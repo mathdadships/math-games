@@ -1207,6 +1207,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.storyText || currentProblem.display || "Division story problem", studentAnswer: String(choice.display), correctAnswer: String(currentChoices.find(c => c.isCorrect).display), isCorrect: true });
                 score += 10;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1231,6 +1232,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.storyText || currentProblem.display || "Division story problem", studentAnswer: String(choice.display), correctAnswer: String(currentChoices.find(c => c.isCorrect).display), isCorrect: false });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');

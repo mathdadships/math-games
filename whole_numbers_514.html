@@ -1332,6 +1332,7 @@
                 if (choice.isCorrect) {
                     btn.classList.add('correct');
                     playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.question, studentAnswer: (choice.displayText || choice.display), correctAnswer: (currentProblem.correctAnswer || ""), isCorrect: true });
                     spawnFlyingEmoji(btn);
 
                     score++;
@@ -1354,6 +1355,7 @@
                 } else {
                     btn.classList.add('wrong');
                     playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.question, studentAnswer: (choice.displayText || choice.display), correctAnswer: (currentProblem.correctAnswer || ""), isCorrect: false });
 
                     streak = 0;
                     streakEl.textContent = '0🔥';

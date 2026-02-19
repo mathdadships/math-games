@@ -1161,6 +1161,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.den1 + " vs " + currentProblem.numerator + "/" + currentProblem.den2, studentAnswer: String(choice.display), correctAnswer: currentProblem.correctStatement, isCorrect: true });
                 spawnFlyingEmoji(btn);
                 
                 score++;
@@ -1191,6 +1192,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.den1 + " vs " + currentProblem.numerator + "/" + currentProblem.den2, studentAnswer: String(choice.display), correctAnswer: currentProblem.correctStatement, isCorrect: false });
                 
                 streak = 0;
                 streakEl.textContent = '0🔥';

@@ -1813,7 +1813,8 @@
 
             if (answer === correctAnswer) {
                 canAnswer = false;
-                let points = 10 + (streak * 2);
+                GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: true });
+        let points = 10 + (streak * 2);
                 const isPerfect = responseTime < PERFECT_THRESHOLD;
                 const isQuick = responseTime < SPEED_BONUS_THRESHOLD;
                 if (isPerfect) points += 5;
@@ -1893,6 +1894,7 @@
 
             } else {
                 playWrongSound();
+                GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: false });
                 btn.classList.add('wrong');
                 setTimeout(() => btn.classList.remove('wrong'), 400);
                 if (row) {

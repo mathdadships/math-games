@@ -1366,7 +1366,8 @@
                 if (isPerfect) points += 5;
                 else if (isQuick) points += 2;
 
-                playBlastSound(streak + 1, currentIndex);
+                GameTracker.recordQuestion({ questionText: "How many equal parts? (" + blocks[currentIndex].parts + " parts)", studentAnswer: String(parts), correctAnswer: String(blocks[currentIndex].parts), isCorrect: true });
+        playBlastSound(streak + 1, currentIndex);
                 screenShake();
 
                 btn.classList.add('correct');
@@ -1418,6 +1419,7 @@
 
             } else {
                 playWrongSound();
+                GameTracker.recordQuestion({ questionText: "How many equal parts? (" + blocks[currentIndex].parts + " parts)", studentAnswer: String(parts), correctAnswer: String(blocks[currentIndex].parts), isCorrect: false });
                 btn.classList.add('wrong');
                 setTimeout(() => btn.classList.remove('wrong'), 400);
                 if (row) {

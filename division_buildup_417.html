@@ -1353,6 +1353,7 @@
                 btn.classList.add('correct');
                 part1Complete = true;
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " Part 1", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: true });
 
                 // Disable other buttons
                 document.querySelectorAll('#choices1 .choice').forEach(b => {
@@ -1397,10 +1398,11 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " Part 1", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: false });
                 streak = 0;
                 document.getElementById('streak').textContent = '0 🔥';
                 document.getElementById('streak-display').classList.remove('hot');
-                
+
                 await sleep(300);
                 showWrongPopup();
             }
@@ -1414,6 +1416,7 @@
                 btn.classList.add('correct');
                 part2Complete = true;
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: true });
 
                 // Disable other buttons
                 document.querySelectorAll('#choices2 .choice').forEach(b => {
@@ -1458,10 +1461,11 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: false });
                 streak = 0;
                 document.getElementById('streak').textContent = '0 🔥';
                 document.getElementById('streak-display').classList.remove('hot');
-                
+
                 await sleep(300);
                 showWrongPopup();
             }

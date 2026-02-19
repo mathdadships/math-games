@@ -953,8 +953,9 @@
             
             if (isCorrect) {
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentEquation.parts.join(" ") + " = ?", studentAnswer: String(selected), correctAnswer: String(currentEquation.answer), isCorrect: true });
                 element.classList.add('correct');
-                
+
                 // Show answer in equation
                 eqAnswer.textContent = correct;
                 eqAnswer.style.background = '#00ff88';
@@ -996,12 +997,13 @@
                 }
             } else {
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentEquation.parts.join(" ") + " = ?", studentAnswer: String(selected), correctAnswer: String(currentEquation.answer), isCorrect: false });
                 element.classList.add('wrong');
                 streak = 0;
                 updateDisplay();
-                
+
                 showFeedback(false);
-                
+
                 document.body.classList.add('screen-shake');
                 setTimeout(() => {
                     document.body.classList.remove('screen-shake');

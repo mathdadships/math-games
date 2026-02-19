@@ -1003,6 +1003,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
                 spawnFlyingEmoji(btn);
+            GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: true });
                 
                 score++;
                 streak++;
@@ -1028,6 +1029,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: false });
                 
                 streak = 0;
                 streakEl.textContent = '0🔥';

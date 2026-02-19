@@ -1329,6 +1329,7 @@
             if (num === correct) {
                 canAnswer = false;
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.cols + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.totalProduct), isCorrect: true });
                 element.classList.add('correct');
 
                 // Reveal answer
@@ -1367,6 +1368,7 @@
             } else {
                 canAnswer = false;
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.cols + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.totalProduct), isCorrect: false });
                 element.classList.add('wrong');
                 streak = 0;
                 updateStats();

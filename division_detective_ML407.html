@@ -777,9 +777,10 @@
             if (isCorrect) {
                 canAnswer = false;
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " Step 1: multiplication fact", studentAnswer: String(selected), correctAnswer: currentProblem.multFact, isCorrect: true });
                 element.classList.add('correct');
                 wrongFeedback.classList.remove('show');
-                
+
                 // Update step 1
                 stepMult.classList.remove('active');
                 stepMult.classList.add('completed');
@@ -802,10 +803,11 @@
                 }, 600);
             } else {
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " Step 1: multiplication fact", studentAnswer: String(selected), correctAnswer: currentProblem.multFact, isCorrect: false });
                 element.classList.add('wrong');
                 streak = 0;
                 updateDisplay();
-                
+
                 wrongFeedback.querySelector('.wrong-text').textContent = "✗ That multiplication doesn't help here!";
                 wrongFeedback.classList.add('show');
                 
@@ -857,9 +859,10 @@
             if (isCorrect) {
                 canAnswer = false;
                 playSound('complete');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(selected), correctAnswer: String(currentProblem.quotient), isCorrect: true });
                 element.classList.add('correct');
                 wrongFeedback.classList.remove('show');
-                
+
                 // Update step 2
                 stepQuotient.classList.remove('active');
                 stepQuotient.classList.add('completed');
@@ -876,10 +879,11 @@
                 }, 400);
             } else {
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(selected), correctAnswer: String(currentProblem.quotient), isCorrect: false });
                 element.classList.add('wrong');
                 streak = 0;
                 updateDisplay();
-                
+
                 wrongFeedback.querySelector('.wrong-text').textContent = "✗ Look at the multiplication fact!";
                 wrongFeedback.classList.add('show');
                 

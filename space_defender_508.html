@@ -1074,6 +1074,7 @@
             
             if (isCorrect) {
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: btn.textContent || "?", correctAnswer: currentProblem.correctNumerator + "/" + currentProblem.correctDenominator, isCorrect: true });
                 btn.classList.add('correct');
                 score += 10 + streak * 2;
                 streak++;
@@ -1092,11 +1093,12 @@
                 
             } else {
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: btn.textContent || "?", correctAnswer: currentProblem.correctNumerator + "/" + currentProblem.correctDenominator, isCorrect: false });
                 btn.classList.add('wrong');
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');
-                
+
                 // For first 2 questions, show hopping animation to teach
                 if (questionNumber <= 2) {
                     playHoppingAnimation(currentProblem.correctNumerator, currentProblem.correctDenominator, currentProblem.targetWholeNumber, true);

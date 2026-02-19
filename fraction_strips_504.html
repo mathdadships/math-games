@@ -1174,6 +1174,7 @@
 
             if (choice.isCorrect) {
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: true });
                 btn.classList.add('correct');
                 score++;
                 streak++;
@@ -1202,6 +1203,7 @@
             GameTracker.checkAutoSave();
             } else {
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: false });
                 btn.classList.add('wrong');
                 streak = 0;
                 streakEl.textContent = '0 🔥';

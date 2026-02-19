@@ -682,7 +682,8 @@
             if (isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-                
+                GameTracker.recordQuestion({ questionText: currentProblem.total + " ÷ " + currentProblem.groups + " = ?", studentAnswer: btn.textContent, correctAnswer: String(currentProblem.perGroup), isCorrect: true });
+
                 streak++;
                 score += 100 + (streak - 1) * 25;
                 scoreEl.textContent = score;
@@ -702,6 +703,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.total + " ÷ " + currentProblem.groups + " = ?", studentAnswer: btn.textContent, correctAnswer: String(currentProblem.perGroup), isCorrect: false });
                 streak = 0;
                 streakEl.textContent = '';
 

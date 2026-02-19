@@ -1509,6 +1509,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1539,6 +1540,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');

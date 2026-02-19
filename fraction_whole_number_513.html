@@ -489,6 +489,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator + " = whole number?", studentAnswer: String(choice.display), correctAnswer: currentProblem.isWhole ? "YES" : "NO", isCorrect: true });
                 spawnFlyingEmoji(btn);
                 score++; streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -516,6 +517,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator + " = whole number?", studentAnswer: String(choice.display), correctAnswer: currentProblem.isWhole ? "YES" : "NO", isCorrect: false });
                 streak = 0;
                 streakEl.textContent = '0🔥';
                 streakDisplay.classList.remove('hot');

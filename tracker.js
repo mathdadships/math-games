@@ -174,11 +174,75 @@ const GameTracker = {
                 );
                 console.log('GameTracker: Saved on exit', data);
             }
+            // Also flush any buffered question responses
+            if (GameTracker._questionBuffer.length > 0) {
+                const qPayload = JSON.stringify(GameTracker._questionBuffer);
+                navigator.sendBeacon(
+                    `${SUPABASE_URL}/rest/v1/question_responses?apikey=${SUPABASE_KEY}`,
+                    new Blob([qPayload], { type: 'application/json' })
+                );
+                GameTracker._questionBuffer = [];
+                console.log('GameTracker: Flushed question buffer on exit');
+            }
         };
         window.addEventListener('beforeunload', saveOnExit);
         window.addEventListener('pagehide', saveOnExit);
 
         console.log(`GameTracker: Auto-save enabled every ${interval} questions`);
+    },
+
+    // Per-question tracking: buffer and batch-send to Supabase
+    _questionBuffer: [],
+    _flushTimer: null,
+
+    recordQuestion({ questionText, studentAnswer, correctAnswer, isCorrect }) {
+        const student = this.getStudent();
+        if (!student) return;
+
+        const gameFile = this._autoSaveState?.gameFile ||
+                         location.pathname.split('/').pop() || 'unknown.html';
+
+        this._questionBuffer.push({
+            student_id: student.id,
+            game_file: gameFile,
+            question_text: String(questionText || '').substring(0, 500) || '?',
+            student_answer: String(studentAnswer ?? '').substring(0, 200) || '?',
+            correct_answer: String(correctAnswer ?? '').substring(0, 200) || '?',
+            is_correct: !!isCorrect
+        });
+
+        // Flush when buffer reaches 5, or set a 5-second timer
+        if (this._questionBuffer.length >= 5) {
+            this._flushQuestions();
+        } else if (!this._flushTimer) {
+            this._flushTimer = setTimeout(() => this._flushQuestions(), 5000);
+        }
+    },
+
+    _flushQuestions() {
+        clearTimeout(this._flushTimer);
+        this._flushTimer = null;
+
+        if (this._questionBuffer.length === 0) return;
+
+        const batch = this._questionBuffer.splice(0);
+
+        fetch(`${SUPABASE_URL}/rest/v1/question_responses`, {
+            method: 'POST',
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(batch)
+        }).then(res => {
+            if (!res.ok) console.error('GameTracker: Failed to flush questions', res.status);
+            else console.log('GameTracker: Flushed', batch.length, 'questions');
+        }).catch(err => {
+            console.error('GameTracker: Flush error', err);
+            // Re-add to buffer for retry
+            this._questionBuffer.unshift(...batch);
+        });
     },
 
     // Call this from the game whenever a question is answered

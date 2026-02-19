@@ -1515,6 +1515,7 @@
                 createElectricSpark(targetX, targetY);
                 
                 zombieEl.classList.add('dying');
+            GameTracker.recordQuestion({ questionText: currentMission.text + " = ?", studentAnswer: String(parseInt(zombieEl.dataset.answer)), correctAnswer: String(currentMission.answer), isCorrect: true });
                 
                 // Chain lightning to others
                 zombies.filter(z => z.el !== zombieEl).forEach((z, i) => {
@@ -1559,6 +1560,7 @@
             } else {
                 playSound('hit');
                 zombieEl.classList.add('wrong-marked');
+            GameTracker.recordQuestion({ questionText: currentMission.text + " = ?", studentAnswer: String(parseInt(zombieEl.dataset.answer)), correctAnswer: String(currentMission.answer), isCorrect: false });
                 
                 incorrectAnswers++;
                 health -= 10; // Lose health for wrong answer

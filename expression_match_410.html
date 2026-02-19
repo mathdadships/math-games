@@ -1059,6 +1059,7 @@
                 btn.classList.add('correct');
                 mainCard.classList.add('correct-flash');
                 playSound('correct');
+            GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.totalCols + " = ?", studentAnswer: choice.expression || choice.display || "", correctAnswer: currentProblem.rows + " x " + currentProblem.leftCols + " + " + currentProblem.rows + " x " + currentProblem.rightCols, isCorrect: true });
                 
                 score++;
                 streak++;
@@ -1081,6 +1082,7 @@
                 // Wrong answer - warm amber feedback
                 btn.classList.add('wrong');
                 playSound('wrong');
+            GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.totalCols + " = ?", studentAnswer: choice.expression || choice.display || "", correctAnswer: currentProblem.rows + " x " + currentProblem.leftCols + " + " + currentProblem.rows + " x " + currentProblem.rightCols, isCorrect: false });
                 streak = 0;
                 updateStats();
                 

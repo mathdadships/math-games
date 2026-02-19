@@ -67,7 +67,7 @@
 
         /* Stats cards */
         .stats-row {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 16px; padding: 24px 32px;
         }
         .stat-card {
@@ -114,44 +114,116 @@
             font-size: 0.88rem; color: #444;
         }
         .data-table tr:hover td { background: #f8f9ff; }
-        .score-badge {
+
+        /* Accuracy badges */
+        .acc-badge {
             display: inline-block; padding: 3px 10px; border-radius: 12px;
             font-weight: 700; font-size: 0.82rem;
         }
-        .score-high { background: #e8f5e9; color: #2e7d32; }
-        .score-mid { background: #fff3e0; color: #e65100; }
-        .score-low { background: #fce4ec; color: #c62828; }
+        .acc-high { background: #e8f5e9; color: #2e7d32; }
+        .acc-mid { background: #fff3e0; color: #e65100; }
+        .acc-low { background: #fce4ec; color: #c62828; }
 
-        /* Student detail */
-        .student-detail {
-            background: white; border-radius: 14px; padding: 24px;
+        /* Student cards */
+        .student-card {
+            background: white; border-radius: 14px; padding: 20px 24px;
             margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            cursor: pointer; transition: box-shadow 0.2s;
         }
-        .student-detail h3 { margin-bottom: 12px; color: #333; }
-        .student-games-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
+        .student-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .student-card.expanded { cursor: default; }
+        .student-card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 8px;
         }
-        .mini-card {
-            background: #f8f9fa; border-radius: 10px; padding: 12px;
-            font-size: 0.85rem;
+        .student-card-header h3 { color: #333; font-size: 1.1rem; }
+        .student-card-header .meta { color: #999; font-size: 0.85rem; }
+        .student-card-summary {
+            display: flex; gap: 16px; margin-top: 10px; flex-wrap: wrap;
         }
-        .mini-card .game-name { font-weight: 700; color: #333; margin-bottom: 4px; }
-        .mini-card .game-stat { color: #888; font-size: 0.8rem; }
+        .student-card-summary .summary-chip {
+            background: #f8f9fa; border-radius: 8px; padding: 6px 12px;
+            font-size: 0.82rem; color: #555;
+        }
+        .summary-chip strong { color: #333; }
+
+        /* Expanded detail area */
+        .student-detail-area { display: none; margin-top: 16px; }
+        .student-card.expanded .student-detail-area { display: block; }
+        .detail-toolbar {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .detail-toolbar label { font-size: 0.85rem; color: #666; cursor: pointer; }
+        .detail-toolbar select {
+            padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd;
+            font-size: 0.82rem; font-family: inherit;
+        }
+        .toggle-mistakes {
+            display: flex; align-items: center; gap: 6px;
+            background: #fce4ec; border-radius: 8px; padding: 6px 12px;
+            cursor: pointer; font-size: 0.82rem; color: #c62828; font-weight: 600;
+            border: none; font-family: inherit; transition: background 0.2s;
+        }
+        .toggle-mistakes.active { background: #c62828; color: white; }
+        .toggle-mistakes:hover { opacity: 0.85; }
+
+        /* Question detail table */
+        .question-table {
+            width: 100%; border-collapse: collapse; font-size: 0.82rem;
+        }
+        .question-table th {
+            background: #f8f9fa; padding: 8px 12px; text-align: left;
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: #888; font-weight: 700;
+        }
+        .question-table td {
+            padding: 8px 12px; border-top: 1px solid #f0f0f0; color: #444;
+        }
+        .question-table tr.correct td { background: #f6fff6; }
+        .question-table tr.wrong td { background: #fff6f6; }
+        .question-table .icon { font-size: 1rem; }
+        .question-table .answer-wrong { color: #c62828; font-weight: 600; }
+        .question-table .answer-correct { color: #2e7d32; }
+
+        /* Game accuracy cards */
+        .game-acc-card {
+            background: #f8f9fa; border-radius: 10px; padding: 12px 16px;
+            font-size: 0.85rem; display: flex; align-items: center;
+            justify-content: space-between; gap: 10px;
+        }
+        .game-acc-card .game-name { font-weight: 700; color: #333; }
+        .game-acc-card .game-stats { color: #888; font-size: 0.8rem; }
+        .game-acc-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 10px; margin-bottom: 12px;
+        }
 
         /* Loading */
         .loading { text-align: center; padding: 60px; color: #999; font-size: 1.1rem; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #ddd; border-top-color: #667eea; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Empty state */
         .empty { text-align: center; padding: 60px; color: #bbb; }
         .empty .empty-icon { font-size: 3rem; margin-bottom: 12px; }
 
+        /* Pagination */
+        .pagination { display: flex; gap: 6px; margin-top: 12px; align-items: center; justify-content: center; }
+        .pagination button {
+            padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd;
+            background: white; cursor: pointer; font-size: 0.82rem; font-family: inherit;
+        }
+        .pagination button.active { background: #667eea; color: white; border-color: #667eea; }
+        .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+
         @media (max-width: 600px) {
             .dash-header { padding: 16px; }
             .stats-row, .tab-content { padding: 16px; }
             .tabs { padding: 0 16px; overflow-x: auto; }
-            .data-table { font-size: 0.8rem; }
+            .data-table, .question-table { font-size: 0.78rem; }
             .data-table th, .data-table td { padding: 8px 10px; }
+            .student-card { padding: 14px 16px; }
         }
     </style>
 </head>
@@ -189,23 +261,27 @@
                 <div class="stat-label">Students</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="stat-plays">-</div>
-                <div class="stat-label">Games Played</div>
+                <div class="stat-value" id="stat-questions">-</div>
+                <div class="stat-label">Questions Answered</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value" id="stat-avg">-</div>
-                <div class="stat-label">Avg Score</div>
+                <div class="stat-value" id="stat-accuracy">-</div>
+                <div class="stat-label">Accuracy</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-wrong">-</div>
+                <div class="stat-label">Wrong Answers</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="stat-today">-</div>
-                <div class="stat-label">Played Today</div>
+                <div class="stat-label">Questions Today</div>
             </div>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('results')">All Results</button>
-            <button class="tab" onclick="switchTab('students')">By Student</button>
-            <button class="tab" onclick="switchTab('games')">By Game</button>
+            <button class="tab active" onclick="switchTab('results', this)">All Results</button>
+            <button class="tab" onclick="switchTab('students', this)">By Student</button>
+            <button class="tab" onclick="switchTab('games', this)">By Game</button>
         </div>
 
         <!-- All Results Tab -->
@@ -216,9 +292,10 @@
                         <th onclick="sortTable('first_name')">Student <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('class_code')">Class <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('game_title')">Game <span class="sort-arrow"></span></th>
-                        <th onclick="sortTable('score')">Score <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('questions_answered')">Questions <span class="sort-arrow"></span></th>
-                        <th onclick="sortTable('best_streak')">Best Streak <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('right_count')">Right <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('wrong_count')">Wrong <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('accuracy')">Accuracy <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('played_at')">Date <span class="sort-arrow"></span></th>
                     </tr>
                 </thead>
@@ -227,7 +304,9 @@
         </div>
 
         <!-- By Student Tab -->
-        <div class="tab-content" id="tab-students"></div>
+        <div class="tab-content" id="tab-students">
+            <div class="loading"><span class="loading-spinner"></span> Loading...</div>
+        </div>
 
         <!-- By Game Tab -->
         <div class="tab-content" id="tab-games">
@@ -236,9 +315,9 @@
                     <tr>
                         <th>Game</th>
                         <th>Times Played</th>
-                        <th>Avg Score</th>
-                        <th>High Score</th>
-                        <th>Avg Streak</th>
+                        <th>Total Questions</th>
+                        <th>Accuracy</th>
+                        <th>Most Missed</th>
                     </tr>
                 </thead>
                 <tbody id="games-body"></tbody>
@@ -249,13 +328,16 @@
     <script>
     const SUPABASE_URL = 'https://pnarndrlkkrzqvbnmahh.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_8ZmsmQ2JV7m3cwGOUbGiIg_UM6gw17d';
-
-    // Simple password - change this to your own!
     const TEACHER_PASSWORD = 'mathteacher2026';
 
     let allStudents = [];
     let allResults = [];
+    let allQuestions = [];  // question_responses data
+    let questionsByStudent = {}; // studentId -> [questions]
     let currentSort = { key: 'played_at', dir: 'desc' };
+
+    // Cache loaded student question details
+    const studentQuestionCache = {};
 
     // ============ AUTH ============
     function checkPassword() {
@@ -274,7 +356,6 @@
         if (e.key === 'Enter') checkPassword();
     });
 
-    // Auto-login if already authenticated this session
     if (sessionStorage.getItem('teacher_auth') === 'true') {
         document.getElementById('password-gate').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
@@ -295,11 +376,14 @@
     }
 
     async function loadData() {
-        document.getElementById('results-body').innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+        document.getElementById('results-body').innerHTML =
+            '<tr><td colspan="8" class="loading"><span class="loading-spinner"></span> Loading...</td></tr>';
 
-        const [students, results] = await Promise.all([
+        // Load students, game_results, and question_responses summary
+        const [students, results, questions] = await Promise.all([
             supaFetch('students', 'order=created_at.asc'),
-            supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc')
+            supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc&limit=5000'),
+            supaFetch('question_responses', 'select=student_id,game_file,is_correct&limit=50000')
         ]);
 
         allStudents = students;
@@ -308,6 +392,37 @@
             first_name: r.students?.first_name || 'Unknown',
             class_code: r.students?.class_code || '?'
         }));
+        allQuestions = questions;
+
+        // Build question stats by student
+        questionsByStudent = {};
+        allQuestions.forEach(q => {
+            if (!questionsByStudent[q.student_id]) {
+                questionsByStudent[q.student_id] = { total: 0, right: 0, wrong: 0, byGame: {} };
+            }
+            const s = questionsByStudent[q.student_id];
+            s.total++;
+            if (q.is_correct) s.right++; else s.wrong++;
+            if (!s.byGame[q.game_file]) s.byGame[q.game_file] = { total: 0, right: 0, wrong: 0 };
+            const g = s.byGame[q.game_file];
+            g.total++;
+            if (q.is_correct) g.right++; else g.wrong++;
+        });
+
+        // Enrich results with accuracy from question data
+        allResults.forEach(r => {
+            const qs = questionsByStudent[r.student_id];
+            if (qs && qs.byGame[r.game_file]) {
+                const g = qs.byGame[r.game_file];
+                r.right_count = g.right;
+                r.wrong_count = g.wrong;
+                r.accuracy = g.total > 0 ? Math.round((g.right / g.total) * 100) : null;
+            } else {
+                r.right_count = null;
+                r.wrong_count = null;
+                r.accuracy = null;
+            }
+        });
 
         populateFilters();
         updateStats();
@@ -319,7 +434,6 @@
     function getFilteredResults() {
         const classVal = document.getElementById('class-filter').value;
         const gameVal = document.getElementById('game-filter').value;
-
         return allResults.filter(r => {
             if (classVal !== 'all' && r.class_code !== classVal) return false;
             if (gameVal !== 'all' && r.game_file !== gameVal) return false;
@@ -327,42 +441,61 @@
         });
     }
 
+    function getFilteredStudentIds() {
+        const classVal = document.getElementById('class-filter').value;
+        if (classVal === 'all') return allStudents.map(s => s.id);
+        return allStudents.filter(s => s.class_code === classVal).map(s => s.id);
+    }
+
     function populateFilters() {
         const classFilter = document.getElementById('class-filter');
         const gameFilter = document.getElementById('game-filter');
-
         const classes = [...new Set(allStudents.map(s => s.class_code))].sort();
         const games = [...new Set(allResults.map(r => r.game_title || r.game_file))].sort();
-
         const classVal = classFilter.value;
         const gameVal = gameFilter.value;
-
         classFilter.innerHTML = '<option value="all">All Classes</option>' +
             classes.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
         gameFilter.innerHTML = '<option value="all">All Games</option>' +
             games.map(g => `<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('');
-
         classFilter.value = classVal;
         gameFilter.value = gameVal;
     }
 
-    document.getElementById('class-filter').addEventListener('change', () => { updateStats(); renderResults(); renderStudents(); renderGames(); });
-    document.getElementById('game-filter').addEventListener('change', () => { updateStats(); renderResults(); renderStudents(); renderGames(); });
+    document.getElementById('class-filter').addEventListener('change', () => {
+        updateStats(); renderResults(); renderStudents(); renderGames();
+    });
+    document.getElementById('game-filter').addEventListener('change', () => {
+        updateStats(); renderResults(); renderStudents(); renderGames();
+    });
 
     // ============ STATS ============
     function updateStats() {
-        const filtered = getFilteredResults();
-        const uniqueStudents = new Set(filtered.map(r => r.student_id));
+        const filteredIds = new Set(getFilteredStudentIds());
+        // Get questions for filtered students
+        const filteredQ = allQuestions.filter(q => filteredIds.has(q.student_id));
+        const gameVal = document.getElementById('game-filter').value;
+        const finalQ = gameVal === 'all' ? filteredQ : filteredQ.filter(q => q.game_file === gameVal);
+
+        const totalQ = finalQ.length;
+        const rightQ = finalQ.filter(q => q.is_correct).length;
+        const wrongQ = totalQ - rightQ;
+        const accuracy = totalQ > 0 ? Math.round((rightQ / totalQ) * 100) : 0;
+
+        const uniqueStudents = new Set(finalQ.map(q => q.student_id));
+
+        // Today's questions — we don't have answered_at in the summary fetch,
+        // so use game_results played_at as proxy
         const today = new Date().toISOString().split('T')[0];
-        const playedToday = filtered.filter(r => r.played_at && r.played_at.startsWith(today));
-        const avgScore = filtered.length > 0
-            ? Math.round(filtered.reduce((sum, r) => sum + (r.score || 0), 0) / filtered.length)
-            : 0;
+        const filtered = getFilteredResults();
+        const todayResults = filtered.filter(r => r.played_at && r.played_at.startsWith(today));
+        const todayQuestions = todayResults.reduce((sum, r) => sum + (r.questions_answered || 0), 0);
 
         document.getElementById('stat-students').textContent = uniqueStudents.size;
-        document.getElementById('stat-plays').textContent = filtered.length;
-        document.getElementById('stat-avg').textContent = avgScore;
-        document.getElementById('stat-today').textContent = playedToday.length;
+        document.getElementById('stat-questions').textContent = totalQ.toLocaleString();
+        document.getElementById('stat-accuracy').textContent = accuracy + '%';
+        document.getElementById('stat-wrong').textContent = wrongQ.toLocaleString();
+        document.getElementById('stat-today').textContent = todayQuestions;
     }
 
     // ============ RESULTS TABLE ============
@@ -380,30 +513,31 @@
         const sorted = [...filtered].sort((a, b) => {
             let va = a[currentSort.key] ?? '';
             let vb = b[currentSort.key] ?? '';
-            if (typeof va === 'number') return currentSort.dir === 'asc' ? va - vb : vb - va;
+            if (typeof va === 'number' && typeof vb === 'number') return currentSort.dir === 'asc' ? va - vb : vb - va;
             va = String(va).toLowerCase();
             vb = String(vb).toLowerCase();
             return currentSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
         });
 
         const tbody = document.getElementById('results-body');
-
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
             return;
         }
 
         tbody.innerHTML = sorted.map(r => {
-            const scoreClass = r.score >= 1000 ? 'score-high' : r.score >= 500 ? 'score-mid' : 'score-low';
-            const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
             const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
+            const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
+            const accClass = r.accuracy >= 80 ? 'acc-high' : r.accuracy >= 50 ? 'acc-mid' : 'acc-low';
+            const accText = r.accuracy !== null ? r.accuracy + '%' : '-';
             return `<tr>
                 <td><strong>${escHtml(r.first_name)}</strong></td>
                 <td>${escHtml(r.class_code)}</td>
                 <td>${escHtml(title)}</td>
-                <td><span class="score-badge ${scoreClass}">${r.score}</span></td>
                 <td>${r.questions_answered || '-'}</td>
-                <td>${r.best_streak || '-'} 🔥</td>
+                <td>${r.right_count !== null ? '<span style="color:#2e7d32;font-weight:600">' + r.right_count + '</span>' : '-'}</td>
+                <td>${r.wrong_count !== null ? '<span style="color:#c62828;font-weight:600">' + r.wrong_count + '</span>' : '-'}</td>
+                <td>${r.accuracy !== null ? '<span class="acc-badge ' + accClass + '">' + accText + '</span>' : '-'}</td>
                 <td>${date}</td>
             </tr>`;
         }).join('');
@@ -414,14 +548,12 @@
         const filtered = getFilteredResults();
         const container = document.getElementById('tab-students');
 
-        // Group by student
         const byStudent = {};
         filtered.forEach(r => {
-            const key = r.student_id;
-            if (!byStudent[key]) {
-                byStudent[key] = { name: r.first_name, classCode: r.class_code, results: [] };
+            if (!byStudent[r.student_id]) {
+                byStudent[r.student_id] = { id: r.student_id, name: r.first_name, classCode: r.class_code, results: [] };
             }
-            byStudent[key].results.push(r);
+            byStudent[r.student_id].results.push(r);
         });
 
         if (Object.keys(byStudent).length === 0) {
@@ -432,72 +564,296 @@
         container.innerHTML = Object.values(byStudent)
             .sort((a, b) => a.name.localeCompare(b.name))
             .map(student => {
-                const totalScore = student.results.reduce((s, r) => s + (r.score || 0), 0);
-                const avgScore = Math.round(totalScore / student.results.length);
-                const gamesHTML = student.results
-                    .sort((a, b) => new Date(b.played_at) - new Date(a.played_at))
-                    .map(r => {
-                        const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
-                        const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-                        return `<div class="mini-card">
-                            <div class="game-name">${escHtml(title)}</div>
-                            <div class="game-stat">Score: ${r.score} · Streak: ${r.best_streak || 0} 🔥 · ${date}</div>
-                        </div>`;
-                    }).join('');
+                const qs = questionsByStudent[student.id];
+                const totalQ = qs ? qs.total : 0;
+                const rightQ = qs ? qs.right : 0;
+                const wrongQ = qs ? qs.wrong : 0;
+                const accuracy = totalQ > 0 ? Math.round((rightQ / totalQ) * 100) : 0;
+                const accClass = accuracy >= 80 ? 'acc-high' : accuracy >= 50 ? 'acc-mid' : 'acc-low';
 
-                return `<div class="student-detail">
-                    <h3>${escHtml(student.name)} <span style="color:#999;font-weight:400;font-size:0.85rem;">(${escHtml(student.classCode)}) · ${student.results.length} plays · Avg: ${avgScore}</span></h3>
-                    <div class="student-games-grid">${gamesHTML}</div>
+                // Per-game accuracy chips
+                const gameChips = qs ? Object.entries(qs.byGame).map(([gf, gs]) => {
+                    const title = gf.replace('.html', '').replace(/_/g, ' ');
+                    const gAcc = gs.total > 0 ? Math.round((gs.right / gs.total) * 100) : 0;
+                    const gAccClass = gAcc >= 80 ? 'acc-high' : gAcc >= 50 ? 'acc-mid' : 'acc-low';
+                    return `<div class="game-acc-card">
+                        <div>
+                            <div class="game-name">${escHtml(title)}</div>
+                            <div class="game-stats">${gs.right}/${gs.total} correct</div>
+                        </div>
+                        <span class="acc-badge ${gAccClass}">${gAcc}%</span>
+                    </div>`;
+                }).join('') : '';
+
+                return `<div class="student-card" id="student-${student.id}" onclick="toggleStudentDetail('${student.id}')">
+                    <div class="student-card-header">
+                        <h3>${escHtml(student.name)} <span class="meta">(${escHtml(student.classCode)})</span></h3>
+                        <span class="acc-badge ${accClass}" style="font-size:1rem;">${accuracy}%</span>
+                    </div>
+                    <div class="student-card-summary">
+                        <div class="summary-chip"><strong>${totalQ}</strong> questions</div>
+                        <div class="summary-chip" style="color:#2e7d32"><strong>${rightQ}</strong> right</div>
+                        <div class="summary-chip" style="color:#c62828"><strong>${wrongQ}</strong> wrong</div>
+                        <div class="summary-chip"><strong>${student.results.length}</strong> sessions</div>
+                    </div>
+                    <div class="game-acc-grid" style="margin-top:12px;">${gameChips}</div>
+                    <div class="student-detail-area" id="detail-${student.id}">
+                        <div class="loading" style="padding:20px;"><span class="loading-spinner"></span> Loading question details...</div>
+                    </div>
                 </div>`;
             }).join('');
     }
 
-    // ============ BY GAME ============
-    function renderGames() {
-        const filtered = getFilteredResults();
+    async function toggleStudentDetail(studentId) {
+        const card = document.getElementById('student-' + studentId);
+        const detail = document.getElementById('detail-' + studentId);
 
-        // Group by game
-        const byGame = {};
-        filtered.forEach(r => {
-            const key = r.game_file;
-            if (!byGame[key]) {
-                byGame[key] = { title: r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' '), results: [] };
-            }
-            byGame[key].results.push(r);
-        });
-
-        const tbody = document.getElementById('games-body');
-
-        if (Object.keys(byGame).length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
+        if (card.classList.contains('expanded')) {
+            card.classList.remove('expanded');
             return;
         }
 
-        tbody.innerHTML = Object.values(byGame)
-            .sort((a, b) => b.results.length - a.results.length)
-            .map(game => {
-                const scores = game.results.map(r => r.score || 0);
-                const streaks = game.results.map(r => r.best_streak || 0);
-                const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-                const high = Math.max(...scores);
-                const avgStreak = (streaks.reduce((a, b) => a + b, 0) / streaks.length).toFixed(1);
+        card.classList.add('expanded');
+
+        // Lazy-load question details for this student
+        if (!studentQuestionCache[studentId]) {
+            try {
+                const questions = await supaFetch('question_responses',
+                    `student_id=eq.${studentId}&order=answered_at.desc&limit=500`);
+                studentQuestionCache[studentId] = questions;
+            } catch (err) {
+                detail.innerHTML = '<div style="color:#c62828;padding:12px;">Failed to load question data.</div>';
+                return;
+            }
+        }
+
+        renderStudentDetail(studentId);
+    }
+
+    function renderStudentDetail(studentId) {
+        const detail = document.getElementById('detail-' + studentId);
+        const questions = studentQuestionCache[studentId] || [];
+
+        if (questions.length === 0) {
+            detail.innerHTML = '<div style="color:#999;padding:12px;">No question data recorded yet. Questions will appear after the student plays with the updated games.</div>';
+            return;
+        }
+
+        // Get unique games for filter
+        const games = [...new Set(questions.map(q => q.game_file))].sort();
+
+        detail.innerHTML = `
+            <div class="detail-toolbar">
+                <select onchange="filterStudentQuestions('${studentId}')" id="game-sel-${studentId}">
+                    <option value="all">All Games</option>
+                    ${games.map(g => `<option value="${escHtml(g)}">${escHtml(g.replace('.html','').replace(/_/g,' '))}</option>`).join('')}
+                </select>
+                <button class="toggle-mistakes" id="mistakes-btn-${studentId}" onclick="event.stopPropagation(); toggleMistakes('${studentId}')">
+                    ✗ Mistakes Only
+                </button>
+                <span style="color:#999;font-size:0.8rem;" id="q-count-${studentId}">${questions.length} questions</span>
+            </div>
+            <div id="q-table-${studentId}"></div>
+        `;
+
+        filterStudentQuestions(studentId);
+    }
+
+    function filterStudentQuestions(studentId) {
+        const questions = studentQuestionCache[studentId] || [];
+        const gameFilter = document.getElementById('game-sel-' + studentId)?.value || 'all';
+        const mistakesBtn = document.getElementById('mistakes-btn-' + studentId);
+        const mistakesOnly = mistakesBtn?.classList.contains('active') || false;
+
+        let filtered = questions;
+        if (gameFilter !== 'all') filtered = filtered.filter(q => q.game_file === gameFilter);
+        if (mistakesOnly) filtered = filtered.filter(q => !q.is_correct);
+
+        const countEl = document.getElementById('q-count-' + studentId);
+        if (countEl) countEl.textContent = filtered.length + ' questions' + (mistakesOnly ? ' (mistakes)' : '');
+
+        const container = document.getElementById('q-table-' + studentId);
+
+        if (filtered.length === 0) {
+            container.innerHTML = mistakesOnly
+                ? '<div style="text-align:center;padding:20px;color:#2e7d32;font-weight:600;">🎉 No mistakes!</div>'
+                : '<div style="text-align:center;padding:20px;color:#999;">No questions found.</div>';
+            return;
+        }
+
+        // Show max 50 at a time
+        const page = parseInt(container.dataset.page || '0');
+        const pageSize = 50;
+        const paged = filtered.slice(page * pageSize, (page + 1) * pageSize);
+        const totalPages = Math.ceil(filtered.length / pageSize);
+
+        let html = `<table class="question-table">
+            <thead><tr>
+                <th style="width:30px"></th>
+                <th>Game</th>
+                <th>Question</th>
+                <th>Their Answer</th>
+                <th>Correct Answer</th>
+                <th>When</th>
+            </tr></thead>
+            <tbody>`;
+
+        paged.forEach(q => {
+            const rowClass = q.is_correct ? 'correct' : 'wrong';
+            const icon = q.is_correct ? '✓' : '✗';
+            const answerClass = q.is_correct ? 'answer-correct' : 'answer-wrong';
+            const game = (q.game_file || '').replace('.html', '').replace(/_/g, ' ');
+            const when = q.answered_at ? new Date(q.answered_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
+
+            html += `<tr class="${rowClass}">
+                <td class="icon">${icon}</td>
+                <td>${escHtml(game)}</td>
+                <td>${escHtml(q.question_text || '?')}</td>
+                <td class="${answerClass}">${escHtml(q.student_answer || '?')}</td>
+                <td>${escHtml(q.correct_answer || '?')}</td>
+                <td style="white-space:nowrap">${when}</td>
+            </tr>`;
+        });
+
+        html += '</tbody></table>';
+
+        if (totalPages > 1) {
+            html += '<div class="pagination">';
+            html += `<button ${page === 0 ? 'disabled' : ''} onclick="event.stopPropagation(); pageStudentQuestions('${studentId}', ${page - 1})">← Prev</button>`;
+            html += `<span style="font-size:0.82rem;color:#888;">Page ${page + 1} of ${totalPages}</span>`;
+            html += `<button ${page >= totalPages - 1 ? 'disabled' : ''} onclick="event.stopPropagation(); pageStudentQuestions('${studentId}', ${page + 1})">Next →</button>`;
+            html += '</div>';
+        }
+
+        container.innerHTML = html;
+        container.dataset.page = page;
+    }
+
+    function toggleMistakes(studentId) {
+        const btn = document.getElementById('mistakes-btn-' + studentId);
+        btn.classList.toggle('active');
+        const container = document.getElementById('q-table-' + studentId);
+        if (container) container.dataset.page = '0';
+        filterStudentQuestions(studentId);
+    }
+
+    function pageStudentQuestions(studentId, page) {
+        const container = document.getElementById('q-table-' + studentId);
+        container.dataset.page = page;
+        filterStudentQuestions(studentId);
+    }
+
+    // ============ BY GAME ============
+    function renderGames() {
+        const gameVal = document.getElementById('game-filter').value;
+        const filteredIds = new Set(getFilteredStudentIds());
+
+        // Group questions by game
+        const byGame = {};
+        allQuestions.forEach(q => {
+            if (!filteredIds.has(q.student_id)) return;
+            if (gameVal !== 'all' && q.game_file !== gameVal) return;
+            if (!byGame[q.game_file]) byGame[q.game_file] = { total: 0, right: 0, wrong: 0, wrongAnswers: {} };
+            const g = byGame[q.game_file];
+            g.total++;
+            if (q.is_correct) g.right++; else g.wrong++;
+        });
+
+        // For "most missed" we need the full question data — we'll show a placeholder
+        // and fetch details on demand. For now, show counts.
+        const tbody = document.getElementById('games-body');
+
+        const entries = Object.entries(byGame);
+        if (entries.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📭</div>No question data yet</div></td></tr>';
+            return;
+        }
+
+        // Also get play counts from game_results
+        const filtered = getFilteredResults();
+        const playCounts = {};
+        filtered.forEach(r => {
+            playCounts[r.game_file] = (playCounts[r.game_file] || 0) + 1;
+        });
+
+        tbody.innerHTML = entries
+            .sort((a, b) => b[1].total - a[1].total)
+            .map(([gf, gs]) => {
+                const title = gf.replace('.html', '').replace(/_/g, ' ');
+                const acc = gs.total > 0 ? Math.round((gs.right / gs.total) * 100) : 0;
+                const accClass = acc >= 80 ? 'acc-high' : acc >= 50 ? 'acc-mid' : 'acc-low';
+                const plays = playCounts[gf] || 0;
 
                 return `<tr>
-                    <td><strong>${escHtml(game.title)}</strong></td>
-                    <td>${game.results.length}</td>
-                    <td>${avg}</td>
-                    <td><span class="score-badge score-high">${high}</span></td>
-                    <td>${avgStreak} 🔥</td>
+                    <td><strong>${escHtml(title)}</strong></td>
+                    <td>${plays}</td>
+                    <td>${gs.total.toLocaleString()} <span style="color:#999;font-size:0.78rem;">(${gs.right}✓ ${gs.wrong}✗)</span></td>
+                    <td><span class="acc-badge ${accClass}">${acc}%</span></td>
+                    <td><button style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;font-size:0.78rem;font-family:inherit;" onclick="showMostMissed('${escHtml(gf)}')">View Mistakes</button></td>
                 </tr>`;
             }).join('');
     }
 
+    async function showMostMissed(gameFile) {
+        // Fetch wrong answers for this game
+        try {
+            const wrong = await supaFetch('question_responses',
+                `game_file=eq.${encodeURIComponent(gameFile)}&is_correct=eq.false&order=answered_at.desc&limit=200`);
+
+            if (wrong.length === 0) {
+                alert('No wrong answers recorded for this game yet!');
+                return;
+            }
+
+            // Count which questions are most missed
+            const counts = {};
+            wrong.forEach(q => {
+                const key = q.question_text || '?';
+                if (!counts[key]) counts[key] = { question: key, count: 0, wrongAnswers: {} };
+                counts[key].count++;
+                const wa = q.student_answer || '?';
+                counts[key].wrongAnswers[wa] = (counts[key].wrongAnswers[wa] || 0) + 1;
+            });
+
+            const sorted = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 15);
+            const title = gameFile.replace('.html', '').replace(/_/g, ' ');
+
+            // Show in a simple overlay
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;';
+            overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+            let tableHTML = `<div style="background:white;border-radius:16px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;">
+                <h3 style="margin-bottom:4px;">Most Missed — ${escHtml(title)}</h3>
+                <p style="color:#999;font-size:0.82rem;margin-bottom:16px;">${wrong.length} wrong answers total</p>
+                <table class="question-table">
+                <thead><tr><th>Question</th><th>Times Missed</th><th>Common Wrong Answer</th></tr></thead>
+                <tbody>`;
+
+            sorted.forEach(item => {
+                const topWrong = Object.entries(item.wrongAnswers).sort((a, b) => b[1] - a[1])[0];
+                tableHTML += `<tr class="wrong">
+                    <td>${escHtml(item.question)}</td>
+                    <td style="font-weight:700;color:#c62828;">${item.count}</td>
+                    <td>"${escHtml(topWrong[0])}" <span style="color:#999">(${topWrong[1]}x)</span></td>
+                </tr>`;
+            });
+
+            tableHTML += '</tbody></table><button onclick="this.closest(\'div\').parentElement.remove()" style="margin-top:16px;padding:8px 20px;border-radius:8px;border:none;background:#667eea;color:white;cursor:pointer;font-family:inherit;font-size:0.9rem;">Close</button></div>';
+
+            overlay.innerHTML = tableHTML;
+            document.body.appendChild(overlay);
+        } catch (err) {
+            alert('Error loading mistake data: ' + err.message);
+        }
+    }
+
     // ============ TABS ============
-    function switchTab(name) {
+    function switchTab(name, btn) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
-        event.target.classList.add('active');
+        btn.classList.add('active');
     }
 
     // ============ EXPORT ============
@@ -505,11 +861,11 @@
         const filtered = getFilteredResults();
         if (filtered.length === 0) { alert('No data to export.'); return; }
 
-        const headers = ['Student', 'Class', 'Game', 'Score', 'Questions', 'Best Streak', 'Date'];
+        const headers = ['Student', 'Class', 'Game', 'Questions', 'Right', 'Wrong', 'Accuracy %', 'Date'];
         const rows = filtered.map(r => {
             const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
             const date = r.played_at ? new Date(r.played_at).toLocaleString() : '';
-            return [r.first_name, r.class_code, title, r.score, r.questions_answered || '', r.best_streak || '', date];
+            return [r.first_name, r.class_code, title, r.questions_answered || '', r.right_count || '', r.wrong_count || '', r.accuracy !== null ? r.accuracy : '', date];
         });
 
         const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');

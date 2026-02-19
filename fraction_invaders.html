@@ -577,6 +577,7 @@
             createLaserBolt(heroX, heroY, targetX, targetY);
             createElectricSpark(targetX, targetY);
             alienEl.classList.add('dying');
+            GameTracker.recordQuestion({ questionText: currentMission.mission, studentAnswer: alienEl.dataset.answer, correctAnswer: currentMission.answer, isCorrect: true });
 
             aliens.filter(a => a.el !== alienEl).forEach((a, i) => {
                 setTimeout(() => {
@@ -602,6 +603,7 @@
             setTimeout(spawnNewQuestion, 500);
         } else {
             playSound('hit'); alienEl.classList.add('wrong-marked');
+            GameTracker.recordQuestion({ questionText: currentMission.mission, studentAnswer: alienEl.dataset.answer, correctAnswer: currentMission.answer, isCorrect: false });
             incorrectAnswers++; health -= 10;
             const desc = currentMission.explain;
             if (!missedProblems.includes(desc)) missedProblems.push(desc);

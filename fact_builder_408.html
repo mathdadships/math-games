@@ -993,8 +993,9 @@
             if (num === correct) {
                 canAnswer = false;
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.targetRows + " x " + currentProblem.dotsPerRow + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.targetProduct), isCorrect: true });
                 element.classList.add('correct');
-                
+
                 // Reveal answer
                 targetAnswer.textContent = correct;
                 targetAnswer.classList.add('revealed');
@@ -1038,6 +1039,7 @@
             } else {
                 canAnswer = false;
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.targetRows + " x " + currentProblem.dotsPerRow + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.targetProduct), isCorrect: false });
                 element.classList.add('wrong');
                 streak = 0;
                 updateStats();

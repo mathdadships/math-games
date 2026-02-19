@@ -947,6 +947,7 @@ Locating Fractions on a Number Line
             if (isCorrect) {
                 tick.classList.add('correct');
                 playSound('correct');
+                GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: tick.dataset.position || "?", correctAnswer: String(currentProblem.numerator), isCorrect: true });
                 score++; streak++;
                 if (streak > bestStreak) bestStreak = streak;
                 scoreEl.textContent = score;
@@ -958,6 +959,7 @@ Locating Fractions on a Number Line
             } else {
                 tick.classList.add('wrong');
                 playSound('wrong');
+                GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: tick.dataset.position || "?", correctAnswer: String(currentProblem.numerator), isCorrect: false });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');
