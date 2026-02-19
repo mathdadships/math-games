@@ -1,0 +1,24 @@
+# Environment & secrets
+.env
+.env.*
+*.env
+
+# API keys & credentials
+*secret*
+*key*.json
+credentials.*
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Private folder
+private/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node (in case you add dependencies later)
+node_modules/
