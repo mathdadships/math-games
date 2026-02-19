@@ -387,11 +387,31 @@
         ]);
 
         allStudents = students;
-        allResults = results.map(r => ({
+        const enriched = results.map(r => ({
             ...r,
             first_name: r.students?.first_name || 'Unknown',
             class_code: r.students?.class_code || '?'
         }));
+
+        // Deduplicate: keep one row per session.
+        // With session_id: group by student_id + game_file + session_id
+        // Without session_id (pre-migration): group by student_id + game_file + date
+        const dedup = {};
+        enriched.forEach(r => {
+            let sessionKey;
+            if (r.session_id) {
+                sessionKey = r.session_id;
+            } else {
+                // Pre-migration rows: group by date to collapse auto-save duplicates
+                const day = r.played_at ? r.played_at.split('T')[0] : 'unknown';
+                sessionKey = 'legacy_' + day;
+            }
+            const key = r.student_id + '|' + r.game_file + '|' + sessionKey;
+            if (!dedup[key] || (r.questions_answered || 0) > (dedup[key].questions_answered || 0)) {
+                dedup[key] = r;
+            }
+        });
+        allResults = Object.values(dedup);
         allQuestions = questions;
 
         // Build question stats by student
@@ -482,13 +502,15 @@
         const wrongQ = totalQ - rightQ;
         const accuracy = totalQ > 0 ? Math.round((rightQ / totalQ) * 100) : 0;
 
-        const uniqueStudents = new Set(finalQ.map(q => q.student_id));
+        // Count unique students from game_results (not just question_responses)
+        // so students without question data still get counted
+        const filteredResults = getFilteredResults();
+        const uniqueStudents = new Set(filteredResults.map(r => r.student_id));
 
         // Today's questions — we don't have answered_at in the summary fetch,
         // so use game_results played_at as proxy
         const today = new Date().toISOString().split('T')[0];
-        const filtered = getFilteredResults();
-        const todayResults = filtered.filter(r => r.played_at && r.played_at.startsWith(today));
+        const todayResults = filteredResults.filter(r => r.played_at && r.played_at.startsWith(today));
         const todayQuestions = todayResults.reduce((sum, r) => sum + (r.questions_answered || 0), 0);
 
         document.getElementById('stat-students').textContent = uniqueStudents.size;

@@ -97,6 +97,7 @@ const GameTracker = {
             return null;
         }
 
+        const sessionId = this._autoSaveState?.sessionId || null;
         const payload = {
             student_id: student.id,
             game_file: gameFile,
@@ -104,8 +105,14 @@ const GameTracker = {
             score: score || 0,
             questions_answered: questionsAnswered || 0,
             best_streak: bestStreak || 0,
-            time_seconds: timeSeconds || null
+            time_seconds: timeSeconds || null,
+            session_id: sessionId
         };
+
+        // Use upsert if we have a session_id (merge-duplicates on the unique constraint)
+        const preferHeader = sessionId
+            ? 'resolution=merge-duplicates,return=representation'
+            : 'return=representation';
 
         try {
             const res = await fetch(`${SUPABASE_URL}/rest/v1/game_results`, {
@@ -114,7 +121,7 @@ const GameTracker = {
                     'apikey': SUPABASE_KEY,
                     'Authorization': `Bearer ${SUPABASE_KEY}`,
                     'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
+                    'Prefer': preferHeader
                 },
                 body: JSON.stringify(payload)
             });
@@ -125,7 +132,7 @@ const GameTracker = {
             }
 
             const saved = (await res.json())[0];
-            console.log('GameTracker: Result saved', saved);
+            console.log('GameTracker: Result saved (upsert)', saved);
             return saved;
         } catch (err) {
             console.error('GameTracker: Error saving result', err);
@@ -142,7 +149,8 @@ const GameTracker = {
             gameFile,
             gameTitle: gameTitle || document.title,
             interval,
-            lastSavedAt: 0
+            lastSavedAt: 0,
+            sessionId: Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
         };
 
         // Also save when student leaves the page (navigate away or close tab)
@@ -166,7 +174,8 @@ const GameTracker = {
                     game_title: data.gameTitle,
                     score: data.score || 0,
                     questions_answered: data.questionsAnswered || 0,
-                    best_streak: data.bestStreak || 0
+                    best_streak: data.bestStreak || 0,
+                    session_id: s.sessionId || null
                 });
                 navigator.sendBeacon(
                     `${SUPABASE_URL}/rest/v1/game_results?apikey=${SUPABASE_KEY}`,
