@@ -1434,7 +1434,22 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                currentProblem = {
+                    questionNum: missed.questionNum,
+                    questionDen: missed.questionDen,
+                    answerNum: missed.answerNum,
+                    answerDen: missed.answerDen,
+                    display: missed.questionNum + '/' + missed.questionDen,
+                    answer: missed.answerNum + '/' + missed.answerDen,
+                    decimalValue: missed.questionNum / missed.questionDen,
+                    _isReplay: true,
+                    _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             // Build chart if not exists
@@ -1510,13 +1525,14 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
-                
+
                 scoreEl.textContent = score;
                 streakEl.textContent = streak + ' 🔥';
-                
+
                 if (streak >= 3) {
                     streakDisplay.classList.add('hot');
                 }
@@ -1541,10 +1557,11 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
+                GameTracker.markMissed({ questionNum: currentProblem.questionNum, questionDen: currentProblem.questionDen, answerNum: currentProblem.answerNum, answerDen: currentProblem.answerDen });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');
-                
+
                 setTimeout(() => showWrongPopup(), 400);
             }
         }

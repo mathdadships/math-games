@@ -1268,7 +1268,21 @@
             zombies.forEach(z => z.el.remove());
             zombies = [];
             
-            currentMission = generateMission();
+            // Adaptive learning: replay missed problems
+            var _replay = GameTracker.getMissedProblem();
+            if (_replay) {
+                currentMission = {
+                    a: _replay.a,
+                    b: _replay.b,
+                    answer: _replay.a * _replay.b,
+                    text: _replay.a + ' × ' + _replay.b,
+                    check: (val) => val === _replay.a * _replay.b,
+                    _isReplay: true,
+                    _replayParams: _replay
+                };
+            } else {
+                currentMission = generateMission();
+            }
             document.getElementById('mission-text').textContent = currentMission.text;
             
             const answers = [currentMission.answer];
@@ -1516,7 +1530,8 @@
                 
                 zombieEl.classList.add('dying');
             GameTracker.recordQuestion({ questionText: currentMission.text + " = ?", studentAnswer: String(parseInt(zombieEl.dataset.answer)), correctAnswer: String(currentMission.answer), isCorrect: true });
-                
+                if (currentMission._isReplay) GameTracker.markCorrected(currentMission._replayParams);
+
                 // Chain lightning to others
                 zombies.filter(z => z.el !== zombieEl).forEach((z, i) => {
                     setTimeout(() => {
@@ -1561,7 +1576,8 @@
                 playSound('hit');
                 zombieEl.classList.add('wrong-marked');
             GameTracker.recordQuestion({ questionText: currentMission.text + " = ?", studentAnswer: String(parseInt(zombieEl.dataset.answer)), correctAnswer: String(currentMission.answer), isCorrect: false });
-                
+                GameTracker.markMissed({a: currentMission.a, b: currentMission.b});
+
                 incorrectAnswers++;
                 health -= 10; // Lose health for wrong answer
                 

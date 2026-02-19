@@ -1284,7 +1284,19 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                currentProblem = {
+                    target: missed.target,
+                    isNotQuestion: missed.isNotQuestion,
+                    question: missed.isNotQuestion
+                        ? `Which fraction does NOT equal ${missed.target}?`
+                        : `Which fraction equals ${missed.target}?`,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             currentChoices = generateChoices(currentProblem);
 
             hideCorrectFeedback();
@@ -1333,6 +1345,7 @@
                     btn.classList.add('correct');
                     playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.question, studentAnswer: (choice.displayText || choice.display), correctAnswer: (currentProblem.correctAnswer || ""), isCorrect: true });
+                    if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                     spawnFlyingEmoji(btn);
 
                     score++;
@@ -1356,6 +1369,7 @@
                     btn.classList.add('wrong');
                     playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.question, studentAnswer: (choice.displayText || choice.display), correctAnswer: (currentProblem.correctAnswer || ""), isCorrect: false });
+                    GameTracker.markMissed({ target: currentProblem.target, isNotQuestion: currentProblem.isNotQuestion });
 
                     streak = 0;
                     streakEl.textContent = '0🔥';

@@ -712,7 +712,24 @@
         }
 
         function startNewProblem() {
-            currentProblem = generateProblem();
+            // Check for a missed problem to replay
+            const replay = GameTracker.getMissedProblem();
+            if (replay) {
+                const dividend = replay.dividend;
+                const divisor = replay.divisor;
+                const quotient = dividend / divisor;
+                currentProblem = {
+                    dividend: dividend,
+                    divisor: divisor,
+                    quotient: quotient,
+                    multFact: `${quotient} × ${divisor} = ${dividend}`,
+                    family: null,
+                    _isReplay: true,
+                    _replayParams: replay
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             currentStep = 0;
             canAnswer = true;
             
@@ -860,6 +877,7 @@
                 canAnswer = false;
                 playSound('complete');
                 GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(selected), correctAnswer: String(currentProblem.quotient), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 element.classList.add('correct');
                 wrongFeedback.classList.remove('show');
 
@@ -880,6 +898,7 @@
             } else {
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(selected), correctAnswer: String(currentProblem.quotient), isCorrect: false });
+                GameTracker.markMissed({ dividend: currentProblem.dividend, divisor: currentProblem.divisor });
                 element.classList.add('wrong');
                 streak = 0;
                 updateDisplay();

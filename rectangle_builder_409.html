@@ -1301,7 +1301,13 @@
         }
 
         function loadProblem() {
-            currentProblem = generateProblem();
+            // Adaptive learning: replay missed problems
+            var _replay = GameTracker.getMissedProblem();
+            if (_replay) {
+                currentProblem = Object.assign({}, _replay, { _isReplay: true, _replayParams: _replay });
+            } else {
+                currentProblem = generateProblem();
+            }
             const p = currentProblem;
 
             // Render the decomposed rectangle
@@ -1330,6 +1336,7 @@
                 canAnswer = false;
                 playSound('correct');
                 GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.cols + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.totalProduct), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 element.classList.add('correct');
 
                 // Reveal answer
@@ -1369,6 +1376,8 @@
                 canAnswer = false;
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.cols + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.totalProduct), isCorrect: false });
+                var _missParams = {rows: currentProblem.rows, totalCols: currentProblem.totalCols, leftCols: currentProblem.leftCols, rightCols: currentProblem.rightCols, totalProduct: currentProblem.totalProduct, leftProduct: currentProblem.leftProduct, rightProduct: currentProblem.rightProduct};
+                GameTracker.markMissed(_missParams);
                 element.classList.add('wrong');
                 streak = 0;
                 updateStats();

@@ -999,7 +999,13 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const a = missed.a, tens = missed.tens, b = tens * 10;
+                currentProblem = { display: `${a} × ${b} = ?`, answer: a * b, a, b, tens, totalTens: a * tens, _isReplay: true, _replayParams: missed };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             // Update display
@@ -1031,6 +1037,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
+            if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1058,6 +1065,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
+            GameTracker.markMissed({ a: currentProblem.a, tens: currentProblem.tens });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');

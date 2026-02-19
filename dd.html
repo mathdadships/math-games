@@ -683,6 +683,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
                 GameTracker.recordQuestion({ questionText: currentProblem.total + " ÷ " + currentProblem.groups + " = ?", studentAnswer: btn.textContent, correctAnswer: String(currentProblem.perGroup), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
 
                 streak++;
                 score += 100 + (streak - 1) * 25;
@@ -696,14 +697,53 @@
 
                 // Next level
                 setTimeout(() => {
-                    currentLevel++;
-            GameTracker.checkAutoSave();
-                    loadLevel();
+                    // Check for a missed problem to replay
+                    const replay = GameTracker.getMissedProblem();
+                    if (replay) {
+                        // Skip level advancement; reconstruct the missed problem directly
+                        currentFruit = fruits[Math.floor(Math.random() * fruits.length)];
+                        currentProblem = { total: replay.total, groups: replay.groups, perGroup: replay.perGroup, _isReplay: true, _replayParams: replay };
+                        phase = 'watch';
+                        canAnswer = false;
+
+                        // Update dots (stay on same level dot)
+                        document.querySelectorAll('.dot').forEach((dot, i) => {
+                            dot.classList.remove('done', 'current');
+                            if (i < currentLevel % 10) dot.classList.add('done');
+                            if (i === currentLevel % 10) dot.classList.add('current');
+                        });
+
+                        // Clear and rebuild visuals
+                        itemsArea.innerHTML = '';
+                        boxesArea.innerHTML = '';
+                        choicesEl.innerHTML = '';
+                        questionText.textContent = '';
+                        questionText.classList.remove('show');
+
+                        for (let i = 0; i < replay.total; i++) {
+                            const item = document.createElement('div');
+                            item.className = 'item';
+                            item.textContent = currentFruit;
+                            itemsArea.appendChild(item);
+                        }
+                        for (let i = 0; i < replay.groups; i++) {
+                            const box = document.createElement('div');
+                            box.className = 'box';
+                            box.dataset.index = i;
+                            boxesArea.appendChild(box);
+                        }
+                        setTimeout(() => animateSplit(), 600);
+                    } else {
+                        currentLevel++;
+                        GameTracker.checkAutoSave();
+                        loadLevel();
+                    }
                 }, 1200);
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.total + " ÷ " + currentProblem.groups + " = ?", studentAnswer: btn.textContent, correctAnswer: String(currentProblem.perGroup), isCorrect: false });
+                GameTracker.markMissed({ total: currentProblem.total, groups: currentProblem.groups, perGroup: currentProblem.perGroup });
                 streak = 0;
                 streakEl.textContent = '';
 

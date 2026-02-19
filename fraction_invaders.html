@@ -525,7 +525,13 @@
     // ======================================================================
     function spawnNewQuestion() {
         aliens.forEach(a => a.el.remove()); aliens = [];
-        currentMission = generateMission();
+        // Adaptive learning: replay missed problems
+        var _replay = GameTracker.getMissedProblem();
+        if (_replay) {
+            currentMission = Object.assign({}, _replay, { _isReplay: true, _replayParams: _replay });
+        } else {
+            currentMission = generateMission();
+        }
         document.getElementById('mission-text').textContent = currentMission.mission;
         buildHudVisual(currentMission);
 
@@ -578,6 +584,7 @@
             createElectricSpark(targetX, targetY);
             alienEl.classList.add('dying');
             GameTracker.recordQuestion({ questionText: currentMission.mission, studentAnswer: alienEl.dataset.answer, correctAnswer: currentMission.answer, isCorrect: true });
+            if (currentMission._isReplay) GameTracker.markCorrected(currentMission._replayParams);
 
             aliens.filter(a => a.el !== alienEl).forEach((a, i) => {
                 setTimeout(() => {
@@ -604,6 +611,8 @@
         } else {
             playSound('hit'); alienEl.classList.add('wrong-marked');
             GameTracker.recordQuestion({ questionText: currentMission.mission, studentAnswer: alienEl.dataset.answer, correctAnswer: currentMission.answer, isCorrect: false });
+            var _missParams = Object.assign({}, currentMission); delete _missParams._isReplay; delete _missParams._replayParams;
+            GameTracker.markMissed(_missParams);
             incorrectAnswers++; health -= 10;
             const desc = currentMission.explain;
             if (!missedProblems.includes(desc)) missedProblems.push(desc);

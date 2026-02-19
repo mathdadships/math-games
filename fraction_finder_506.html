@@ -1087,7 +1087,20 @@
         // LOAD PROBLEM - Customized for both question types
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                currentProblem = {
+                    numerator: 1,
+                    denominator: missed.denominator,
+                    answer: missed.denominator,
+                    display: '1/' + missed.denominator,
+                    questionType: missed.questionType,
+                    _isReplay: true,
+                    _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             // Update prompt and display based on question type
@@ -1171,13 +1184,14 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
-                
+
                 scoreEl.textContent = score;
                 streakEl.textContent = streak + ' 🔥';
-                
+
                 if (streak >= 3) {
                     streakDisplay.classList.add('hot');
                 }
@@ -1192,10 +1206,11 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: false });
+                GameTracker.markMissed({ denominator: currentProblem.denominator, questionType: currentProblem.questionType });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');
-                
+
                 setTimeout(() => showWrongPopup(), 400);
             }
         }

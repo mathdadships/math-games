@@ -1176,7 +1176,27 @@
         // ==========================================================================
         function loadProblem() {
             canAnswer = true;
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const quotient = missed.dividend / missed.divisor;
+                const template = storyTemplates[missed.templateIdx];
+                const storyText = missed.dividend + ' ' + template.items + ' are ' + template.verb + ' ' + missed.divisor + ' ' + template.containers + '. How many ' + template.items + ' are ' + template.prep + ' each ' + template.singular + '?';
+                currentProblem = {
+                    dividend: missed.dividend,
+                    divisor: missed.divisor,
+                    quotient: quotient,
+                    answer: quotient,
+                    storyText: storyText,
+                    template: template,
+                    templateIdx: missed.templateIdx,
+                    tens: Math.floor(quotient / 10) * 10,
+                    ones: quotient % 10,
+                    _isReplay: true,
+                    _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             currentChoices = generateChoices(currentProblem);
             
             // Update problem display
@@ -1208,6 +1228,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.storyText || currentProblem.display || "Division story problem", studentAnswer: String(choice.display), correctAnswer: String(currentChoices.find(c => c.isCorrect).display), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score += 10;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1233,6 +1254,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.storyText || currentProblem.display || "Division story problem", studentAnswer: String(choice.display), correctAnswer: String(currentChoices.find(c => c.isCorrect).display), isCorrect: false });
+                GameTracker.markMissed({ dividend: currentProblem.dividend, divisor: currentProblem.divisor, templateIdx: currentProblem.templateIdx });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');

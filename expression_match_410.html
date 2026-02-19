@@ -1010,7 +1010,23 @@
 
         // Load a new problem
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const rightCols = missed.totalCols - missed.leftCols;
+                currentProblem = {
+                    rows: missed.rows,
+                    totalCols: missed.totalCols,
+                    leftCols: missed.leftCols,
+                    rightCols: rightCols,
+                    totalProduct: missed.rows * missed.totalCols,
+                    leftProduct: missed.rows * missed.leftCols,
+                    rightProduct: missed.rows * rightCols,
+                    _isReplay: true,
+                    _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const p = currentProblem;
             const choices = generateChoices(p);
             
@@ -1060,7 +1076,8 @@
                 mainCard.classList.add('correct-flash');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.totalCols + " = ?", studentAnswer: choice.expression || choice.display || "", correctAnswer: currentProblem.rows + " x " + currentProblem.leftCols + " + " + currentProblem.rows + " x " + currentProblem.rightCols, isCorrect: true });
-                
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
+
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1083,6 +1100,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.rows + " x " + currentProblem.totalCols + " = ?", studentAnswer: choice.expression || choice.display || "", correctAnswer: currentProblem.rows + " x " + currentProblem.leftCols + " + " + currentProblem.rows + " x " + currentProblem.rightCols, isCorrect: false });
+                GameTracker.markMissed({ rows: currentProblem.rows, totalCols: currentProblem.totalCols, leftCols: currentProblem.leftCols });
                 streak = 0;
                 updateStats();
                 

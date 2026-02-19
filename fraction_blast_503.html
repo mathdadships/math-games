@@ -1814,6 +1814,7 @@
             if (answer === correctAnswer) {
                 canAnswer = false;
                 GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: true });
+                if (currentBlock._isReplay) GameTracker.markCorrected(currentBlock._replayParams);
         let points = 10 + (streak * 2);
                 const isPerfect = responseTime < PERFECT_THRESHOLD;
                 const isQuick = responseTime < SPEED_BONUS_THRESHOLD;
@@ -1870,8 +1871,42 @@
                             if (row) row.remove();
                             // Remove the first block from array
                             blocks.shift();
-                            // Add a new block at the bottom
-                            addNewBlockToBottom();
+                            // Check for a missed problem to replay
+                            const replay = GameTracker.getMissedProblem();
+                            if (replay) {
+                                // Create a block from the missed problem params
+                                const denom = replay.denom;
+                                const numShaded = replay.numShaded;
+                                const shapes = SHAPE_TYPES[denom];
+                                const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
+                                // Generate shaded indices for the replay
+                                const available = [...Array(denom).keys()];
+                                const shadedIndices = [];
+                                for (let si = 0; si < numShaded; si++) {
+                                    const pick = Math.floor(Math.random() * available.length);
+                                    shadedIndices.push(available[pick]);
+                                    available.splice(pick, 1);
+                                }
+                                shadedIndices.sort((a, b) => a - b);
+                                const replayBlock = {
+                                    denom: denom,
+                                    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                                    shapeType: shapeType,
+                                    shadedIndex: shadedIndices[0],
+                                    shadedIndices: shadedIndices,
+                                    id: nextBlockId++,
+                                    showHint: false,
+                                    _isReplay: true,
+                                    _replayParams: replay
+                                };
+                                blocks.push(replayBlock);
+                                const stack = document.getElementById('block-stack');
+                                const newRow = renderBlock(replayBlock, blocks.length - 1);
+                                stack.appendChild(newRow);
+                            } else {
+                                // Add a new block at the bottom
+                                addNewBlockToBottom();
+                            }
                             settleRemainingBlocks();
                             updateBlockStates();
                             canAnswer = true;
@@ -1895,6 +1930,7 @@
             } else {
                 playWrongSound();
                 GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: false });
+                GameTracker.markMissed({ denom: blocks[0].denom, numShaded: blocks[0].shadedIndices.length });
                 btn.classList.add('wrong');
                 setTimeout(() => btn.classList.remove('wrong'), 400);
                 if (row) {

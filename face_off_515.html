@@ -968,7 +968,23 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const greaterDenom = Math.min(missed.denom1, missed.denom2);
+                const lesserDenom = Math.max(missed.denom1, missed.denom2);
+                currentProblem = {
+                    fraction1: { numerator: 1, denominator: missed.denom1 },
+                    fraction2: { numerator: 1, denominator: missed.denom2 },
+                    correctAnswer: '1/' + greaterDenom,
+                    wrongAnswer: '1/' + lesserDenom,
+                    greaterDenom: greaterDenom,
+                    lesserDenom: lesserDenom,
+                    _isReplay: true,
+                    _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             hideCorrectFeedback();
@@ -1004,7 +1020,8 @@
                 playSound('correct');
                 spawnFlyingEmoji(btn);
             GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: true });
-                
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
+
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1030,7 +1047,8 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: false });
-                
+                GameTracker.markMissed({ denom1: currentProblem.fraction1.denominator, denom2: currentProblem.fraction2.denominator });
+
                 streak = 0;
                 streakEl.textContent = '0🔥';
                 streakDisplay.classList.remove('hot');

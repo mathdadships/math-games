@@ -1333,7 +1333,17 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                currentProblem = {
+                    numerator: missed.numerator, denominator: missed.denominator,
+                    display: `${missed.numerator}/${missed.denominator}`,
+                    answer: missed.numerator,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             // Hide equation helper from previous problem
@@ -1367,6 +1377,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -1391,6 +1402,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
+                GameTracker.markMissed({ numerator: currentProblem.numerator, denominator: currentProblem.denominator });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
                 streakDisplay.classList.remove('hot');

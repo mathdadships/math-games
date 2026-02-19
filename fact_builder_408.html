@@ -933,7 +933,13 @@
         }
 
         function loadProblem() {
-            currentProblem = generateProblem();
+            // Adaptive learning: replay missed problems
+            var _replay = GameTracker.getMissedProblem();
+            if (_replay) {
+                currentProblem = Object.assign({}, _replay, { _isReplay: true, _replayParams: _replay });
+            } else {
+                currentProblem = generateProblem();
+            }
             const p = currentProblem;
 
             // Update equations
@@ -994,6 +1000,7 @@
                 canAnswer = false;
                 playSound('correct');
                 GameTracker.recordQuestion({ questionText: currentProblem.targetRows + " x " + currentProblem.dotsPerRow + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.targetProduct), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 element.classList.add('correct');
 
                 // Reveal answer
@@ -1040,6 +1047,8 @@
                 canAnswer = false;
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.targetRows + " x " + currentProblem.dotsPerRow + " = ?", studentAnswer: String(num), correctAnswer: String(currentProblem.targetProduct), isCorrect: false });
+                var _missParams = {givenRows: currentProblem.givenRows, targetRows: currentProblem.targetRows, dotsPerRow: currentProblem.dotsPerRow, givenProduct: currentProblem.givenProduct, targetProduct: currentProblem.targetProduct, extraRows: currentProblem.extraRows};
+                GameTracker.markMissed(_missParams);
                 element.classList.add('wrong');
                 streak = 0;
                 updateStats();

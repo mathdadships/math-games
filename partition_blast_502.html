@@ -1367,6 +1367,7 @@
                 else if (isQuick) points += 2;
 
                 GameTracker.recordQuestion({ questionText: "How many equal parts? (" + blocks[currentIndex].parts + " parts)", studentAnswer: String(parts), correctAnswer: String(blocks[currentIndex].parts), isCorrect: true });
+                if (currentBlock._isReplay) GameTracker.markCorrected(currentBlock._replayParams);
         playBlastSound(streak + 1, currentIndex);
                 screenShake();
 
@@ -1412,6 +1413,20 @@
                     if (currentIndex >= blocks.length) {
                         setTimeout(winGame, 200);
                     } else {
+                        // Check for a missed problem to replay
+                        const replay = GameTracker.getMissedProblem();
+                        if (replay) {
+                            const block = blocks[currentIndex];
+                            block.parts = replay.parts;
+                            block._isReplay = true;
+                            block._replayParams = replay;
+                            // Re-render this block in the DOM
+                            const oldRow = document.querySelector(`.partition-row[data-id="${currentIndex}"]`);
+                            if (oldRow) {
+                                const newRow = renderBlock(block, currentIndex);
+                                oldRow.replaceWith(newRow);
+                            }
+                        }
                         updateBlockStates();
                         canAnswer = true;
                     }
@@ -1420,6 +1435,7 @@
             } else {
                 playWrongSound();
                 GameTracker.recordQuestion({ questionText: "How many equal parts? (" + blocks[currentIndex].parts + " parts)", studentAnswer: String(parts), correctAnswer: String(blocks[currentIndex].parts), isCorrect: false });
+                GameTracker.markMissed({ parts: blocks[currentIndex].parts });
                 btn.classList.add('wrong');
                 setTimeout(() => btn.classList.remove('wrong'), 400);
                 if (row) {

@@ -954,7 +954,21 @@
         function loadProblem() {
             questionNumber++;
             GameTracker.checkAutoSave();
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const d = missed.correctDenominator;
+                const correctNumerator = missed.targetWholeNumber * d;
+                currentProblem = {
+                    targetWholeNumber: missed.targetWholeNumber,
+                    correctNumerator: correctNumerator,
+                    correctDenominator: d,
+                    answer: missed.targetWholeNumber,
+                    display: `${correctNumerator}/${d}`,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             currentChoices = generateChoices(currentProblem);
             
             // Update target display
@@ -1075,6 +1089,7 @@
             if (isCorrect) {
                 playSound('correct');
                 GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: btn.textContent || "?", correctAnswer: currentProblem.correctNumerator + "/" + currentProblem.correctDenominator, isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 btn.classList.add('correct');
                 score += 10 + streak * 2;
                 streak++;
@@ -1094,6 +1109,7 @@
             } else {
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: btn.textContent || "?", correctAnswer: currentProblem.correctNumerator + "/" + currentProblem.correctDenominator, isCorrect: false });
+                GameTracker.markMissed({ targetWholeNumber: currentProblem.targetWholeNumber, correctDenominator: currentProblem.correctDenominator });
                 btn.classList.add('wrong');
                 streak = 0;
                 streakEl.textContent = '0 🔥';

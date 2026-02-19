@@ -1209,7 +1209,16 @@
         function loadProblem() {
             questionNumber++;
             GameTracker.checkAutoSave();
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const quotient = missed.dividend / missed.divisor;
+                currentProblem = {
+                    dividend: missed.dividend, divisor: missed.divisor, quotient: quotient,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             part1Complete = false;
             part2Complete = false;
             canAnswer = true;
@@ -1417,6 +1426,7 @@
                 part2Complete = true;
                 playSound('correct');
                 GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
 
                 // Disable other buttons
                 document.querySelectorAll('#choices2 .choice').forEach(b => {
@@ -1462,6 +1472,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
                 GameTracker.recordQuestion({ questionText: currentProblem.dividend + " ÷ " + currentProblem.divisor + " = ?", studentAnswer: String(value), correctAnswer: String(currentProblem.quotient), isCorrect: false });
+                GameTracker.markMissed({ dividend: currentProblem.dividend, divisor: currentProblem.divisor });
                 streak = 0;
                 document.getElementById('streak').textContent = '0 🔥';
                 document.getElementById('streak-display').classList.remove('hot');

@@ -1160,7 +1160,18 @@
         // GAME LOGIC - Do not modify
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const totalParts = missed.denominator * missed.numWholes;
+                currentProblem = {
+                    denominator: missed.denominator, numWholes: missed.numWholes,
+                    shadedParts: missed.shadedParts, totalParts: totalParts,
+                    answer: missed.shadedParts,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             buildVisualHelper(currentProblem);
@@ -1175,6 +1186,7 @@
             if (choice.isCorrect) {
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 btn.classList.add('correct');
                 score++;
                 streak++;
@@ -1204,6 +1216,7 @@
             } else {
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: false });
+                GameTracker.markMissed({ denominator: currentProblem.denominator, numWholes: currentProblem.numWholes, shadedParts: currentProblem.shadedParts });
                 btn.classList.add('wrong');
                 streak = 0;
                 streakEl.textContent = '0 🔥';

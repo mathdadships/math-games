@@ -1988,7 +1988,22 @@
         // LOAD PROBLEM
         // ==========================================================================
         function loadProblem() {
-            currentProblem = generateProblem();
+            const missed = GameTracker.getMissedProblem();
+            if (missed) {
+                const value = missed.givenNum / missed.givenDenom;
+                let endpoint = 1;
+                if (value > 1) endpoint = 2;
+                if (value > 2) endpoint = 3;
+                currentProblem = {
+                    givenNum: missed.givenNum, givenDenom: missed.givenDenom,
+                    equivNum: missed.equivNum, equivDenom: missed.equivDenom,
+                    value: value, endpoint: endpoint,
+                    answer: `${missed.equivNum}/${missed.equivDenom}`,
+                    _isReplay: true, _replayParams: missed
+                };
+            } else {
+                currentProblem = generateProblem();
+            }
             const choices = generateChoices(currentProblem);
             
             // Hide any previous correct feedback
@@ -2101,6 +2116,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
             GameTracker.recordQuestion({ questionText: currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ?", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: true });
+                if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
@@ -2122,6 +2138,7 @@
                 btn.classList.add('wrong');
                 playSound('wrong');
             GameTracker.recordQuestion({ questionText: currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ?", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: false });
+                GameTracker.markMissed({ givenNum: currentProblem.givenNum, givenDenom: currentProblem.givenDenom, equivNum: currentProblem.equivNum, equivDenom: currentProblem.equivDenom });
                 streak = 0;
                 streakEl.textContent = '0🔥';
                 streakDisplay.classList.remove('hot');
