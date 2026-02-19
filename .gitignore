@@ -22,7 +22,10 @@ Thumbs.db
 
 # Build/setup scripts (not needed in production)
 inject_tracker.py
+inject_questions.py
+fix_autosave.py
 supabase_setup.sql
+status.md
 
 # Node (in case you add dependencies later)
 node_modules/

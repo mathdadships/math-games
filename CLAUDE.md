@@ -12,3 +12,5 @@
 - Games are organized by Unit 4 (multiplication/division) and Unit 5 (fractions)
 - index.html is the hub page that links to all games
 - Hosted via GitHub Pages at https://mathdadships.github.io/math-games/
+- **Read status.md first** — it contains full project history, architecture, and current state
+- status.md is gitignored and local-only
