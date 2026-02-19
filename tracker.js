@@ -201,10 +201,37 @@ const GameTracker = {
         }
     },
 
+    // Idle timeout: log out after 10 minutes of no interaction
+    _idleTimer: null,
+    IDLE_TIMEOUT: 10 * 60 * 1000, // 10 minutes
+
+    startIdleTimer() {
+        const resetTimer = () => {
+            clearTimeout(this._idleTimer);
+            this._idleTimer = setTimeout(() => {
+                if (this.isLoggedIn()) {
+                    console.log('GameTracker: Idle timeout — logging out');
+                    this.logout();
+                    location.reload();
+                }
+            }, this.IDLE_TIMEOUT);
+        };
+
+        // Reset on any user interaction
+        ['touchstart', 'click', 'keydown', 'scroll'].forEach(evt => {
+            document.addEventListener(evt, resetTimer, { passive: true });
+        });
+
+        resetTimer(); // Start the timer
+    },
+
     // Inject the login overlay into any page if not logged in
     // Call this at the top of any game file
     requireLogin() {
-        if (this.isLoggedIn()) return Promise.resolve(this.getStudent());
+        if (this.isLoggedIn()) {
+            this.startIdleTimer();
+            return Promise.resolve(this.getStudent());
+        }
 
         return new Promise((resolve) => {
             const overlay = document.createElement('div');
@@ -282,6 +309,7 @@ const GameTracker = {
                 btn.textContent = 'Signing in...';
                 try {
                     const student = await GameTracker.login(nameInput.value, codeInput.value);
+                    GameTracker.startIdleTimer();
                     overlay.remove();
                     style.remove();
                     resolve(student);
