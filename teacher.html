@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Math Games</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+        }
+
+        /* Password Gate */
+        #password-gate {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999;
+        }
+        #password-box {
+            background: white; border-radius: 20px; padding: 40px 36px;
+            max-width: 360px; width: 90%; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        #password-box h2 { color: #333; margin-bottom: 6px; font-size: 1.3rem; }
+        #password-box p { color: #888; font-size: 0.85rem; margin-bottom: 20px; }
+        #password-input {
+            display: block; width: 100%; padding: 12px 16px;
+            border: 2px solid #e0e0e0; border-radius: 10px;
+            font-size: 1rem; text-align: center; outline: none;
+            font-family: inherit;
+        }
+        #password-input:focus { border-color: #667eea; }
+        #password-btn {
+            display: block; width: 100%; padding: 12px;
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            color: white; border: none; border-radius: 10px;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            margin-top: 12px; font-family: inherit;
+        }
+        #password-error { color: #e53935; font-size: 0.85rem; margin-top: 10px; min-height: 1.2em; }
+
+        /* Dashboard */
+        #dashboard { display: none; }
+
+        /* Header */
+        .dash-header {
+            background: linear-gradient(135deg, #2d3436, #636e72);
+            padding: 20px 32px;
+            color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-wrap: wrap; gap: 12px;
+        }
+        .dash-header h1 { font-size: 1.4rem; }
+        .dash-header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .dash-header select, .dash-header button {
+            padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1); color: white;
+            font-size: 0.85rem; cursor: pointer; font-family: inherit;
+        }
+        .dash-header select option { color: #333; background: white; }
+        .dash-header button:hover { background: rgba(255,255,255,0.2); }
+        .btn-export { background: rgba(76,175,80,0.3) !important; border-color: rgba(76,175,80,0.5) !important; }
+        .btn-refresh { background: rgba(33,150,243,0.3) !important; border-color: rgba(33,150,243,0.5) !important; }
+
+        /* Stats cards */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px; padding: 24px 32px;
+        }
+        .stat-card {
+            background: white; border-radius: 14px; padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card .stat-value { font-size: 2rem; font-weight: 800; color: #333; }
+        .stat-card .stat-label { font-size: 0.8rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+        /* Tabs */
+        .tabs {
+            display: flex; gap: 0; padding: 0 32px; border-bottom: 2px solid #e0e0e0;
+            background: white;
+        }
+        .tab {
+            padding: 12px 20px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+            color: #888; border-bottom: 3px solid transparent; margin-bottom: -2px;
+            transition: all 0.2s; font-family: inherit; background: none; border-top: none;
+            border-left: none; border-right: none;
+        }
+        .tab:hover { color: #555; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; }
+
+        /* Tab content */
+        .tab-content { display: none; padding: 24px 32px; }
+        .tab-content.active { display: block; }
+
+        /* Table */
+        .data-table {
+            width: 100%; border-collapse: collapse; background: white;
+            border-radius: 12px; overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .data-table th {
+            background: #f8f9fa; padding: 12px 16px; text-align: left;
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px;
+            color: #888; font-weight: 700; cursor: pointer; user-select: none;
+            white-space: nowrap;
+        }
+        .data-table th:hover { color: #555; }
+        .data-table th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
+        .data-table td {
+            padding: 11px 16px; border-top: 1px solid #f0f0f0;
+            font-size: 0.88rem; color: #444;
+        }
+        .data-table tr:hover td { background: #f8f9ff; }
+        .score-badge {
+            display: inline-block; padding: 3px 10px; border-radius: 12px;
+            font-weight: 700; font-size: 0.82rem;
+        }
+        .score-high { background: #e8f5e9; color: #2e7d32; }
+        .score-mid { background: #fff3e0; color: #e65100; }
+        .score-low { background: #fce4ec; color: #c62828; }
+
+        /* Student detail */
+        .student-detail {
+            background: white; border-radius: 14px; padding: 24px;
+            margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .student-detail h3 { margin-bottom: 12px; color: #333; }
+        .student-games-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .mini-card {
+            background: #f8f9fa; border-radius: 10px; padding: 12px;
+            font-size: 0.85rem;
+        }
+        .mini-card .game-name { font-weight: 700; color: #333; margin-bottom: 4px; }
+        .mini-card .game-stat { color: #888; font-size: 0.8rem; }
+
+        /* Loading */
+        .loading { text-align: center; padding: 60px; color: #999; font-size: 1.1rem; }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 60px; color: #bbb; }
+        .empty .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+        @media (max-width: 600px) {
+            .dash-header { padding: 16px; }
+            .stats-row, .tab-content { padding: 16px; }
+            .tabs { padding: 0 16px; overflow-x: auto; }
+            .data-table { font-size: 0.8rem; }
+            .data-table th, .data-table td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Password Gate -->
+    <div id="password-gate">
+        <div id="password-box">
+            <h2>🔐 Teacher Dashboard</h2>
+            <p>Enter your teacher password</p>
+            <input type="password" id="password-input" placeholder="Password" autocomplete="off" />
+            <button id="password-btn" onclick="checkPassword()">Enter</button>
+            <p id="password-error"></p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <div class="dash-header">
+            <h1>📊 Teacher Dashboard</h1>
+            <div class="dash-header-actions">
+                <select id="class-filter">
+                    <option value="all">All Classes</option>
+                </select>
+                <select id="game-filter">
+                    <option value="all">All Games</option>
+                </select>
+                <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+                <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-students">-</div>
+                <div class="stat-label">Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-plays">-</div>
+                <div class="stat-label">Games Played</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-avg">-</div>
+                <div class="stat-label">Avg Score</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-today">-</div>
+                <div class="stat-label">Played Today</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('results')">All Results</button>
+            <button class="tab" onclick="switchTab('students')">By Student</button>
+            <button class="tab" onclick="switchTab('games')">By Game</button>
+        </div>
+
+        <!-- All Results Tab -->
+        <div class="tab-content active" id="tab-results">
+            <table class="data-table" id="results-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('first_name')">Student <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('class_code')">Class <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('game_title')">Game <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('score')">Score <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('questions_answered')">Questions <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('best_streak')">Best Streak <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('played_at')">Date <span class="sort-arrow"></span></th>
+                    </tr>
+                </thead>
+                <tbody id="results-body"></tbody>
+            </table>
+        </div>
+
+        <!-- By Student Tab -->
+        <div class="tab-content" id="tab-students"></div>
+
+        <!-- By Game Tab -->
+        <div class="tab-content" id="tab-games">
+            <table class="data-table" id="games-table">
+                <thead>
+                    <tr>
+                        <th>Game</th>
+                        <th>Times Played</th>
+                        <th>Avg Score</th>
+                        <th>High Score</th>
+                        <th>Avg Streak</th>
+                    </tr>
+                </thead>
+                <tbody id="games-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+    const SUPABASE_URL = 'https://pnarndrlkkrzqvbnmahh.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_8ZmsmQ2JV7m3cwGOUbGiIg_UM6gw17d';
+
+    // Simple password - change this to your own!
+    const TEACHER_PASSWORD = 'mathteacher2026';
+
+    let allStudents = [];
+    let allResults = [];
+    let currentSort = { key: 'played_at', dir: 'desc' };
+
+    // ============ AUTH ============
+    function checkPassword() {
+        const input = document.getElementById('password-input').value;
+        if (input === TEACHER_PASSWORD) {
+            document.getElementById('password-gate').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            sessionStorage.setItem('teacher_auth', 'true');
+            loadData();
+        } else {
+            document.getElementById('password-error').textContent = 'Incorrect password';
+        }
+    }
+
+    document.getElementById('password-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') checkPassword();
+    });
+
+    // Auto-login if already authenticated this session
+    if (sessionStorage.getItem('teacher_auth') === 'true') {
+        document.getElementById('password-gate').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadData();
+    } else {
+        setTimeout(() => document.getElementById('password-input').focus(), 100);
+    }
+
+    // ============ DATA ============
+    async function supaFetch(table, query = '') {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        return res.json();
+    }
+
+    async function loadData() {
+        document.getElementById('results-body').innerHTML = '<tr><td colspan="7" class="loading">Loading...</td></tr>';
+
+        const [students, results] = await Promise.all([
+            supaFetch('students', 'order=created_at.asc'),
+            supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc')
+        ]);
+
+        allStudents = students;
+        allResults = results.map(r => ({
+            ...r,
+            first_name: r.students?.first_name || 'Unknown',
+            class_code: r.students?.class_code || '?'
+        }));
+
+        populateFilters();
+        updateStats();
+        renderResults();
+        renderStudents();
+        renderGames();
+    }
+
+    function getFilteredResults() {
+        const classVal = document.getElementById('class-filter').value;
+        const gameVal = document.getElementById('game-filter').value;
+
+        return allResults.filter(r => {
+            if (classVal !== 'all' && r.class_code !== classVal) return false;
+            if (gameVal !== 'all' && r.game_file !== gameVal) return false;
+            return true;
+        });
+    }
+
+    function populateFilters() {
+        const classFilter = document.getElementById('class-filter');
+        const gameFilter = document.getElementById('game-filter');
+
+        const classes = [...new Set(allStudents.map(s => s.class_code))].sort();
+        const games = [...new Set(allResults.map(r => r.game_title || r.game_file))].sort();
+
+        const classVal = classFilter.value;
+        const gameVal = gameFilter.value;
+
+        classFilter.innerHTML = '<option value="all">All Classes</option>' +
+            classes.map(c => `<option value="${c}">${c}</option>`).join('');
+        gameFilter.innerHTML = '<option value="all">All Games</option>' +
+            games.map(g => `<option value="${g}">${g}</option>`).join('');
+
+        classFilter.value = classVal;
+        gameFilter.value = gameVal;
+    }
+
+    document.getElementById('class-filter').addEventListener('change', () => { updateStats(); renderResults(); renderStudents(); renderGames(); });
+    document.getElementById('game-filter').addEventListener('change', () => { updateStats(); renderResults(); renderStudents(); renderGames(); });
+
+    // ============ STATS ============
+    function updateStats() {
+        const filtered = getFilteredResults();
+        const uniqueStudents = new Set(filtered.map(r => r.student_id));
+        const today = new Date().toISOString().split('T')[0];
+        const playedToday = filtered.filter(r => r.played_at && r.played_at.startsWith(today));
+        const avgScore = filtered.length > 0
+            ? Math.round(filtered.reduce((sum, r) => sum + (r.score || 0), 0) / filtered.length)
+            : 0;
+
+        document.getElementById('stat-students').textContent = uniqueStudents.size;
+        document.getElementById('stat-plays').textContent = filtered.length;
+        document.getElementById('stat-avg').textContent = avgScore;
+        document.getElementById('stat-today').textContent = playedToday.length;
+    }
+
+    // ============ RESULTS TABLE ============
+    function sortTable(key) {
+        if (currentSort.key === key) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort = { key, dir: 'asc' };
+        }
+        renderResults();
+    }
+
+    function renderResults() {
+        const filtered = getFilteredResults();
+        const sorted = [...filtered].sort((a, b) => {
+            let va = a[currentSort.key] ?? '';
+            let vb = b[currentSort.key] ?? '';
+            if (typeof va === 'number') return currentSort.dir === 'asc' ? va - vb : vb - va;
+            va = String(va).toLowerCase();
+            vb = String(vb).toLowerCase();
+            return currentSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+        });
+
+        const tbody = document.getElementById('results-body');
+
+        if (sorted.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = sorted.map(r => {
+            const scoreClass = r.score >= 1000 ? 'score-high' : r.score >= 500 ? 'score-mid' : 'score-low';
+            const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
+            const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
+            return `<tr>
+                <td><strong>${escHtml(r.first_name)}</strong></td>
+                <td>${escHtml(r.class_code)}</td>
+                <td>${escHtml(title)}</td>
+                <td><span class="score-badge ${scoreClass}">${r.score}</span></td>
+                <td>${r.questions_answered || '-'}</td>
+                <td>${r.best_streak || '-'} 🔥</td>
+                <td>${date}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    // ============ BY STUDENT ============
+    function renderStudents() {
+        const filtered = getFilteredResults();
+        const container = document.getElementById('tab-students');
+
+        // Group by student
+        const byStudent = {};
+        filtered.forEach(r => {
+            const key = r.student_id;
+            if (!byStudent[key]) {
+                byStudent[key] = { name: r.first_name, classCode: r.class_code, results: [] };
+            }
+            byStudent[key].results.push(r);
+        });
+
+        if (Object.keys(byStudent).length === 0) {
+            container.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>No students found</div>';
+            return;
+        }
+
+        container.innerHTML = Object.values(byStudent)
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map(student => {
+                const totalScore = student.results.reduce((s, r) => s + (r.score || 0), 0);
+                const avgScore = Math.round(totalScore / student.results.length);
+                const gamesHTML = student.results
+                    .sort((a, b) => new Date(b.played_at) - new Date(a.played_at))
+                    .map(r => {
+                        const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
+                        const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+                        return `<div class="mini-card">
+                            <div class="game-name">${escHtml(title)}</div>
+                            <div class="game-stat">Score: ${r.score} · Streak: ${r.best_streak || 0} 🔥 · ${date}</div>
+                        </div>`;
+                    }).join('');
+
+                return `<div class="student-detail">
+                    <h3>${escHtml(student.name)} <span style="color:#999;font-weight:400;font-size:0.85rem;">(${escHtml(student.classCode)}) · ${student.results.length} plays · Avg: ${avgScore}</span></h3>
+                    <div class="student-games-grid">${gamesHTML}</div>
+                </div>`;
+            }).join('');
+    }
+
+    // ============ BY GAME ============
+    function renderGames() {
+        const filtered = getFilteredResults();
+
+        // Group by game
+        const byGame = {};
+        filtered.forEach(r => {
+            const key = r.game_file;
+            if (!byGame[key]) {
+                byGame[key] = { title: r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' '), results: [] };
+            }
+            byGame[key].results.push(r);
+        });
+
+        const tbody = document.getElementById('games-body');
+
+        if (Object.keys(byGame).length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = Object.values(byGame)
+            .sort((a, b) => b.results.length - a.results.length)
+            .map(game => {
+                const scores = game.results.map(r => r.score || 0);
+                const streaks = game.results.map(r => r.best_streak || 0);
+                const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                const high = Math.max(...scores);
+                const avgStreak = (streaks.reduce((a, b) => a + b, 0) / streaks.length).toFixed(1);
+
+                return `<tr>
+                    <td><strong>${escHtml(game.title)}</strong></td>
+                    <td>${game.results.length}</td>
+                    <td>${avg}</td>
+                    <td><span class="score-badge score-high">${high}</span></td>
+                    <td>${avgStreak} 🔥</td>
+                </tr>`;
+            }).join('');
+    }
+
+    // ============ TABS ============
+    function switchTab(name) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    // ============ EXPORT ============
+    function exportCSV() {
+        const filtered = getFilteredResults();
+        if (filtered.length === 0) { alert('No data to export.'); return; }
+
+        const headers = ['Student', 'Class', 'Game', 'Score', 'Questions', 'Best Streak', 'Date'];
+        const rows = filtered.map(r => {
+            const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
+            const date = r.played_at ? new Date(r.played_at).toLocaleString() : '';
+            return [r.first_name, r.class_code, title, r.score, r.questions_answered || '', r.best_streak || '', date];
+        });
+
+        const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `math-games-results-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ============ UTIL ============
+    function escHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str;
+        return d.innerHTML;
+    }
+    </script>
+</body>
+</html>
