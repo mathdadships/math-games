@@ -1,0 +1,1556 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 4.16 - Solving Story Problems Involving Division                         ║
+║  Students solve word problems by finding quotients using decomposition       ║
+║  Format: total ÷ groups = quotient                                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>📦 Division Story Problems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #prompt {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+        }
+
+        /* ========== STORY PROBLEM DISPLAY ========== */
+        #problem-display {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 20px 24px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+            text-align: center;
+            line-height: 1.5;
+            max-width: 100%;
+        }
+
+        /* ========== VISUAL HELPER - BOX DECOMPOSITION ========== */
+        #visual-helper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .boxes-container {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .division-box {
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            min-width: 50px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .box-row {
+            padding: 6px 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 18px;
+            color: #333;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .box-row:last-child {
+            border-bottom: none;
+        }
+
+        .box-row.tens { background: #e8f4fd; }
+        .box-row.ones { background: #fff3e0; }
+        .box-row.empty { 
+            background: #f5f5f5; 
+            color: #999;
+            padding: 12px 10px;
+        }
+
+        .equation-display {
+            font-size: 18px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* ========== CHOICES ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 28px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 5px;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Correct popup styling */
+        #correct-popup .popup-content {
+            border: 4px solid #2ed573;
+        }
+
+        #correct-popup .popup-title {
+            color: #333;
+            font-size: 64px;
+        }
+
+        .correct-answer-box {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2ed573;
+            background: #e8f8f0;
+            padding: 16px 32px;
+            border-radius: 16px;
+            margin: 16px 0;
+        }
+
+        /* Wrong popup styling */
+        #wrong-popup .popup-content {
+            border: 4px solid #E8A838;
+        }
+
+        #wrong-popup .popup-title {
+            color: #D4882A;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+            padding: 16px;
+            background: #f0f8ff;
+            border-radius: 12px;
+        }
+
+        #correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2ed573;
+        }
+
+        /* Streak popup styling */
+        #streak-popup .popup-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        #streak-popup .popup-title,
+        #streak-popup .popup-subtitle {
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd93d;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
+
+        .streak-hype {
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        #start-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        /* Demo section on start screen */
+        .demo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            max-width: 500px;
+            width: 95%;
+        }
+
+        .demo-problem {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        /* Fair Share Animation */
+        .animation-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pile-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pile {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 3px;
+            max-width: 340px;
+            min-height: 60px;
+            padding: 12px;
+            background: #f8f9ff;
+            border-radius: 12px;
+        }
+
+        .pile-item {
+            font-size: 18px;
+            transition: all 0.5s ease-out;
+        }
+
+        .pile-item.gone {
+            opacity: 0;
+            transform: scale(0) translateY(20px);
+        }
+
+        .pile-count {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            transition: all 0.4s;
+        }
+
+        .pile-count.pulse {
+            animation: pileCountPulse 0.6s ease-out;
+        }
+
+        @keyframes pileCountPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .deal-boxes {
+            display: flex;
+            gap: 10px;
+        }
+
+        .deal-box {
+            border: 3px solid #667eea;
+            border-radius: 12px;
+            width: 85px;
+            min-height: 110px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 8px;
+            background: white;
+            position: relative;
+        }
+
+        .deal-box-label {
+            position: absolute;
+            bottom: -22px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .deal-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+        }
+
+        .deal-chunk {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 6px 10px;
+            border-radius: 6px;
+            opacity: 0;
+            transform: translateY(-15px) scale(0.8);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 90%;
+            text-align: center;
+        }
+
+        .deal-chunk.tens {
+            background: #e8f4fd;
+            color: #333;
+        }
+
+        .deal-chunk.ones {
+            background: #fff3e0;
+            color: #333;
+        }
+
+        .deal-chunk.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        .deal-total {
+            margin-top: auto;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2ed573;
+            opacity: 0;
+            transition: all 0.5s;
+        }
+
+        .deal-total.show {
+            opacity: 1;
+        }
+            transform: translateY(0);
+        }
+
+        .demo-answer {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2ed573;
+            background: #e8f8f0;
+            padding: 8px 16px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 16px 48px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to { top: 110vh; transform: rotate(720deg); }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 65px; }
+        .flying-emoji-correct.streak-high { font-size: 80px; }
+        .flying-emoji-correct.streak-ultra { font-size: 100px; }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #problem-display { font-size: 16px; padding: 16px 20px; }
+            #prompt { font-size: 16px; }
+            .choice { font-size: 24px; min-height: 70px; padding: 12px; }
+            #start-title { font-size: 32px; }
+            #end-title { font-size: 32px; }
+            .division-box { min-width: 40px; }
+            .box-row { font-size: 14px; padding: 4px 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div id="start-title">📦 Division Story Problems</div>
+            
+            <div class="demo-card">
+                <div class="demo-problem">
+                    40 games are packed equally into 4 boxes.<br>
+                    How many games are in each box?
+                </div>
+                
+                <div class="animation-area">
+                    <div class="pile-container">
+                        <div class="pile" id="pile"></div>
+                        <div class="pile-count" id="pile-count">40 games</div>
+                    </div>
+                    
+                    <div class="deal-boxes">
+                        <div class="deal-box">
+                            <div class="deal-stack">
+                                <div class="deal-chunk tens" id="d0-tens">+10</div>
+                            </div>
+                            <div class="deal-total" id="d0-total">10</div>
+                            <div class="deal-box-label">Box 1</div>
+                        </div>
+                        <div class="deal-box">
+                            <div class="deal-stack">
+                                <div class="deal-chunk tens" id="d1-tens">+10</div>
+                            </div>
+                            <div class="deal-total" id="d1-total">10</div>
+                            <div class="deal-box-label">Box 2</div>
+                        </div>
+                        <div class="deal-box">
+                            <div class="deal-stack">
+                                <div class="deal-chunk tens" id="d2-tens">+10</div>
+                            </div>
+                            <div class="deal-total" id="d2-total">10</div>
+                            <div class="deal-box-label">Box 3</div>
+                        </div>
+                        <div class="deal-box">
+                            <div class="deal-stack">
+                                <div class="deal-chunk tens" id="d3-tens">+10</div>
+                            </div>
+                            <div class="deal-total" id="d3-total">10</div>
+                            <div class="deal-box-label">Box 4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🚀</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">📦 Division Stories</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt"></div>
+            
+            <div id="problem-display"></div>
+            
+            <div id="visual-helper"></div>
+            
+            <div id="choices"></div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box">
+                    <span id="correct-answer-text"></span> ✓
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle">Mistakes in math are OK!</div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">The answer is:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">On fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        // Mr. Signer's growth mindset board - ONLY for WRONG answers
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain and become a thinker!"
+        ];
+
+        // Hype messages - ONLY for CORRECT answers (2026 Gen Alpha slang)
+        const correctHypeMessages = [
+            "W!",
+            "Huge W!",
+            "Slay!",
+            "Goated!",
+            "Fire!",
+            "Slaps!",
+            "No cap!",
+            "Main character energy!",
+            "Ate that!",
+            "Understood the assignment!",
+            "Lowkey genius!",
+            "Hits different!",
+            "It's giving smart!",
+            "The vibe is immaculate!",
+            "Sigma math!",
+            "Bussin'!"
+        ];
+
+        const correctEmojis = ['⭐', '🌟', '✨', '💫', '🎯', '🔥', '💪', '🚀', '👑', '💥'];
+
+        // Streak hype messages
+        const streakHypeMessages = [
+            { streak: 3, hype: "You're on fire!" },
+            { streak: 6, hype: "Unstoppable!" },
+            { streak: 9, hype: "LEGENDARY!" },
+            { streak: 12, hype: "GODLIKE!" },
+            { streak: 15, hype: "ABSOLUTELY GOATED!" }
+        ];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let currentProblem = null;
+        let currentChoices = [];
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let canAnswer = true;
+        
+        // Variety tracking - prevent repetition
+        let recentEquations = [];      // Track last 5 equations (dividend÷divisor)
+        let recentTemplates = [];      // Track last 3 template indices
+        const MAX_RECENT_EQUATIONS = 5;
+        const MAX_RECENT_TEMPLATES = 3;
+
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const startScreen = document.getElementById('start-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startBtn = document.getElementById('start-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+
+        // ==========================================================================
+        // PROBLEM TEMPLATES - Story problem contexts
+        // ==========================================================================
+        const storyTemplates = [
+            { items: "apples", containers: "boxes", singular: "box", verb: "packed equally into", prep: "in" },
+            { items: "puzzles", containers: "shelves", singular: "shelf", verb: "split equally on", prep: "on" },
+            { items: "games", containers: "boxes", singular: "box", verb: "packed into", prep: "in" },
+            { items: "blocks", containers: "bins", singular: "bin", verb: "shared equally between", prep: "in" },
+            { items: "toy cars", containers: "bags", singular: "bag", verb: "split equally between", prep: "in" },
+            { items: "beads", containers: "bowls", singular: "bowl", verb: "shared equally between", prep: "in" },
+            { items: "markers", containers: "trays", singular: "tray", verb: "split equally between", prep: "on" },
+            { items: "chairs", containers: "rows", singular: "row", verb: "arranged in", prep: "in" },
+            { items: "bottles of paint", containers: "tables", singular: "table", verb: "put at", prep: "at" },
+            { items: "clay pots", containers: "shelves", singular: "shelf", verb: "displayed on", prep: "on" },
+            { items: "roses", containers: "vases", singular: "vase", verb: "placed in", prep: "in" },
+            { items: "plates", containers: "stacks", singular: "stack", verb: "set out in", prep: "in" },
+            { items: "pencils", containers: "cups", singular: "cup", verb: "divided into", prep: "in" },
+            { items: "stickers", containers: "sheets", singular: "sheet", verb: "arranged on", prep: "on" },
+            { items: "crayons", containers: "boxes", singular: "box", verb: "sorted into", prep: "in" }
+        ];
+
+        // ==========================================================================
+        // GAME LOGIC - CUSTOMIZE THESE FUNCTIONS
+        // ==========================================================================
+
+        /**
+         * Generate a division story problem
+         * Returns: { dividend, divisor, quotient, answer, storyText, template }
+         */
+        function generateProblem() {
+            const divisors = [3, 4, 5, 6, 7];
+            
+            // Try to generate a unique problem (avoid recent equations and templates)
+            let attempts = 0;
+            let divisor, quotient, dividend, templateIdx, template;
+            
+            do {
+                divisor = divisors[Math.floor(Math.random() * divisors.length)];
+                quotient = 6 + Math.floor(Math.random() * 5); // 6-10 (max 10th product)
+                dividend = divisor * quotient;
+                templateIdx = Math.floor(Math.random() * storyTemplates.length);
+                template = storyTemplates[templateIdx];
+                attempts++;
+            } while (
+                attempts < 20 && (
+                    recentEquations.includes(dividend + '÷' + divisor) ||
+                    recentTemplates.includes(templateIdx)
+                )
+            );
+            
+            // Update history
+            const equationKey = dividend + '÷' + divisor;
+            recentEquations.push(equationKey);
+            if (recentEquations.length > MAX_RECENT_EQUATIONS) recentEquations.shift();
+            
+            recentTemplates.push(templateIdx);
+            if (recentTemplates.length > MAX_RECENT_TEMPLATES) recentTemplates.shift();
+            
+            // Build the story text - use singular for "each" question with proper preposition
+            const storyText = `${dividend} ${template.items} are ${template.verb} ${divisor} ${template.containers}. How many ${template.items} are ${template.prep} each ${template.singular}?`;
+            
+            // Decompose quotient into tens and ones for visual
+            const tens = Math.floor(quotient / 10) * 10;
+            const ones = quotient % 10;
+            
+            return {
+                dividend,
+                divisor,
+                quotient,
+                answer: quotient,
+                storyText,
+                template,
+                templateIdx,
+                tens,
+                ones
+            };
+        }
+
+        /**
+         * Generate 4 answer choices (1 correct, 3 wrong)
+         * Wrong answers use common mistake patterns
+         */
+        function generateChoices(problem) {
+            const correct = problem.answer;
+            const choices = [];
+            const usedValues = new Set([correct]);
+            
+            // Wrong answer strategies for division:
+            // 1. Off-by-one (common counting error)
+            // 2. Off-by-two
+            // 3. Swapped dividend/divisor relationship
+            // 4. Random nearby number
+            
+            const wrongStrategies = [
+                () => correct + 1,  // Off by +1
+                () => correct - 1,  // Off by -1
+                () => correct + 2,  // Off by +2
+                () => correct - 2,  // Off by -2
+                () => problem.divisor,  // Confuse divisor with quotient
+                () => Math.floor(problem.dividend / 10),  // Wrong decomposition
+                () => correct + 3,  // Off by +3
+                () => correct - 3,  // Off by -3
+            ];
+            
+            // Shuffle strategies
+            const shuffled = wrongStrategies.sort(() => Math.random() - 0.5);
+            
+            // Generate 3 unique wrong answers
+            for (const strategy of shuffled) {
+                if (choices.length >= 3) break;
+                const wrongAnswer = strategy();
+                if (wrongAnswer > 0 && 
+                    Number.isInteger(wrongAnswer) && 
+                    !usedValues.has(wrongAnswer)) {
+                    usedValues.add(wrongAnswer);
+                    choices.push({
+                        display: wrongAnswer,
+                        isCorrect: false
+                    });
+                }
+            }
+            
+            // Fill remaining slots with random nearby values if needed
+            let offset = 4;
+            while (choices.length < 3) {
+                const val = correct + (Math.random() > 0.5 ? offset : -offset);
+                if (val > 0 && Number.isInteger(val) && !usedValues.has(val)) {
+                    usedValues.add(val);
+                    choices.push({
+                        display: val,
+                        isCorrect: false
+                    });
+                }
+                offset++;
+            }
+            
+            // Add correct answer
+            choices.push({
+                display: correct,
+                isCorrect: true
+            });
+            
+            // Shuffle all choices
+            return choices.sort(() => Math.random() - 0.5);
+        }
+
+        /**
+         * Build the visual helper - progressive scaffolding
+         * Questions 1-4: boxes with answer
+         * Questions 5-9: empty boxes
+         * Questions 10+: no boxes
+         */
+        function buildVisualHelper(problem) {
+            const helper = document.getElementById('visual-helper');
+            const questionNum = questionsAnswered + 1;
+            
+            // Questions 10+: no visual helper
+            if (questionNum >= 10) {
+                helper.innerHTML = '';
+                return;
+            }
+            
+            // Questions 1-9: show boxes
+            let boxesHTML = '<div class="boxes-container">';
+            
+            for (let i = 0; i < problem.divisor; i++) {
+                boxesHTML += '<div class="division-box">';
+                
+                // Questions 1-4: show answer in boxes
+                if (questionNum <= 4) {
+                    if (problem.tens > 0) {
+                        boxesHTML += `<div class="box-row tens">${problem.tens}</div>`;
+                    }
+                    if (problem.ones > 0) {
+                        boxesHTML += `<div class="box-row ones">${problem.ones}</div>`;
+                    }
+                } else {
+                    // Questions 5-9: empty boxes
+                    boxesHTML += '<div class="box-row empty">?</div>';
+                }
+                
+                boxesHTML += '</div>';
+            }
+            boxesHTML += '</div>';
+            
+            helper.innerHTML = boxesHTML;
+        }
+
+        /**
+         * Build the correct answer display for wrong popup
+         */
+        function buildCorrectAnswerDisplay() {
+            const display = document.getElementById('correct-answer-display');
+            display.innerHTML = `
+                <div>${currentProblem.dividend} ÷ ${currentProblem.divisor} = <strong>${currentProblem.answer}</strong></div>
+                <div style="font-size: 18px; color: #666; margin-top: 8px;">
+                    ${currentProblem.answer} ${currentProblem.template.items.split(' ').pop()} ${currentProblem.template.prep} each ${currentProblem.template.singular}
+                </div>
+            `;
+        }
+
+        // ==========================================================================
+        // GAME FLOW - Do not modify
+        // ==========================================================================
+        function loadProblem() {
+            canAnswer = true;
+            currentProblem = generateProblem();
+            currentChoices = generateChoices(currentProblem);
+            
+            // Update problem display
+            document.getElementById('problem-display').textContent = currentProblem.storyText;
+            
+            // Build visual helper
+            buildVisualHelper(currentProblem);
+            
+            // Build choices
+            const choicesContainer = document.getElementById('choices');
+            choicesContainer.innerHTML = '';
+            
+            currentChoices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = choice.display;
+                btn.addEventListener('click', () => handleAnswer(index, btn));
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(index, btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            
+            const choice = currentChoices[index];
+            
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score += 10;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+                
+                // Show correct popup
+                setTimeout(() => {
+                    document.getElementById('correct-answer-text').textContent = choice.display;
+                    const hypeMsg = correctHypeMessages[Math.floor(Math.random() * correctHypeMessages.length)];
+                    document.getElementById('correct-title').textContent = hypeMsg;
+                    document.getElementById('correct-emoji').textContent = correctEmojis[Math.floor(Math.random() * correctEmojis.length)];
+                    document.getElementById('correct-popup').classList.add('show');
+                    spawnCorrectEmojis(4, streak);
+                }, 300);
+                
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                
+                // Show wrong popup with growth mindset message
+                setTimeout(() => {
+                    const growthMsg = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+                    document.getElementById('wrong-title').textContent = growthMsg;
+                    document.getElementById('wrong-popup').classList.add('show');
+                }, 300);
+            }
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hypeMsg = "Straight fire!";
+            for (const s of streakHypeMessages) {
+                if (streak >= s.streak) hypeMsg = s.hype;
+            }
+            document.getElementById('streak-hype').textContent = hypeMsg;
+            
+            let emojiCount, confettiCount;
+            if (streak >= 15) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 12) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 6) {
+                emojiCount = 10;
+                confettiCount = 15;
+            } else {
+                emojiCount = 6;
+                confettiCount = 10;
+            }
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(confettiCount);
+            spawnCorrectEmojis(emojiCount, streak);
+        }
+
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(50);
+        }
+
+        function checkGameEnd() {
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS - Do not modify
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            questionsAnswered++;
+            const shouldCelebrate = streak > 0 && (
+                (streak <= 15 && streak % 3 === 0) ||
+                (streak > 15 && streak % 10 === 5)
+            );
+            if (shouldCelebrate) {
+                showStreakCelebration();
+            } else {
+                checkGameEnd();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // ==========================================================================
+        // START SCREEN ANIMATION - Fair Share (40 ÷ 4 = 10)
+        // ==========================================================================
+        let animationRunning = false;
+
+        function createPile() {
+            const pile = document.getElementById('pile');
+            if (!pile) return;
+            pile.innerHTML = '';
+            for (let i = 0; i < 40; i++) {
+                const item = document.createElement('span');
+                item.className = 'pile-item';
+                item.textContent = '🎮';
+                item.id = `item-${i}`;
+                pile.appendChild(item);
+            }
+        }
+
+        async function animateDistribution() {
+            if (!document.getElementById('pile')) return;
+            animationRunning = true;
+            
+            const pileCount = document.getElementById('pile-count');
+            if (pileCount) {
+                pileCount.textContent = '40 games';
+                pileCount.style.color = '#667eea';
+            }
+            createPile();
+            
+            // Initial pause to see the full pile
+            await animSleep(2000);
+            if (!animationRunning) return;
+            
+            // Deal 10 to each box (remove all 40 from pile)
+            for (let box = 0; box < 4; box++) {
+                if (!animationRunning) return;
+                
+                // Remove 10 items from pile one by one
+                for (let j = 0; j < 10; j++) {
+                    const idx = box * 10 + j;
+                    const item = document.getElementById(`item-${idx}`);
+                    if (item) item.classList.add('gone');
+                    await animSleep(60);
+                }
+                
+                // Show +10 in box
+                document.getElementById(`d${box}-tens`).classList.add('show');
+                
+                // Update count
+                const newCount = 40 - ((box + 1) * 10);
+                pileCount.classList.add('pulse');
+                if (newCount === 0) {
+                    pileCount.textContent = '0 - All distributed! ✓';
+                    pileCount.style.color = '#2ed573';
+                } else {
+                    pileCount.textContent = newCount + ' games';
+                }
+                
+                await animSleep(800);
+                pileCount.classList.remove('pulse');
+            }
+            
+            if (!animationRunning) return;
+            
+            // Show totals
+            await animSleep(1200);
+            for (let i = 0; i < 4; i++) {
+                if (!animationRunning) return;
+                document.getElementById(`d${i}-total`).classList.add('show');
+                await animSleep(400);
+            }
+            
+            // Wait 10 seconds then restart
+            await animSleep(10000);
+            if (animationRunning) resetAnimation();
+        }
+
+        function animSleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function resetAnimation() {
+            const pileCount = document.getElementById('pile-count');
+            if (pileCount) {
+                pileCount.textContent = '40 games';
+                pileCount.style.color = '#667eea';
+            }
+            
+            for (let i = 0; i < 4; i++) {
+                const tens = document.getElementById(`d${i}-tens`);
+                const ones = document.getElementById(`d${i}-ones`);
+                const total = document.getElementById(`d${i}-total`);
+                if (tens) tens.classList.remove('show');
+                if (ones) ones.classList.remove('show');
+                if (total) total.classList.remove('show');
+            }
+            
+            createPile();
+            animateDistribution();
+        }
+
+        function stopAnimation() {
+            animationRunning = false;
+        }
+
+        // Initialize animation on load
+        createPile();
+        animateDistribution();
+
+        // ==========================================================================
+        // START / RESTART - Do not modify
+        // ==========================================================================
+        function startGame() {
+            stopAnimation();
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            recentEquations = [];  // Reset variety tracking
+            recentTemplates = [];
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+        playAgainBtn.addEventListener('click', () => { startGame(); });
+
+        // ==========================================================================
+        // 🧪 MATH VALIDATOR - Press Ctrl+T to run tests
+        // ==========================================================================
+        function runMathTests(numTests = 500, verbose = true) {
+            if (verbose) console.log('🧪 Running ' + numTests + ' tests...');
+            
+            const results = {
+                passed: 0, failed: 0, errors: [],
+                typeCount: {}, positions: [0,0,0,0],
+                minAnswer: Infinity, maxAnswer: -Infinity,
+                divisorCount: {}
+            };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // Basic checks
+                if (choices.length !== 4) issues.push(choices.length + ' choices');
+                const correctCount = choices.filter(c => c.isCorrect).length;
+                if (correctCount !== 1) issues.push(correctCount + ' correct');
+                if (new Set(choices.map(c => c.display)).size !== choices.length) issues.push('dup strings');
+                
+                // Validate division is correct
+                if (problem.dividend !== problem.divisor * problem.quotient) {
+                    issues.push('division error: ' + problem.dividend + '÷' + problem.divisor + '≠' + problem.quotient);
+                }
+                
+                // Validate decomposition
+                if (problem.tens + problem.ones !== problem.quotient) {
+                    issues.push('decomposition error');
+                }
+                
+                // Parse and validate values
+                const values = [];
+                for (const c of choices) {
+                    const val = c.display;
+                    if (val < 0) issues.push('negative: ' + val);
+                    if (!Number.isInteger(val)) issues.push('decimal: ' + val);
+                    values.push(val);
+                }
+                
+                if (new Set(values).size !== values.length) issues.push('dup values');
+                
+                // Verify correct answer
+                const correct = choices.find(c => c.isCorrect);
+                if (correct && correct.display !== problem.answer) {
+                    issues.push('answer mismatch');
+                }
+                
+                // Track results
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 5) {
+                    results.errors.push('#' + (i+1) + ': ' + issues.join(', '));
+                }
+                
+                // Track distribution
+                results.divisorCount[problem.divisor] = (results.divisorCount[problem.divisor] || 0) + 1;
+                const correctIdx = choices.findIndex(c => c.isCorrect);
+                if (correctIdx >= 0 && correctIdx < 4) results.positions[correctIdx]++;
+                
+                // Track edge cases
+                results.minAnswer = Math.min(results.minAnswer, problem.answer);
+                results.maxAnswer = Math.max(results.maxAnswer, problem.answer);
+            }
+            
+            // Build result message
+            let msg = results.failed === 0 
+                ? '✅ ALL ' + numTests + ' TESTS PASSED!'
+                : '❌ ' + results.failed + '/' + numTests + ' FAILED:\n' + results.errors.join('\n');
+            
+            msg += '\n\nDivisors: ' + JSON.stringify(results.divisorCount);
+            msg += '\nPositions: ' + results.positions.map((p,i) => 'P' + (i+1) + ':' + Math.round(p/numTests*100) + '%').join(' ');
+            msg += '\nAnswers: ' + results.minAnswer + ' to ' + results.maxAnswer;
+            
+            if (verbose) {
+                console.log(msg);
+                alert(msg);
+            }
+            return results.failed === 0;
+        }
+
+        // Keyboard shortcut for testing
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                runMathTests();
+            }
+        });
+        
+    </script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Games Hub</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-size: 2.4rem;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.85);
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+        }
+        .unit-section {
+            max-width: 1100px;
+            margin: 0 auto 40px;
+        }
+        .unit-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .unit-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .unit4-icon { background: linear-gradient(135deg, #f6d365, #fda085); }
+        .unit5-icon { background: linear-gradient(135deg, #a1c4fd, #c2e9fb); }
+        .unit-header h2 {
+            color: #fff;
+            font-size: 1.5rem;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.2);
+        }
+        .unit-header .unit-desc {
+            color: rgba(255,255,255,0.75);
+            font-size: 0.9rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .card {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+        }
+        .card:active {
+            transform: translateY(-1px);
+        }
+        .card-emoji {
+            font-size: 2rem;
+            line-height: 1;
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #222;
+        }
+        .card-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            width: fit-content;
+        }
+        .tag-mult   { background: #fff3e0; color: #e65100; }
+        .tag-div    { background: #fce4ec; color: #c62828; }
+        .tag-mixed  { background: #f3e5f5; color: #7b1fa2; }
+        .tag-frac   { background: #e3f2fd; color: #1565c0; }
+        .tag-story  { background: #e8f5e9; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Math Games Hub</h1>
+    <p class="subtitle">3rd Grade &mdash; Pick a game and play!</p>
+
+    <!-- UNIT 4 -->
+    <section class="unit-section">
+        <div class="unit-header">
+            <div class="unit-icon unit4-icon">&#x2716;</div>
+            <div>
+                <h2>Unit 4 &mdash; Multiplication &amp; Division</h2>
+                <span class="unit-desc">Facts, strategies, and story problems</span>
+            </div>
+        </div>
+        <div class="grid">
+            <a class="card" href="number_family_407.html">
+                <span class="card-emoji">&#x2716;&#xFE0F;&#x2797;</span>
+                <span class="card-title">Number Family</span>
+                <span class="card-tag tag-mixed">ML 4.07 &middot; Fact Families</span>
+            </a>
+            <a class="card" href="fact_builder_408.html">
+                <span class="card-emoji">&#x2716;&#xFE0F;</span>
+                <span class="card-title">Fact Builder</span>
+                <span class="card-tag tag-mult">ML 4.08 &middot; Multiplication</span>
+            </a>
+            <a class="card" href="rectangle_builder_409.html">
+                <span class="card-emoji">&#x1F537;</span>
+                <span class="card-title">Rectangle Builder</span>
+                <span class="card-tag tag-mult">ML 4.09 &middot; Arrays</span>
+            </a>
+            <a class="card" href="expression_match_410.html">
+                <span class="card-emoji">&#x2728;</span>
+                <span class="card-title">Expression Match</span>
+                <span class="card-tag tag-mult">ML 4.10 &middot; Expressions</span>
+            </a>
+            <a class="card" href="tens_multiply_411.html">
+                <span class="card-emoji">&#x1F51F;</span>
+                <span class="card-title">Tens Takeover!</span>
+                <span class="card-tag tag-mult">ML 4.11 &middot; Multiply by 10s</span>
+            </a>
+            <a class="card" href="tens_multiply_hard.html">
+                <span class="card-emoji">&#x1F525;</span>
+                <span class="card-title">Tens Takeover! (Hard)</span>
+                <span class="card-tag tag-mult">Multiply by 10s &middot; Challenge</span>
+            </a>
+            <a class="card" href="two_step_415.html">
+                <span class="card-emoji">&#x1F9EE;</span>
+                <span class="card-title">Two-Step Story Problems</span>
+                <span class="card-tag tag-story">ML 4.15 &middot; Word Problems</span>
+            </a>
+            <a class="card" href="division_story_416.html">
+                <span class="card-emoji">&#x1F4E6;</span>
+                <span class="card-title">Division Story Problems</span>
+                <span class="card-tag tag-story">ML 4.16 &middot; Word Problems</span>
+            </a>
+            <a class="card" href="division_buildup_417.html">
+                <span class="card-emoji">&#x1F989;</span>
+                <span class="card-title">Division: Build Up!</span>
+                <span class="card-tag tag-div">ML 4.17 &middot; Division</span>
+            </a>
+            <a class="card" href="dd.html">
+                <span class="card-emoji">&#x1F9E0;</span>
+                <span class="card-title">Intuition Division</span>
+                <span class="card-tag tag-div">Division</span>
+            </a>
+            <a class="card" href="division_detective_ML407.html">
+                <span class="card-emoji">&#x1F50D;</span>
+                <span class="card-title">Division Detective</span>
+                <span class="card-tag tag-div">ML 4.07 &middot; Division</span>
+            </a>
+            <a class="card" href="multiplication_arcade_zombie.html">
+                <span class="card-emoji">&#x1F9DF;</span>
+                <span class="card-title">Multiplication Zombies</span>
+                <span class="card-tag tag-mult">Multiplication &middot; Arcade</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- UNIT 5 -->
+    <section class="unit-section">
+        <div class="unit-header">
+            <div class="unit-icon unit5-icon">&#x1F355;</div>
+            <div>
+                <h2>Unit 5 &mdash; Fractions</h2>
+                <span class="unit-desc">Naming, comparing, and exploring fractions</span>
+            </div>
+        </div>
+        <div class="grid">
+            <a class="card" href="partition_blast_502.html">
+                <span class="card-emoji">&#x1F4A5;</span>
+                <span class="card-title">Partition Blast!</span>
+                <span class="card-tag tag-frac">ML 5.02 &middot; Partitioning</span>
+            </a>
+            <a class="card" href="fraction_blast_503.html">
+                <span class="card-emoji">&#x1F4A5;</span>
+                <span class="card-title">Fraction Blast!</span>
+                <span class="card-tag tag-frac">ML 5.03 &middot; Fractions</span>
+            </a>
+            <a class="card" href="fraction_strips_504.html">
+                <span class="card-emoji">&#x1F355;</span>
+                <span class="card-title">Fraction Strips</span>
+                <span class="card-tag tag-frac">ML 5.04 &middot; Visual Fractions</span>
+            </a>
+            <a class="card" href="shade_shifters_505.html">
+                <span class="card-emoji">&#x1F3AE;</span>
+                <span class="card-title">Shade Shifters</span>
+                <span class="card-tag tag-frac">ML 5.05 &middot; Shading Fractions</span>
+            </a>
+            <a class="card" href="fraction_finder_506.html">
+                <span class="card-emoji">&#x1F3AF;</span>
+                <span class="card-title">Fraction Finder</span>
+                <span class="card-tag tag-frac">ML 5.06 &middot; Number Lines</span>
+            </a>
+            <a class="card" href="fraction_finder_507.html">
+                <span class="card-emoji">&#x1F522;</span>
+                <span class="card-title">Fraction Finder</span>
+                <span class="card-tag tag-frac">ML 5.07 &middot; Number Lines</span>
+            </a>
+            <a class="card" href="space_defender_508.html">
+                <span class="card-emoji">&#x1F47E;</span>
+                <span class="card-title">Space Defender</span>
+                <span class="card-tag tag-frac">ML 5.08 &middot; Fractions = Wholes</span>
+            </a>
+            <a class="card" href="fraction_arcade_509.html">
+                <span class="card-emoji">&#x1F579;&#xFE0F;</span>
+                <span class="card-title">Fraction Locator</span>
+                <span class="card-tag tag-frac">ML 5.09 &middot; Locating Fractions</span>
+            </a>
+            <a class="card" href="fraction_blaster_510.html">
+                <span class="card-emoji">&#x1F680;</span>
+                <span class="card-title">Fraction Blaster</span>
+                <span class="card-tag tag-frac">ML 5.10 &middot; Fractions</span>
+            </a>
+            <a class="card" href="fraction_transformer_511.html">
+                <span class="card-emoji">&#x1F504;</span>
+                <span class="card-title">Fraction Transformer</span>
+                <span class="card-tag tag-frac">ML 5.11 &middot; Equivalent Fractions</span>
+            </a>
+            <a class="card" href="fraction_finder_512.html">
+                <span class="card-emoji">&#x1F50E;</span>
+                <span class="card-title">Fraction Finder</span>
+                <span class="card-tag tag-frac">ML 5.12 &middot; Comparing Fractions</span>
+            </a>
+            <a class="card" href="fraction_whole_number_513.html">
+                <span class="card-emoji">&#x1F4AF;</span>
+                <span class="card-title">Fraction Finder - Wholes</span>
+                <span class="card-tag tag-frac">ML 5.13 &middot; Whole Numbers</span>
+            </a>
+            <a class="card" href="whole_numbers_514.html">
+                <span class="card-emoji">&#x1F3B2;</span>
+                <span class="card-title">Fraction Match</span>
+                <span class="card-tag tag-frac">ML 5.14 &middot; Matching</span>
+            </a>
+            <a class="card" href="face_off_515.html">
+                <span class="card-emoji">&#x1F93C;</span>
+                <span class="card-title">Fraction Face-Off</span>
+                <span class="card-tag tag-frac">ML 5.15 &middot; Comparing</span>
+            </a>
+            <a class="card" href="fraction_faceoff_516.html">
+                <span class="card-emoji">&#x2694;&#xFE0F;</span>
+                <span class="card-title">Fraction Face-Off</span>
+                <span class="card-tag tag-frac">ML 5.16 &middot; Comparing</span>
+            </a>
+            <a class="card" href="fraction_invaders.html">
+                <span class="card-emoji">&#x26A1;</span>
+                <span class="card-title">Fraction Invaders</span>
+                <span class="card-tag tag-frac">Fractions &middot; Arcade</span>
+            </a>
+        </div>
+    </section>
+</body>
+</html>

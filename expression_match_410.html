@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Expression Match ✨</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Fredoka', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            user-select: none;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0 15px;
+            overflow: hidden;
+        }
+
+        /* Header */
+        #header {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            border-radius: 0 0 15px 15px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* Game area */
+        #game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 12px 0;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        /* Main card */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #main-card.correct-flash {
+            animation: cardFlash 0.4s ease;
+        }
+
+        @keyframes cardFlash {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+            50% { box-shadow: 0 0 30px rgba(46, 213, 115, 0.6); }
+        }
+
+        /* Question prompt */
+        #prompt {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+        }
+
+        #target-expression {
+            font-size: 56px;
+            font-weight: 700;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 16px 48px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+        }
+
+        /* Visual rectangle helper */
+        #visual-helper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        #helper-rectangle {
+            display: grid;
+            gap: 4px;
+            padding: 12px;
+            background: linear-gradient(135deg, #a8e6cf, #88d8b0);
+            border-radius: 12px;
+            border: 4px solid #333;
+        }
+
+        .helper-cell {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+        }
+
+        #helper-label {
+            font-size: 18px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Choice grid */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 120px;
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        /* Warm amber/gold for wrong - encouraging, not alarming */
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .choice-main {
+            font-size: 18px;
+            margin-bottom: 6px;
+            display: none; /* Hide the single line expression */
+        }
+
+        /* Choice layout - CSS grid for perfect alignment */
+        .choice-visual {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto auto;
+            gap: 4px 8px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .choice-equation {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .choice-mini-rect {
+            display: grid;
+            gap: 2px;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
+        .choice-mini-rect.left {
+            background: rgba(168, 230, 207, 0.9);
+        }
+
+        .choice-mini-rect.right {
+            background: rgba(255, 211, 182, 0.9);
+        }
+
+        .choice-mini-cell {
+            width: 12px;
+            height: 12px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 2px;
+        }
+
+        .choice-plus {
+            font-size: 22px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.95);
+        }
+
+        @media (max-width: 480px) {
+            .choice-mini-cell {
+                width: 6px;
+                height: 6px;
+            }
+            .choice-equation {
+                font-size: 15px;
+            }
+        }
+
+        /* Popups */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            padding: 20px;
+        }
+
+        .popup-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            text-align: center;
+            max-width: 360px;
+            width: 100%;
+            transform: scale(0.9);
+            transition: transform 0.25s ease;
+        }
+
+        .popup-overlay.show .popup-content {
+            transform: scale(1);
+        }
+
+        .popup-emoji {
+            font-size: 56px;
+            margin-bottom: 12px;
+        }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        /* Streak celebration popup */
+        .streak-popup .popup-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-popup .popup-title,
+        .streak-popup .popup-subtitle,
+        .streak-popup .streak-number {
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd93d;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+            margin: 10px 0;
+        }
+
+        .growth-message {
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        /* Wrong popup - warm amber theme */
+        .wrong-popup .popup-content {
+            border: 4px solid #E8A838;
+        }
+
+        .wrong-popup .popup-title {
+            color: #D4882A;
+        }
+
+        /* Correct answer display in wrong popup */
+        .correct-answer-area {
+            margin: 16px 0;
+        }
+
+        .correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .correct-answer-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: inline-block;
+        }
+
+        .correct-answer-display .choice-visual {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            grid-template-rows: auto auto;
+            gap: 4px 8px;
+            align-items: center;
+            justify-items: center;
+        }
+
+        .correct-answer-display .choice-equation {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .correct-answer-display .choice-plus {
+            font-size: 20px;
+            font-weight: 700;
+            color: rgba(255,255,255,0.95);
+        }
+
+        .correct-answer-display .choice-mini-rect {
+            display: grid;
+            gap: 2px;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
+        .correct-answer-display .choice-mini-rect.left {
+            background: rgba(168, 230, 207, 0.9);
+        }
+
+        .correct-answer-display .choice-mini-rect.right {
+            background: rgba(255, 211, 182, 0.9);
+        }
+
+        .correct-answer-display .choice-mini-cell {
+            width: 10px;
+            height: 10px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 2px;
+        }
+
+        /* Button styles */
+        .popup-btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            margin: 6px;
+            transition: transform 0.15s ease;
+        }
+
+        .popup-btn:active {
+            transform: scale(0.96);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        /* Start screen */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 30px;
+            text-align: center;
+        }
+
+        #start-screen.hidden {
+            display: none;
+        }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: #ffd93d;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+        }
+
+        #start-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 30px;
+            max-width: 320px;
+        }
+
+        #start-btn {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            color: white;
+            border: none;
+            padding: 18px 48px;
+            border-radius: 16px;
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        #start-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* End screen */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 30px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+        }
+
+        #end-screen.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #end-emoji {
+            font-size: 80px;
+            margin-bottom: 16px;
+        }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: #ffd93d;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+        }
+
+        #end-subtitle {
+            font-size: 24px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 30px;
+        }
+
+        #play-again-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            border-radius: 14px;
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 300;
+            animation: confettiFall 2s ease forwards;
+        }
+
+        @keyframes confettiFall {
+            to {
+                top: 110vh;
+                transform: rotate(720deg);
+            }
+        }
+
+        /* Flying emoji for streak celebrations */
+        .flying-emoji {
+            position: fixed;
+            font-size: 40px;
+            animation: flyUp 0.7s ease forwards;
+            z-index: 150;
+            pointer-events: none;
+        }
+
+        @keyframes flyUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-120px) scale(1.3); opacity: 0; }
+        }
+
+        /* Flying correct emojis - spawn around screen on correct answers */
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 500;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid {
+            font-size: 65px;
+            animation: flyUpCorrectMid 1.4s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-high {
+            font-size: 80px;
+            animation: flyUpCorrectHigh 1.6s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-ultra {
+            font-size: 100px;
+            animation: flyUpCorrectUltra 1.8s ease-out forwards;
+        }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        @keyframes flyUpCorrectMid {
+            0% { transform: scale(0) translateY(0) rotate(0deg); opacity: 1; }
+            30% { transform: scale(1.4) translateY(-150px) rotate(15deg); opacity: 1; }
+            100% { transform: scale(1.1) translateY(-600px) rotate(30deg); opacity: 0; }
+        }
+
+        @keyframes flyUpCorrectHigh {
+            0% { transform: scale(0) translateY(0) rotate(0deg); opacity: 1; }
+            30% { transform: scale(1.5) translateY(-200px) rotate(-20deg); opacity: 1; }
+            100% { transform: scale(1.2) translateY(-700px) rotate(45deg); opacity: 0; }
+        }
+
+        @keyframes flyUpCorrectUltra {
+            0% { transform: scale(0) translateY(0) rotate(0deg); opacity: 1; }
+            20% { transform: scale(2) translateY(-150px) rotate(20deg); opacity: 1; }
+            50% { transform: scale(1.8) translateY(-400px) rotate(-20deg); opacity: 1; }
+            100% { transform: scale(1.5) translateY(-800px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #target-expression { font-size: 28px; padding: 10px 24px; }
+            .choice { padding: 12px 10px; min-height: 70px; }
+            .choice-main { font-size: 17px; }
+            .choice-breakdown { font-size: 12px; }
+            #start-title { font-size: 36px; }
+            .popup-content { padding: 20px; }
+            .popup-emoji { font-size: 48px; }
+            .popup-title { font-size: 26px; }
+            .streak-number { font-size: 56px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <div id="title">Expression Match ✨</div>
+            <div class="stat-row">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="game-area">
+            <div id="main-card">
+                <div id="prompt">Which expression equals...</div>
+                <div id="target-expression">6 × 8</div>
+                
+                <div id="visual-helper">
+                    <div id="helper-rectangle"></div>
+                    <div id="helper-label">6 rows × 8 columns = ?</div>
+                </div>
+
+                <div id="choices">
+                    <button class="choice">
+                        <span class="choice-main">6 × 5 + 6 × 3</span>
+                        <span class="choice-breakdown">30 + 18 = 48</span>
+                    </button>
+                    <button class="choice">
+                        <span class="choice-main">6 × 4 + 6 × 4</span>
+                        <span class="choice-breakdown">24 + 24 = 48</span>
+                    </button>
+                    <button class="choice">
+                        <span class="choice-main">6 × 6 + 6 × 3</span>
+                        <span class="choice-breakdown">36 + 18 = 54</span>
+                    </button>
+                    <button class="choice">
+                        <span class="choice-main">6 × 4 + 6 × 3</span>
+                        <span class="choice-breakdown">24 + 18 = 42</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="start-screen">
+        <div id="start-title">Expression Match ✨</div>
+        <div id="start-subtitle">Match multiplication expressions to their equivalent decomposed form!</div>
+        <button id="start-btn">Let's Go! 🚀</button>
+    </div>
+
+    <!-- End Screen -->
+    <div id="end-screen">
+        <div id="end-emoji">🎓</div>
+        <div id="end-title">You're a Mathematician!</div>
+        <div id="end-subtitle">Amazing work!</div>
+        <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+        <button id="play-again-btn">Play Again 🔄</button>
+    </div>
+
+    <!-- Streak Celebration Popup -->
+    <div class="popup-overlay streak-popup" id="streak-popup">
+        <div class="popup-content">
+            <div class="popup-emoji">🔥</div>
+            <div class="popup-title">STREAK!</div>
+            <div class="streak-number" id="streak-count">3</div>
+            <div class="growth-message" id="growth-message">Mistakes in math are OK!</div>
+            <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+        </div>
+    </div>
+
+    <!-- Wrong Answer Popup - Warm Amber Theme -->
+    <div class="popup-overlay wrong-popup" id="wrong-popup">
+        <div class="popup-content">
+            <div class="popup-emoji" id="wrong-emoji">🤔</div>
+            <div class="popup-title" id="wrong-title">Not Quite!</div>
+            <div class="popup-subtitle" id="wrong-subtitle">The process is more important than the answer!</div>
+            
+            <div class="correct-answer-area" id="correct-answer-area" style="display: none;">
+                <div class="correct-answer-label">The correct answer was:</div>
+                <div class="correct-answer-display" id="correct-answer-display">
+                    <!-- Will be filled with the correct choice -->
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Correct Answer Popup -->
+    <div class="popup-overlay" id="correct-popup">
+        <div class="popup-content">
+            <div class="popup-emoji" id="correct-emoji">✅</div>
+            <div class="popup-title" id="correct-title">Correct!</div>
+            <div class="popup-subtitle" id="correct-subtitle">You got it!</div>
+            <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        // Game state
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+        const TOTAL_QUESTIONS = 15;
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const endScreen = document.getElementById('end-screen');
+        const startBtn = document.getElementById('start-btn');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const targetExpression = document.getElementById('target-expression');
+        const helperRectangle = document.getElementById('helper-rectangle');
+        const helperLabel = document.getElementById('helper-label');
+        const choicesContainer = document.getElementById('choices');
+        const mainCard = document.getElementById('main-card');
+
+        // Growth mindset messages from Mr. Signer's board
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "I have positive math esteem!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "Be a problem solver!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me become a thinker!",
+            "Math can be fun!",
+            "Talking about math helps me learn!"
+        ];
+
+        // Encouraging messages for wrong answers
+        const wrongEncouragements = [
+            { emoji: '🤔', title: 'Not Quite!', sub: "The process is more important than the answer!" },
+            { emoji: '💭', title: 'Almost!', sub: "Mistakes in math are OK!" },
+            { emoji: '🌟', title: 'Keep Trying!', sub: "I can learn anything in math!" },
+            { emoji: '🧩', title: 'Think Again!', sub: "There's always more than one way!" },
+            { emoji: '🦊', title: 'Oopsie!', sub: "Math is hard, but you can do it!" },
+            { emoji: '💪', title: 'So Close!', sub: "If I don't get it first, I try a new way!" }
+        ];
+
+        // Correct messages
+        const correctMsgs = [
+            { emoji: '✅', title: 'CORRECT!', sub: 'Nice one!' },
+            { emoji: '👍', title: 'GOT IT!', sub: 'Keep going!' },
+            { emoji: '⭐', title: 'AWESOME!', sub: 'You know this!' },
+            { emoji: '🌟', title: 'BRILLIANT!', sub: "You're a thinker!" },
+            { emoji: '💪', title: 'STRONG!', sub: 'Math skills!' }
+        ];
+
+        // Audio context
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                // 3-note ascending arpeggio (C5 → E5 → G5) - same as Division Dash
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                // Descending sawtooth - gentler for growth mindset
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                // 4-note fanfare for streak celebrations
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                // Victory fanfare
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // Generate a problem
+        function generateProblem() {
+            // Pick dimensions: rows 2-6, total columns 6-9
+            const rows = 2 + Math.floor(Math.random() * 5); // 2-6
+            const totalCols = 6 + Math.floor(Math.random() * 4); // 6-9
+            
+            // Generate a valid decomposition (left + right = totalCols)
+            const leftCols = 1 + Math.floor(Math.random() * (totalCols - 2)); // 1 to totalCols-2
+            const rightCols = totalCols - leftCols;
+            
+            const totalProduct = rows * totalCols;
+            const leftProduct = rows * leftCols;
+            const rightProduct = rows * rightCols;
+
+            return {
+                rows,
+                totalCols,
+                leftCols,
+                rightCols,
+                totalProduct,
+                leftProduct,
+                rightProduct
+            };
+        }
+
+        // Generate wrong answers that are plausible
+        function generateChoices(problem) {
+            const p = problem;
+            const correctChoice = {
+                expression: `${p.rows} × ${p.leftCols} + ${p.rows} × ${p.rightCols}`,
+                rows: p.rows,
+                leftCols: p.leftCols,
+                rightCols: p.rightCols,
+                isCorrect: true
+            };
+
+            const wrongChoices = [];
+            const usedExpressions = new Set([correctChoice.expression]);
+
+            // Wrong type 1: Different split that doesn't add up
+            const wrongSplits = [
+                { left: p.leftCols + 1, right: p.rightCols },
+                { left: p.leftCols - 1, right: p.rightCols },
+                { left: p.leftCols, right: p.rightCols + 1 },
+                { left: p.leftCols, right: p.rightCols - 1 },
+                { left: p.leftCols + 1, right: p.rightCols - 1 },
+                { left: Math.ceil(p.totalCols / 2) + 1, right: Math.floor(p.totalCols / 2) + 1 }
+            ];
+
+            for (const split of wrongSplits) {
+                if (split.left > 0 && split.right > 0 && wrongChoices.length < 3) {
+                    const expr = `${p.rows} × ${split.left} + ${p.rows} × ${split.right}`;
+                    if (!usedExpressions.has(expr)) {
+                        wrongChoices.push({
+                            expression: expr,
+                            rows: p.rows,
+                            leftCols: split.left,
+                            rightCols: split.right,
+                            isCorrect: false
+                        });
+                        usedExpressions.add(expr);
+                    }
+                }
+            }
+
+            // Fill remaining with other wrong answers
+            while (wrongChoices.length < 3) {
+                const wrongLeft = 1 + Math.floor(Math.random() * 7);
+                const wrongRight = 1 + Math.floor(Math.random() * 7);
+                const expr = `${p.rows} × ${wrongLeft} + ${p.rows} × ${wrongRight}`;
+                
+                if (!usedExpressions.has(expr) && (wrongLeft + wrongRight !== p.totalCols)) {
+                    wrongChoices.push({
+                        expression: expr,
+                        rows: p.rows,
+                        leftCols: wrongLeft,
+                        rightCols: wrongRight,
+                        isCorrect: false
+                    });
+                    usedExpressions.add(expr);
+                }
+            }
+
+            // Shuffle all choices
+            const allChoices = [correctChoice, ...wrongChoices.slice(0, 3)];
+            for (let i = allChoices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [allChoices[i], allChoices[j]] = [allChoices[j], allChoices[i]];
+            }
+
+            return allChoices;
+        }
+
+        // Build the visual helper rectangle
+        function buildHelperRectangle(rows, cols) {
+            helperRectangle.innerHTML = '';
+            helperRectangle.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
+            for (let i = 0; i < rows * cols; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'helper-cell';
+                helperRectangle.appendChild(cell);
+            }
+            
+            helperLabel.textContent = `${rows} rows × ${cols} columns = ${rows * cols}`;
+        }
+
+        // Build mini rectangle HTML for choice buttons
+        function buildChoiceMiniRect(rows, cols, side) {
+            let html = `<div class="choice-mini-rect ${side}" style="grid-template-columns: repeat(${cols}, 1fr);">`;
+            for (let i = 0; i < rows * cols; i++) {
+                html += '<div class="choice-mini-cell"></div>';
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Load a new problem
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const p = currentProblem;
+            const choices = generateChoices(p);
+            
+            // Update display
+            targetExpression.textContent = `${p.rows} × ${p.totalCols}`;
+            buildHelperRectangle(p.rows, p.totalCols);
+            
+            // Update choices with mini rectangle visuals
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                
+                // Build mini rectangles for this choice
+                const leftRect = buildChoiceMiniRect(choice.rows, choice.leftCols, 'left');
+                const rightRect = buildChoiceMiniRect(choice.rows, choice.rightCols, 'right');
+                
+                // Layout: CSS Grid 3 columns x 2 rows
+                // Row 1: equation + equation
+                // Row 2: rect + rect
+                btn.innerHTML = `
+                    <div class="choice-visual">
+                        <span class="choice-equation">${choice.rows} × ${choice.leftCols}</span>
+                        <span class="choice-plus">+</span>
+                        <span class="choice-equation">${choice.rows} × ${choice.rightCols}</span>
+                        ${leftRect}
+                        <span class="choice-plus">+</span>
+                        ${rightRect}
+                    </div>
+                `;
+                btn.dataset.correct = choice.isCorrect;
+                btn.addEventListener('click', () => handleChoice(btn, choice));
+                choicesContainer.appendChild(btn);
+            });
+            
+            canAnswer = true;
+        }
+
+        // Handle choice selection
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            if (choice.isCorrect) {
+                // Correct answer
+                btn.classList.add('correct');
+                mainCard.classList.add('correct-flash');
+                playSound('correct');
+                
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                questionsAnswered++;
+                updateStats();
+
+                setTimeout(() => {
+                    mainCard.classList.remove('correct-flash');
+                    
+                    // Check if streak is multiple of 3 for celebration
+                    if (streak > 0 && streak % 3 === 0) {
+                        showStreakCelebration();
+                    } else {
+                        showCorrectPopup();
+                    }
+                }, 400);
+            } else {
+                // Wrong answer - warm amber feedback
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                updateStats();
+                
+                setTimeout(() => {
+                    showWrongPopup();
+                }, 400);
+            }
+        }
+
+        // Show streak celebration popup
+        function showStreakCelebration() {
+            playSound('streak');
+            
+            document.getElementById('streak-count').textContent = streak;
+            document.getElementById('growth-message').textContent = 
+                growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(25);
+            spawnCorrectEmojis(20, streak);
+        }
+
+        // Show correct popup
+        function showCorrectPopup() {
+            const msg = correctMsgs[Math.floor(Math.random() * correctMsgs.length)];
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            document.getElementById('correct-subtitle').textContent = msg.sub;
+            
+            // Spawn emojis based on streak level - more emojis and bigger as streak grows
+            let emojiCount;
+            
+            if (streak >= 10) {
+                emojiCount = 25;
+                spawnConfetti(30);
+            } else if (streak >= 6) {
+                emojiCount = 18;
+                spawnConfetti(20);
+            } else if (streak >= 3) {
+                emojiCount = 12;
+                spawnConfetti(10);
+            } else {
+                emojiCount = 6;
+            }
+            
+            spawnCorrectEmojis(emojiCount, streak);
+            
+            document.getElementById('correct-popup').classList.add('show');
+        }
+
+        // Show wrong popup with try again / show answer options
+        function showWrongPopup() {
+            const msg = wrongEncouragements[Math.floor(Math.random() * wrongEncouragements.length)];
+            document.getElementById('wrong-emoji').textContent = msg.emoji;
+            document.getElementById('wrong-title').textContent = msg.title;
+            document.getElementById('wrong-subtitle').textContent = msg.sub;
+            
+            // Hide correct answer initially
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        // Build the correct answer display
+        function buildCorrectAnswerDisplay() {
+            const p = currentProblem;
+            
+            // Build mini rectangles
+            let leftRectHTML = `<div class="choice-mini-rect left" style="grid-template-columns: repeat(${p.leftCols}, 1fr);">`;
+            for (let i = 0; i < p.rows * p.leftCols; i++) {
+                leftRectHTML += '<div class="choice-mini-cell"></div>';
+            }
+            leftRectHTML += '</div>';
+            
+            let rightRectHTML = `<div class="choice-mini-rect right" style="grid-template-columns: repeat(${p.rightCols}, 1fr);">`;
+            for (let i = 0; i < p.rows * p.rightCols; i++) {
+                rightRectHTML += '<div class="choice-mini-cell"></div>';
+            }
+            rightRectHTML += '</div>';
+            
+            document.getElementById('correct-answer-display').innerHTML = `
+                <div class="choice-visual">
+                    <span class="choice-equation">${p.rows} × ${p.leftCols}</span>
+                    <span class="choice-plus">+</span>
+                    <span class="choice-equation">${p.rows} × ${p.rightCols}</span>
+                    ${leftRectHTML}
+                    <span class="choice-plus">+</span>
+                    ${rightRectHTML}
+                </div>
+            `;
+        }
+
+        // Handle try again
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            
+            // Remove wrong class from all buttons
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        // Handle show answer
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        // Handle streak continue
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // Handle correct next
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // Check if game should end
+        function checkGameEnd() {
+            if (questionsAnswered >= TOTAL_QUESTIONS) {
+                showEndScreen();
+            } else {
+                loadProblem();
+            }
+        }
+
+        // Show end screen
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(30);
+        }
+
+        // Update stats display
+        function updateStats() {
+            scoreEl.textContent = score;
+            streakEl.textContent = streak + '🔥';
+            streakDisplay.classList.toggle('hot', streak >= 3);
+        }
+
+        // Spawn flying correct emojis around screen - scales with streak
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            
+            // Determine class based on streak level
+            let sizeClass = '';
+            if (streakLevel >= 10) {
+                sizeClass = 'streak-ultra';
+            } else if (streakLevel >= 6) {
+                sizeClass = 'streak-high';
+            } else if (streakLevel >= 3) {
+                sizeClass = 'streak-mid';
+            }
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    
+                    // Longer duration for bigger streaks
+                    const duration = streakLevel >= 10 ? 1800 : streakLevel >= 6 ? 1600 : streakLevel >= 3 ? 1400 : 1200;
+                    setTimeout(() => emoji.remove(), duration);
+                }, i * 50);
+            }
+        }
+
+        // Spawn confetti
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        // Spawn flying emoji
+        function spawnEmoji(emoji) {
+            const el = document.createElement('div');
+            el.className = 'flying-emoji';
+            el.textContent = emoji;
+            el.style.left = (30 + Math.random() * 40) + '%';
+            el.style.top = '50%';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 700);
+        }
+
+        // Start game
+        function startGame() {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            updateStats();
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            startGame();
+        });
+
+        playAgainBtn.addEventListener('click', () => {
+            startGame();
+        });
+    </script>
+</body>
+</html>

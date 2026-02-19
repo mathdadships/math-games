@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>⚡ MULTIPLICATION ZOMBIES ⚡</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        
+        :root {
+            --neon-pink: #ff00ff;
+            --neon-cyan: #00ffff;
+            --neon-green: #39ff14;
+            --neon-yellow: #ffff00;
+            --neon-orange: #ff6600;
+            --neon-red: #ff0044;
+            --neon-purple: #bf00ff;
+            --dark-bg: #0a0a0a;
+            --darker-bg: #050508;
+            --zombie-green: #39ff14;
+            --grid-color: rgba(0, 255, 255, 0.1);
+            --amber: #ffaa00;
+        }
+        
+        @font-face {
+            font-family: 'Arcade';
+            src: local('Press Start 2P');
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: var(--darker-bg);
+            font-family: 'Press Start 2P', monospace;
+            image-rendering: pixelated;
+        }
+        
+        /* CRT Screen Effect - Subtle */
+        #crt-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(0, 0, 0, 0.03) 0px,
+                    rgba(0, 0, 0, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+        }
+        
+        #crt-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(
+                ellipse at center,
+                transparent 0%,
+                transparent 70%,
+                rgba(0, 0, 0, 0.15) 100%
+            );
+        }
+        
+        #game-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(180deg, 
+                    #0a0015 0%, 
+                    #1a0030 30%,
+                    #0d0d1a 60%,
+                    #0a0a0a 100%
+                );
+            overflow: hidden;
+        }
+        
+        /* Animated grid floor */
+        #grid-floor {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: perspective(500px) rotateX(60deg);
+            transform-origin: center top;
+            animation: gridScroll 2s linear infinite;
+        }
+        
+        @keyframes gridScroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 40px; }
+        }
+        
+        /* Stars background */
+        #stars {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 40%;
+            background: transparent;
+            overflow: hidden;
+        }
+        
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        
+        /* ========== TOP BAR - ARCADE STYLE ========== */
+        #top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 180px;
+            background: linear-gradient(180deg, 
+                rgba(10, 5, 20, 0.98) 0%,
+                rgba(15, 5, 30, 0.95) 100%
+            );
+            border-bottom: 4px solid var(--neon-pink);
+            box-shadow: 
+                0 0 20px var(--neon-pink),
+                0 0 40px rgba(255, 0, 255, 0.3),
+                inset 0 -10px 30px rgba(255, 0, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .stats-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .stat-box {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-size: 8px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            margin-bottom: 5px;
+            letter-spacing: 2px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            color: var(--neon-yellow);
+            text-shadow: 
+                0 0 10px var(--neon-yellow),
+                0 0 20px var(--neon-yellow),
+                0 0 30px var(--neon-orange);
+            animation: neonFlicker 3s ease-in-out infinite;
+        }
+        
+        @keyframes neonFlicker {
+            0%, 100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.8; }
+            94% { opacity: 1; }
+            96% { opacity: 0.9; }
+            97% { opacity: 1; }
+        }
+        
+        /* Mission Center - THE PROBLEM */
+        #mission-center {
+            text-align: center;
+            flex: 1;
+        }
+        
+        #mission-label {
+            font-size: 10px;
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        #mission-text {
+            font-size: 52px;
+            color: #50ff50;
+            text-shadow: 
+                0 0 5px #50ff50,
+                0 0 10px rgba(80, 255, 80, 0.5);
+        }
+        
+        /* Health Bar - Arcade Style */
+        #health-container {
+            text-align: center;
+        }
+        
+        #health-bar {
+            width: 120px;
+            height: 20px;
+            background: #1a1a2e;
+            border: 3px solid var(--neon-cyan);
+            box-shadow: 
+                0 0 10px var(--neon-cyan),
+                inset 0 0 10px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #health-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--neon-green), #00ff88);
+            box-shadow: 0 0 20px var(--neon-green);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+        
+        #health-fill::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+        }
+        
+        #health-fill.hurt {
+            background: linear-gradient(90deg, var(--neon-orange), #ffaa00);
+            box-shadow: 0 0 20px var(--neon-orange);
+        }
+        
+        #health-fill.danger {
+            background: linear-gradient(90deg, var(--neon-red), #ff4444);
+            box-shadow: 0 0 20px var(--neon-red);
+            animation: dangerPulse 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes dangerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        /* HERO - Pixel Art with Glow */
+        #hero {
+            position: fixed;
+            bottom: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 100px;
+            z-index: 30;
+            filter: drop-shadow(0 0 20px var(--neon-cyan));
+        }
+        
+        .pixel-hero {
+            width: 4px;
+            height: 4px;
+            background: transparent;
+            transform: scale(2);
+            transform-origin: top left;
+            box-shadow:
+                /* Hair - neon purple */
+                8px 0 var(--neon-purple), 12px 0 var(--neon-purple), 16px 0 var(--neon-purple), 20px 0 var(--neon-purple), 24px 0 var(--neon-purple),
+                4px 4px var(--neon-purple), 8px 4px var(--neon-purple), 12px 4px var(--neon-purple), 16px 4px var(--neon-purple), 20px 4px var(--neon-purple), 24px 4px var(--neon-purple), 28px 4px var(--neon-purple),
+                /* Face */
+                8px 8px #ffcc99, 12px 8px #ffcc99, 16px 8px #ffcc99, 20px 8px #ffcc99, 24px 8px #ffcc99,
+                8px 12px #ffcc99, 12px 12px var(--neon-cyan), 16px 12px #ffcc99, 20px 12px var(--neon-cyan), 24px 12px #ffcc99,
+                8px 16px #ffcc99, 12px 16px #ffcc99, 16px 16px #ffcc99, 20px 16px #ffcc99, 24px 16px #ffcc99,
+                12px 20px #ffcc99, 16px 20px #ff6666, 20px 20px #ffcc99,
+                /* Body - neon blue */
+                8px 24px var(--neon-cyan), 12px 24px var(--neon-cyan), 16px 24px var(--neon-cyan), 20px 24px var(--neon-cyan), 24px 24px var(--neon-cyan),
+                4px 28px #ffcc99, 8px 28px var(--neon-cyan), 12px 28px var(--neon-cyan), 16px 28px var(--neon-cyan), 20px 28px var(--neon-cyan), 24px 28px var(--neon-cyan), 28px 28px #ffcc99,
+                4px 32px #ffcc99, 8px 32px var(--neon-cyan), 12px 32px var(--neon-cyan), 16px 32px var(--neon-cyan), 20px 32px var(--neon-cyan), 24px 32px var(--neon-cyan), 28px 32px #ffcc99,
+                8px 36px var(--neon-cyan), 12px 36px var(--neon-cyan), 16px 36px var(--neon-cyan), 20px 36px var(--neon-cyan), 24px 36px var(--neon-cyan),
+                /* Legs - dark */
+                8px 40px #333366, 12px 40px #333366, 20px 40px #333366, 24px 40px #333366,
+                8px 44px #333366, 12px 44px #333366, 20px 44px #333366, 24px 44px #333366,
+                8px 48px #222244, 12px 48px #222244, 20px 48px #222244, 24px 48px #222244;
+        }
+        
+        .pixel-hero-casting {
+            width: 4px;
+            height: 4px;
+            background: transparent;
+            transform: scale(2);
+            transform-origin: top left;
+            display: none;
+            box-shadow:
+                /* Hair */
+                8px 0 var(--neon-purple), 12px 0 var(--neon-purple), 16px 0 var(--neon-purple), 20px 0 var(--neon-purple), 24px 0 var(--neon-purple),
+                4px 4px var(--neon-purple), 8px 4px var(--neon-purple), 12px 4px var(--neon-purple), 16px 4px var(--neon-purple), 20px 4px var(--neon-purple), 24px 4px var(--neon-purple), 28px 4px var(--neon-purple),
+                /* Face */
+                8px 8px #ffcc99, 12px 8px #ffcc99, 16px 8px #ffcc99, 20px 8px #ffcc99, 24px 8px #ffcc99,
+                8px 12px #ffcc99, 12px 12px var(--neon-cyan), 16px 12px #ffcc99, 20px 12px var(--neon-cyan), 24px 12px #ffcc99,
+                8px 16px #ffcc99, 12px 16px #ffcc99, 16px 16px #ffcc99, 20px 16px #ffcc99, 24px 16px #ffcc99,
+                12px 20px #ffcc99, 16px 20px #ff6666, 20px 20px #ffcc99,
+                /* Body */
+                8px 24px var(--neon-cyan), 12px 24px var(--neon-cyan), 16px 24px var(--neon-cyan), 20px 24px var(--neon-cyan), 24px 24px var(--neon-cyan),
+                4px 28px #ffcc99, 8px 28px var(--neon-cyan), 12px 28px var(--neon-cyan), 16px 28px var(--neon-cyan), 20px 28px var(--neon-cyan), 24px 28px var(--neon-cyan),
+                4px 32px #ffcc99, 8px 32px var(--neon-cyan), 12px 32px var(--neon-cyan), 16px 32px var(--neon-cyan), 20px 32px var(--neon-cyan), 24px 32px var(--neon-cyan),
+                /* Raised arm with lightning */
+                28px 24px #ffcc99, 32px 24px #ffcc99,
+                32px 20px #ffcc99, 36px 20px #ffcc99,
+                36px 16px #ffcc99, 40px 16px #ffcc99,
+                40px 12px var(--neon-cyan), 44px 12px var(--neon-cyan),
+                44px 8px var(--neon-cyan), 40px 8px #ffffff,
+                36px 12px var(--neon-cyan),
+                /* Body continued */
+                8px 36px var(--neon-cyan), 12px 36px var(--neon-cyan), 16px 36px var(--neon-cyan), 20px 36px var(--neon-cyan), 24px 36px var(--neon-cyan),
+                8px 40px #333366, 12px 40px #333366, 20px 40px #333366, 24px 40px #333366,
+                8px 44px #333366, 12px 44px #333366, 20px 44px #333366, 24px 44px #333366,
+                8px 48px #222244, 12px 48px #222244, 20px 48px #222244, 24px 48px #222244;
+        }
+        
+        #hero .pixel-hero-casting { display: none; }
+        #hero.casting .pixel-hero { display: none; }
+        #hero.casting .pixel-hero-casting { display: block; }
+        #hero.casting { 
+            filter: 
+                drop-shadow(0 0 30px var(--neon-cyan)) 
+                drop-shadow(0 0 60px var(--neon-cyan))
+                drop-shadow(0 0 90px white);
+        }
+        
+        #hero.hurt { animation: heroHurt 0.4s; }
+        @keyframes heroHurt {
+            0% { filter: drop-shadow(0 0 20px var(--neon-cyan)); transform: translateX(-50%); }
+            10% { filter: drop-shadow(0 0 40px var(--neon-red)) brightness(2); transform: translateX(calc(-50% + 8px)); }
+            20% { transform: translateX(calc(-50% - 8px)); }
+            30% { filter: drop-shadow(0 0 30px var(--neon-red)) brightness(1.5); transform: translateX(calc(-50% + 6px)); }
+            40% { transform: translateX(calc(-50% - 6px)); }
+            50% { transform: translateX(calc(-50% + 4px)); }
+            60% { transform: translateX(calc(-50% - 4px)); }
+            70% { transform: translateX(calc(-50% + 2px)); }
+            80% { transform: translateX(calc(-50% - 2px)); }
+            100% { filter: drop-shadow(0 0 20px var(--neon-cyan)); transform: translateX(-50%); }
+        }
+        
+        /* ZOMBIES - Neon Glow Style - BIGGER */
+        .zombie {
+            position: fixed;
+            width: 100px;
+            height: 120px;
+            cursor: crosshair;
+            z-index: 50;
+            transition: transform 0.1s;
+            filter: drop-shadow(0 0 15px var(--zombie-green));
+        }
+        
+        .zombie:hover { 
+            transform: scale(1.15); 
+            z-index: 55; 
+            filter: drop-shadow(0 0 25px var(--zombie-green)) drop-shadow(0 0 40px var(--zombie-green));
+        }
+        
+        .pixel-zombie {
+            width: 4px;
+            height: 4px;
+            background: transparent;
+            transform: scale(3);
+            transform-origin: top left;
+            box-shadow:
+                8px 0 var(--zombie-green), 12px 0 var(--zombie-green), 16px 0 var(--zombie-green),
+                4px 4px var(--zombie-green), 8px 4px var(--zombie-green), 12px 4px var(--zombie-green), 16px 4px var(--zombie-green), 20px 4px var(--zombie-green),
+                4px 8px var(--zombie-green), 8px 8px var(--neon-yellow), 12px 8px var(--zombie-green), 16px 8px var(--neon-yellow), 20px 8px var(--zombie-green),
+                4px 12px var(--zombie-green), 8px 12px var(--zombie-green), 12px 12px var(--neon-red), 16px 12px var(--zombie-green), 20px 12px var(--zombie-green),
+                8px 16px var(--zombie-green), 12px 16px var(--zombie-green), 16px 16px var(--zombie-green),
+                4px 20px #444466, 8px 20px #444466, 12px 20px #444466, 16px 20px #444466, 20px 20px #444466,
+                0px 24px var(--zombie-green), 4px 24px #444466, 8px 24px #444466, 12px 24px #444466, 16px 24px #444466, 20px 24px #444466, 24px 24px var(--zombie-green),
+                0px 28px var(--zombie-green), 8px 28px #444466, 12px 28px #444466, 16px 28px #444466, 24px 28px var(--zombie-green),
+                8px 32px #553322, 12px 32px #553322, 16px 32px #553322,
+                8px 36px #553322, 16px 36px #553322;
+        }
+        
+        .zombie-answer {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            border: 4px solid var(--neon-pink);
+            box-shadow: 
+                0 0 10px var(--neon-pink),
+                0 0 20px rgba(255, 0, 255, 0.5),
+                inset 0 0 10px rgba(255, 0, 255, 0.2);
+            padding: 8px 18px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow);
+            white-space: nowrap;
+            z-index: 100;
+            cursor: crosshair;
+        }
+        
+        .zombie.dying {
+            animation: zombieDie 0.5s forwards;
+            pointer-events: none;
+        }
+        
+        .zombie.attacking {
+            animation: zombieAttack 0.5s ease-in-out infinite;
+        }
+        
+        @keyframes zombieAttack {
+            0%, 100% { transform: scale(1) rotate(-2deg); }
+            50% { transform: scale(1.05) rotate(2deg); }
+        }
+        
+        @keyframes zombieDie {
+            0% { transform: scale(1); opacity: 1; }
+            30% { transform: scale(1.8); filter: brightness(3) drop-shadow(0 0 50px var(--neon-cyan)); }
+            100% { transform: scale(0) rotate(180deg); opacity: 0; }
+        }
+        
+        .zombie.wrong-marked {
+            pointer-events: none;
+            opacity: 0.4;
+            filter: grayscale(0.8) drop-shadow(0 0 10px var(--neon-red));
+        }
+        
+        .zombie.wrong-marked::after {
+            content: '✕';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: var(--neon-red);
+            text-shadow: 
+                0 0 20px var(--neon-red),
+                0 0 40px var(--neon-red);
+            z-index: 100;
+            animation: xAppear 0.3s ease-out;
+        }
+        
+        @keyframes xAppear {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-45deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.5) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+        
+        .try-again-text {
+            position: fixed;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: var(--amber);
+            text-shadow: 
+                0 0 10px var(--amber),
+                0 0 20px var(--amber);
+            z-index: 250;
+            animation: tryAgainFloat 1s ease-out forwards;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        
+        @keyframes tryAgainFloat {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.2); opacity: 0; }
+        }
+        
+        /* LIGHTNING - More dramatic */
+        .lightning-bolt {
+            position: fixed;
+            pointer-events: none;
+            z-index: 300;
+        }
+        
+        .lightning-bolt svg { overflow: visible; }
+        
+        .lightning-bolt path {
+            fill: none;
+            stroke: var(--neon-cyan);
+            stroke-width: 6;
+            stroke-linecap: round;
+            filter: 
+                drop-shadow(0 0 10px var(--neon-cyan)) 
+                drop-shadow(0 0 20px var(--neon-cyan))
+                drop-shadow(0 0 40px white);
+            animation: lightningFlash 0.15s ease-out;
+        }
+        
+        .lightning-bolt path.core {
+            stroke: white;
+            stroke-width: 3;
+        }
+        
+        @keyframes lightningFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .electric-spark {
+            position: fixed;
+            width: 80px;
+            height: 80px;
+            pointer-events: none;
+            z-index: 250;
+            animation: sparkBurst 0.5s forwards;
+        }
+        
+        @keyframes sparkBurst {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(3); opacity: 0; }
+        }
+        
+        .spark-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--neon-cyan), transparent);
+            transform-origin: left center;
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+        
+        /* Red Laser from zombie */
+        /* RED LIGHTNING - When zombie zaps hero on wrong answer */
+        .red-lightning-bolt {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+        }
+        
+        .red-lightning-bolt svg { overflow: visible; }
+        
+        .red-lightning-bolt path.red-outer {
+            fill: none;
+            stroke: var(--neon-red);
+            stroke-width: 6;
+            stroke-linecap: round;
+            filter: 
+                drop-shadow(0 0 10px var(--neon-red)) 
+                drop-shadow(0 0 20px var(--neon-red))
+                drop-shadow(0 0 40px #ff0000);
+            animation: redLightningFlash 0.2s ease-out;
+        }
+        
+        .red-lightning-bolt path.red-core {
+            fill: none;
+            stroke: #ffaaaa;
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+        
+        @keyframes redLightningFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .red-impact {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, var(--neon-red) 0%, rgba(255, 0, 68, 0.5) 40%, transparent 70%);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 200;
+            animation: redImpactBurst 0.3s ease-out forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes redImpactBurst {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
+        }
+        
+        /* COMBO TEXT - Big arcade style */
+        .combo-text {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Press Start 2P', monospace;
+            font-size: 36px;
+            color: var(--neon-yellow);
+            text-transform: uppercase;
+            text-shadow: 
+                0 0 20px var(--neon-yellow),
+                0 0 40px var(--neon-orange),
+                4px 4px 0 var(--neon-red);
+            z-index: 250;
+            animation: comboFade 1s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes comboFade {
+            0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) translateY(-100px) scale(0.8); opacity: 0; }
+        }
+        
+        /* Streak Milestone - Big motivational message */
+        .streak-milestone {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 260;
+            animation: streakMilestoneAnim 1.5s forwards;
+            pointer-events: none;
+        }
+        
+        .streak-msg {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 32px;
+            color: var(--neon-orange);
+            text-shadow: 
+                0 0 20px var(--neon-orange),
+                0 0 40px var(--neon-yellow),
+                0 0 60px var(--neon-red);
+            margin-bottom: 10px;
+        }
+        
+        .streak-num {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 24px;
+            color: var(--neon-yellow);
+            text-shadow: 
+                0 0 15px var(--neon-yellow),
+                0 0 30px var(--neon-orange);
+        }
+        
+        @keyframes streakMilestoneAnim {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            15% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+            85% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.8) translateY(-50px); opacity: 0; }
+        }
+        
+        /* MEGA STREAK - Every 10 */
+        .streak-milestone.mega-streak {
+            animation: megaStreakAnim 2s forwards;
+        }
+        
+        .streak-milestone.mega-streak .streak-msg {
+            font-size: 42px;
+            color: #fff;
+            text-shadow: 
+                0 0 20px var(--neon-pink),
+                0 0 40px var(--neon-pink),
+                0 0 60px var(--neon-cyan),
+                0 0 80px var(--neon-yellow);
+            animation: rainbowText 0.5s linear infinite;
+        }
+        
+        .streak-milestone.mega-streak .streak-num {
+            font-size: 32px;
+            color: var(--neon-yellow);
+            text-shadow: 
+                0 0 20px var(--neon-yellow),
+                0 0 40px var(--neon-orange),
+                0 0 60px var(--neon-red);
+        }
+        
+        .streak-challenge {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: var(--neon-cyan);
+            text-shadow: 
+                0 0 15px var(--neon-cyan),
+                0 0 30px var(--neon-cyan);
+            margin-top: 15px;
+            animation: challengePulse 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes challengePulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+        
+        @keyframes megaStreakAnim {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-10deg); opacity: 0; }
+            10% { transform: translate(-50%, -50%) scale(1.5) rotate(5deg); opacity: 1; }
+            20% { transform: translate(-50%, -50%) scale(1.3) rotate(-3deg); opacity: 1; }
+            30% { transform: translate(-50%, -50%) scale(1.4) rotate(2deg); opacity: 1; }
+            80% { transform: translate(-50%, -50%) scale(1.2) rotate(0deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(0.5) translateY(-80px); opacity: 0; }
+        }
+        
+        @keyframes rainbowText {
+            0% { color: var(--neon-pink); }
+            25% { color: var(--neon-cyan); }
+            50% { color: var(--neon-yellow); }
+            75% { color: var(--neon-green); }
+            100% { color: var(--neon-pink); }
+        }
+        
+        /* Screen flash for mega streaks */
+        .screen-flash {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: white;
+            z-index: 1000;
+            animation: screenFlash 0.5s forwards;
+            pointer-events: none;
+        }
+        
+        @keyframes screenFlash {
+            0% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+        
+        /* Incorrect value styling */
+        .incorrect-value {
+            color: var(--neon-red) !important;
+            text-shadow: 
+                0 0 10px var(--neon-red),
+                0 0 20px var(--neon-red) !important;
+        }
+        
+        /* Missed Equations Panel - Right Side */
+        #missed-panel {
+            position: fixed;
+            right: 15px;
+            top: 200px;
+            width: 160px;
+            z-index: 50;
+            pointer-events: none;
+        }
+        
+        #missed-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 5px var(--neon-cyan);
+            margin-bottom: 8px;
+            opacity: 0.8;
+        }
+        
+        .missed-equation {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--amber);
+            text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+            margin-bottom: 6px;
+            opacity: 0.7;
+        }
+        
+        /* Final missed equations on game over */
+        #final-missed-section {
+            margin: 20px 0 30px;
+            text-align: center;
+        }
+        
+        #final-missed-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            margin-bottom: 15px;
+        }
+        
+        #final-missed-equations {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            max-width: 500px;
+        }
+        
+        #final-missed-equations .missed-equation {
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 12px;
+            border: 2px solid var(--amber);
+            border-radius: 4px;
+            opacity: 1;
+        }
+        
+        /* ========== OVERLAY SCREENS - Arcade Cabinet Style ========== */
+        .overlay-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at center, 
+                    rgba(20, 0, 40, 0.98) 0%, 
+                    rgba(5, 5, 15, 0.99) 100%
+                );
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 500;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .overlay-screen.hidden { display: none; }
+        
+        .game-title {
+            font-size: 32px;
+            color: var(--neon-pink);
+            text-shadow: 
+                0 0 20px var(--neon-pink),
+                0 0 40px var(--neon-pink),
+                0 0 60px var(--neon-purple),
+                4px 4px 0 var(--neon-purple);
+            margin-bottom: 10px;
+            animation: titleGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes titleGlow {
+            0% { text-shadow: 0 0 20px var(--neon-pink), 0 0 40px var(--neon-pink), 4px 4px 0 var(--neon-purple); }
+            100% { text-shadow: 0 0 30px var(--neon-pink), 0 0 60px var(--neon-pink), 0 0 100px var(--neon-purple), 4px 4px 0 var(--neon-purple); }
+        }
+        
+        .subtitle {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+        
+        .demo-box {
+            background: rgba(0, 0, 0, 0.8);
+            border: 4px solid var(--neon-green);
+            box-shadow: 
+                0 0 20px var(--neon-green),
+                inset 0 0 30px rgba(57, 255, 20, 0.1);
+            padding: 30px 50px;
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+        
+        .demo-title {
+            font-size: 10px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 10px var(--neon-yellow);
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+        }
+        
+        .demo-problem {
+            font-size: 28px;
+            color: var(--neon-green);
+            text-shadow: 0 0 20px var(--neon-green);
+            margin-bottom: 20px;
+        }
+        
+        .demo-zombies {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .demo-zombie {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .demo-zombie-sprite {
+            font-size: 32px;
+            filter: drop-shadow(0 0 10px var(--zombie-green));
+        }
+        
+        .demo-zombie-answer {
+            margin-top: 8px;
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 3px solid;
+            font-family: 'Press Start 2P', monospace;
+        }
+        
+        .demo-zombie-answer.correct {
+            color: var(--neon-green);
+            border-color: var(--neon-green);
+            box-shadow: 0 0 15px var(--neon-green);
+        }
+        
+        .demo-zombie-answer.wrong {
+            color: #666;
+            border-color: #444;
+        }
+        
+        /* Arcade Button */
+        .btn {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            color: var(--dark-bg);
+            background: linear-gradient(180deg, var(--neon-yellow) 0%, var(--neon-orange) 100%);
+            border: none;
+            padding: 20px 50px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 
+                0 6px 0 #aa4400,
+                0 0 30px var(--neon-orange),
+                inset 0 -4px 10px rgba(0,0,0,0.3);
+            transition: all 0.1s;
+            position: relative;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 0 #aa4400,
+                0 0 50px var(--neon-orange),
+                inset 0 -4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 2px 0 #aa4400,
+                0 0 20px var(--neon-orange),
+                inset 0 -4px 10px rgba(0,0,0,0.3);
+        }
+        
+        /* Blinking INSERT COIN text */
+        .insert-coin {
+            font-size: 10px;
+            color: var(--neon-cyan);
+            margin-top: 30px;
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        /* GAME OVER */
+        #game-over h1 {
+            font-size: 28px;
+            color: var(--neon-red);
+            text-shadow: 
+                0 0 20px var(--neon-red),
+                0 0 40px var(--neon-red),
+                4px 4px 0 #660022;
+            margin-bottom: 30px;
+        }
+        
+        #game-over.won h1 {
+            color: var(--neon-green);
+            text-shadow: 
+                0 0 20px var(--neon-green),
+                0 0 40px var(--neon-green),
+                4px 4px 0 #006622;
+        }
+        
+        .final-stats {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .final-stat {
+            text-align: center;
+        }
+        
+        .final-stat-label {
+            font-size: 8px;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+            margin-bottom: 10px;
+        }
+        
+        .final-stat-value {
+            font-size: 28px;
+            color: var(--neon-yellow);
+            text-shadow: 
+                0 0 15px var(--neon-yellow),
+                0 0 30px var(--neon-orange);
+        }
+        
+        /* High score entry feel */
+        .high-score-label {
+            font-size: 10px;
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+            margin-bottom: 20px;
+            animation: blink 0.5s step-end infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="stars"></div>
+        <div id="grid-floor"></div>
+        
+        <!-- TOP BAR -->
+        <div id="top-bar">
+            <div class="stats-panel">
+                <div class="stat-box">
+                    <div class="stat-label">SCORE</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">STREAK</div>
+                    <div class="stat-value" id="streak">0⚡</div>
+                </div>
+            </div>
+            
+            <div id="mission-center">
+                <div id="mission-label">⚡ DESTROY ⚡</div>
+                <div id="mission-text">7 × 8</div>
+            </div>
+            
+            <div class="stats-panel">
+                <div class="stat-box">
+                    <div class="stat-label">KILLS</div>
+                    <div class="stat-value" id="questions">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">INCORRECT</div>
+                    <div class="stat-value incorrect-value" id="incorrect">0</div>
+                </div>
+                <div class="stat-box" id="health-container">
+                    <div class="stat-label">ENERGY</div>
+                    <div id="health-bar">
+                        <div id="health-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HERO -->
+        <div id="hero">
+            <div class="pixel-hero"></div>
+            <div class="pixel-hero-casting"></div>
+        </div>
+        
+        <!-- Missed Equations Panel -->
+        <div id="missed-panel">
+            <div id="missed-label">REVIEW:</div>
+            <div id="missed-equations"></div>
+        </div>
+    </div>
+    
+    <!-- CRT Overlay -->
+    <div id="crt-overlay"></div>
+    
+    <!-- START SCREEN -->
+    <div id="start-screen" class="overlay-screen">
+        <div class="game-title">⚡ MULTIPLICATION<br>ZOMBIES ⚡</div>
+        <div class="subtitle">- ARCADE EDITION -</div>
+        <div class="demo-box">
+            <div class="demo-title">ZAP THE CORRECT ANSWER!</div>
+            <div class="demo-problem">7 × 8 = ?</div>
+            <div class="demo-zombies">
+                <div class="demo-zombie">
+                    <div class="demo-zombie-sprite">🧟</div>
+                    <div class="demo-zombie-answer wrong">54</div>
+                </div>
+                <div class="demo-zombie">
+                    <div class="demo-zombie-sprite">🧟</div>
+                    <div class="demo-zombie-answer correct">56 ⚡</div>
+                </div>
+                <div class="demo-zombie">
+                    <div class="demo-zombie-sprite">🧟</div>
+                    <div class="demo-zombie-answer wrong">48</div>
+                </div>
+            </div>
+        </div>
+        <button class="btn" id="start-btn">START GAME</button>
+        <div class="insert-coin">CLICK TO INSERT COIN</div>
+    </div>
+    
+    <!-- GAME OVER -->
+    <div id="game-over" class="overlay-screen hidden">
+        <h1>GAME OVER</h1>
+        <div class="final-stats">
+            <div class="final-stat">
+                <div class="final-stat-label">SCORE</div>
+                <div class="final-stat-value" id="final-score">0</div>
+            </div>
+            <div class="final-stat">
+                <div class="final-stat-label">BEST STREAK</div>
+                <div class="final-stat-value" id="final-streak">0</div>
+            </div>
+            <div class="final-stat">
+                <div class="final-stat-label">KILLS</div>
+                <div class="final-stat-value" id="final-questions">0</div>
+            </div>
+        </div>
+        <div id="final-missed-section">
+            <div id="final-missed-label">PRACTICE THESE:</div>
+            <div id="final-missed-equations"></div>
+        </div>
+        <button class="btn" id="restart-btn">PLAY AGAIN</button>
+    </div>
+    
+    <script>
+        // ==========================================================================
+        // CREATE STARS
+        // ==========================================================================
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                star.style.width = (Math.random() * 2 + 1) + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+        }
+        createStars();
+        
+        // ==========================================================================
+        // AUDIO
+        // ==========================================================================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioContext();
+        }
+        
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'lightning') {
+                // Arcade zap sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'hit') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'chain') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'die') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'megaStreak') {
+                // Epic rising arpeggio sound (quieter)
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime + 0.3);
+                osc.frequency.setValueAtTime(1000, audioCtx.currentTime + 0.4);
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime + 0.3);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.7);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.7);
+            } else if (type === 'laser') {
+                // Zappy laser sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            }
+        }
+        
+        // ==========================================================================
+        // MESSAGES
+        // ==========================================================================
+        const comboMessages = [
+            "ZAP!", "SLAY!", "BOOM!", "REKT!", 
+            "NICE!", "EPIC!", "MEGA!", "ULTRA!"
+        ];
+        
+        const streakMilestoneMessages = [
+            "ON FIRE! 🔥",
+            "UNSTOPPABLE!",
+            "GODLIKE!",
+            "LEGENDARY!",
+            "INSANE!",
+            "DOMINATING!",
+            "MYTHICAL!",
+            "TRANSCENDENT!"
+        ];
+        
+        const streakChallenges = {
+            20: "CAN YOU HIT 40? 🎯",
+            40: "GO FOR 100! 🏆",
+            100: "ULTIMATE MASTER! 👑"
+        };
+        
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        const container = document.getElementById('game-container');
+        let gameState = 'start';
+        let gamePaused = false;
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let health = 100;
+        let questionsAnswered = 0;
+        let incorrectAnswers = 0;
+        let missedEquations = [];
+        
+        let zombies = [];
+        let zombieSpeed = 0.3;
+        
+        let currentMission = null;
+        let gameLoop = null;
+        
+        // ==========================================================================
+        // MISSION GENERATION
+        // ==========================================================================
+        function generateMission() {
+            const a = 2 + Math.floor(Math.random() * 8);
+            const b = 2 + Math.floor(Math.random() * 8);
+            const answer = a * b;
+            
+            return {
+                a: a,
+                b: b,
+                answer: answer,
+                text: `${a} × ${b}`,
+                check: (val) => val === answer
+            };
+        }
+        
+        // ==========================================================================
+        // SPAWN SINGLE ZOMBIE WITH CHOICES
+        // ==========================================================================
+        function spawnNewQuestion() {
+            zombies.forEach(z => z.el.remove());
+            zombies = [];
+            
+            currentMission = generateMission();
+            document.getElementById('mission-text').textContent = currentMission.text;
+            
+            const answers = [currentMission.answer];
+            while (answers.length < 4) {
+                const wrong = generateWrongAnswer();
+                if (!answers.includes(wrong)) {
+                    answers.push(wrong);
+                }
+            }
+            
+            // Shuffle
+            for (let i = answers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [answers[i], answers[j]] = [answers[j], answers[i]];
+            }
+            
+            // Calculate spacing to fit screen without overlap
+            const zombieWidth = 120; // zombie width + padding
+            const totalWidth = (answers.length - 1) * zombieWidth;
+            const startX = (window.innerWidth - totalWidth) / 2;
+            const topBarHeight = 180;
+            const y = topBarHeight + 20;
+            
+            answers.forEach((answer, i) => {
+                const zombie = document.createElement('div');
+                zombie.className = 'zombie';
+                zombie.dataset.answer = answer;
+                
+                const x = startX + (i * zombieWidth);
+                zombie.style.left = x + 'px';
+                zombie.style.top = y + 'px';
+                
+                zombie.innerHTML = `
+                    <div class="pixel-zombie"></div>
+                    <div class="zombie-answer">${answer}</div>
+                `;
+                
+                zombie.addEventListener('click', () => handleZombieClick(zombie));
+                container.appendChild(zombie);
+                
+                zombies.push({ 
+                    el: zombie, 
+                    x, 
+                    y, 
+                    answer: answer, 
+                    isCorrect: currentMission.check(answer) 
+                });
+            });
+            
+            updateHUD();
+        }
+        
+        // ==========================================================================
+        // GENERATE WRONG ANSWERS
+        // ==========================================================================
+        function generateWrongAnswer() {
+            const a = currentMission.a;
+            const b = currentMission.b;
+            const correct = currentMission.answer;
+            
+            const wrongAnswers = [];
+            if (a > 2) wrongAnswers.push((a - 1) * b);
+            if (a < 9) wrongAnswers.push((a + 1) * b);
+            if (b > 2) wrongAnswers.push(a * (b - 1));
+            if (b < 9) wrongAnswers.push(a * (b + 1));
+            wrongAnswers.push(a + b);
+            if (correct >= 10 && correct <= 99) {
+                const swapped = parseInt(String(correct).split('').reverse().join(''));
+                if (swapped !== correct) wrongAnswers.push(swapped);
+            }
+            wrongAnswers.push(correct + 1);
+            wrongAnswers.push(correct - 1);
+            wrongAnswers.push(correct + 10);
+            wrongAnswers.push(correct - 10);
+            
+            const filtered = [...new Set(wrongAnswers)].filter(w => w !== correct && w > 0);
+            
+            if (filtered.length > 0) {
+                return filtered[Math.floor(Math.random() * filtered.length)];
+            }
+            
+            let wrong;
+            do {
+                wrong = 4 + Math.floor(Math.random() * 77);
+            } while (wrong === correct);
+            return wrong;
+        }
+        
+        // ==========================================================================
+        // LIGHTNING
+        // ==========================================================================
+        function generateLightningPath(x1, y1, x2, y2) {
+            const points = [{ x: x1, y: y1 }];
+            const segments = 8 + Math.floor(Math.random() * 4);
+            const dx = (x2 - x1) / segments;
+            const dy = (y2 - y1) / segments;
+            
+            for (let i = 1; i < segments; i++) {
+                points.push({
+                    x: x1 + dx * i + (Math.random() - 0.5) * 60,
+                    y: y1 + dy * i + (Math.random() - 0.5) * 40
+                });
+            }
+            points.push({ x: x2, y: y2 });
+            
+            let path = `M ${points[0].x} ${points[0].y}`;
+            for (let i = 1; i < points.length; i++) {
+                path += ` L ${points[i].x} ${points[i].y}`;
+            }
+            return path;
+        }
+        
+        function createLightningBolt(x1, y1, x2, y2) {
+            const bolt = document.createElement('div');
+            bolt.className = 'lightning-bolt';
+            const pathData = generateLightningPath(x1, y1, x2, y2);
+            bolt.innerHTML = `
+                <svg width="100%" height="100%" style="position:fixed;top:0;left:0;pointer-events:none;">
+                    <path d="${pathData}" />
+                    <path d="${pathData}" class="core" />
+                </svg>
+            `;
+            container.appendChild(bolt);
+            setTimeout(() => bolt.remove(), 150);
+        }
+        
+        function createElectricSpark(x, y) {
+            const spark = document.createElement('div');
+            spark.className = 'electric-spark';
+            spark.style.left = x + 'px';
+            spark.style.top = y + 'px';
+            for (let i = 0; i < 12; i++) {
+                const line = document.createElement('div');
+                line.className = 'spark-line';
+                line.style.transform = `rotate(${i * 30}deg)`;
+                spark.appendChild(line);
+            }
+            container.appendChild(spark);
+            setTimeout(() => spark.remove(), 500);
+        }
+        
+        function createRedLaser(x1, y1, x2, y2) {
+            // Create red lightning bolt (reverse of hero's blue lightning)
+            const bolt = document.createElement('div');
+            bolt.className = 'red-lightning-bolt';
+            const pathData = generateLightningPath(x1, y1, x2, y2);
+            bolt.innerHTML = `
+                <svg width="100%" height="100%" style="position:fixed;top:0;left:0;pointer-events:none;">
+                    <path d="${pathData}" class="red-outer" />
+                    <path d="${pathData}" class="red-core" />
+                </svg>
+            `;
+            container.appendChild(bolt);
+            setTimeout(() => bolt.remove(), 200);
+            
+            // Create red impact spark at hero
+            const impact = document.createElement('div');
+            impact.className = 'red-impact';
+            impact.style.left = x2 + 'px';
+            impact.style.top = y2 + 'px';
+            container.appendChild(impact);
+            setTimeout(() => impact.remove(), 300);
+        }
+        
+        function showComboText(text) {
+            const el = document.createElement('div');
+            el.className = 'combo-text';
+            el.textContent = text || comboMessages[Math.floor(Math.random() * comboMessages.length)];
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+        
+        function showStreakMilestone(message, streakNum, challengeMsg) {
+            const el = document.createElement('div');
+            
+            // Bigger celebration every 10 streak
+            const isMegaStreak = streakNum % 10 === 0;
+            
+            if (isMegaStreak) {
+                el.className = 'streak-milestone mega-streak';
+                
+                let html = `<div class="streak-msg">${message}</div><div class="streak-num">🔥 ${streakNum} STREAK! 🔥</div>`;
+                
+                // Add challenge message if exists
+                if (challengeMsg) {
+                    html += `<div class="streak-challenge">${challengeMsg}</div>`;
+                }
+                
+                el.innerHTML = html;
+                
+                // Screen flash
+                const flash = document.createElement('div');
+                flash.className = 'screen-flash';
+                container.appendChild(flash);
+                setTimeout(() => flash.remove(), 500);
+                
+                // Explosion of sparks
+                for (let i = 0; i < 12; i++) {
+                    setTimeout(() => {
+                        const x = Math.random() * window.innerWidth;
+                        const y = Math.random() * window.innerHeight * 0.6 + 180;
+                        createElectricSpark(x, y);
+                    }, i * 50);
+                }
+                
+                // Play extra sound
+                playSound('megaStreak');
+                
+            } else {
+                el.className = 'streak-milestone';
+                el.innerHTML = `<div class="streak-msg">${message}</div><div class="streak-num">${streakNum} STREAK!</div>`;
+            }
+            
+            container.appendChild(el);
+            setTimeout(() => el.remove(), isMegaStreak ? 2000 : 1500);
+        }
+        
+        // ==========================================================================
+        // HANDLE ZOMBIE CLICK
+        // ==========================================================================
+        function handleZombieClick(zombieEl) {
+            if (gameState !== 'playing' || gamePaused) return;
+            if (zombieEl.classList.contains('wrong-marked')) return;
+            initAudio();
+            
+            const answer = parseInt(zombieEl.dataset.answer);
+            const isCorrect = currentMission.check(answer);
+            
+            if (isCorrect) {
+                const hero = document.getElementById('hero');
+                hero.classList.add('casting');
+                setTimeout(() => hero.classList.remove('casting'), 400);
+                
+                const heroRect = hero.getBoundingClientRect();
+                const heroX = heroRect.left + heroRect.width / 2 + 30;
+                const heroY = heroRect.top + 10;
+                
+                const zombieRect = zombieEl.getBoundingClientRect();
+                const targetX = zombieRect.left + zombieRect.width / 2;
+                const targetY = zombieRect.top + zombieRect.height / 2;
+                
+                playSound('lightning');
+                createLightningBolt(heroX, heroY, targetX, targetY);
+                createElectricSpark(targetX, targetY);
+                
+                zombieEl.classList.add('dying');
+                
+                // Chain lightning to others
+                zombies.filter(z => z.el !== zombieEl).forEach((z, i) => {
+                    setTimeout(() => {
+                        if (z.el && z.el.parentNode) {
+                            const r = z.el.getBoundingClientRect();
+                            createLightningBolt(targetX, targetY, r.left + r.width/2, r.top + r.height/2);
+                            createElectricSpark(r.left + r.width/2, r.top + r.height/2);
+                            playSound('chain');
+                            z.el.classList.add('dying');
+                        }
+                    }, (i + 1) * 80);
+                });
+                
+                score += 15 + streak * 2;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                questionsAnswered++;
+                
+                // Show streak milestone message every 5 streak
+                if (streak > 0 && streak % 5 === 0) {
+                    const milestoneMsg = streakMilestoneMessages[Math.min(Math.floor(streak / 5) - 1, streakMilestoneMessages.length - 1)];
+                    
+                    // Check for challenge milestones
+                    const challengeMsg = streakChallenges[streak];
+                    
+                    showStreakMilestone(milestoneMsg, streak, challengeMsg);
+                }
+                
+                if (questionsAnswered % 5 === 0) {
+                    zombieSpeed = Math.min(0.8, zombieSpeed + 0.05);
+                }
+                
+                updateHUD();
+                showComboText();
+                
+                setTimeout(() => {
+                    spawnNewQuestion();
+                }, 500);
+                
+            } else {
+                playSound('hit');
+                zombieEl.classList.add('wrong-marked');
+                
+                incorrectAnswers++;
+                health -= 10; // Lose health for wrong answer
+                
+                // Track the missed equation
+                const equation = currentMission.a + ' × ' + currentMission.b + ' = ' + currentMission.answer;
+                if (!missedEquations.includes(equation)) {
+                    missedEquations.push(equation);
+                    updateMissedDisplay();
+                }
+                
+                // Shoot red laser from zombie to hero
+                const zombieRect = zombieEl.getBoundingClientRect();
+                const heroEl = document.getElementById('hero');
+                const heroRect = heroEl.getBoundingClientRect();
+                
+                const zombieX = zombieRect.left + zombieRect.width / 2;
+                const zombieY = zombieRect.top + zombieRect.height / 2;
+                const heroX = heroRect.left + heroRect.width / 2;
+                const heroY = heroRect.top + heroRect.height / 2;
+                
+                createRedLaser(zombieX, zombieY, heroX, heroY);
+                
+                // Hero hurt effect
+                heroEl.classList.add('hurt');
+                setTimeout(() => heroEl.classList.remove('hurt'), 300);
+                
+                const tryAgain = document.createElement('div');
+                tryAgain.className = 'try-again-text';
+                tryAgain.textContent = 'TRY AGAIN!';
+                tryAgain.style.left = zombieEl.style.left;
+                tryAgain.style.top = zombieEl.style.top;
+                container.appendChild(tryAgain);
+                setTimeout(() => tryAgain.remove(), 1000);
+                
+                streak = 0;
+                updateHUD();
+                
+                // Check if dead
+                if (health <= 0) {
+                    gameOver();
+                }
+            }
+        }
+        
+        // ==========================================================================
+        // ZOMBIE MOVEMENT
+        // ==========================================================================
+        function moveZombies() {
+            const hero = document.getElementById('hero');
+            const heroRect = hero.getBoundingClientRect();
+            const heroX = heroRect.left + heroRect.width / 2;
+            const heroY = heroRect.top + heroRect.height / 2;
+            
+            zombies.forEach(z => {
+                if (z.el.classList.contains('dying') || z.el.classList.contains('wrong-marked')) return;
+                
+                const dx = heroX - z.x;
+                const dy = heroY - z.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                // Separation from other zombies to prevent overlap
+                let sepX = 0, sepY = 0;
+                zombies.forEach(other => {
+                    if (other !== z && !other.el.classList.contains('dying') && !other.el.classList.contains('wrong-marked')) {
+                        const ox = z.x - other.x;
+                        const oy = z.y - other.y;
+                        const oDist = Math.sqrt(ox * ox + oy * oy);
+                        const minDist = 140; // Minimum distance between zombies
+                        if (oDist < minDist && oDist > 0) {
+                            sepX += (ox / oDist) * (minDist - oDist) * 0.08;
+                            sepY += (oy / oDist) * (minDist - oDist) * 0.08;
+                        }
+                    }
+                });
+                
+                const stopDistance = 180; // Stop further from hero so answers stay visible
+                
+                if (dist > stopDistance) {
+                    // Move toward hero
+                    z.x += (dx/dist) * zombieSpeed + sepX;
+                    z.y += (dy/dist) * zombieSpeed + sepY;
+                    z.el.style.left = z.x + 'px';
+                    z.el.style.top = z.y + 'px';
+                    z.attacking = false;
+                    z.el.classList.remove('attacking');
+                } else {
+                    // At hero - stop and attack (surround, don't overlap)
+                    // Apply separation to spread around hero
+                    z.x += sepX;
+                    z.y += sepY;
+                    z.el.style.left = z.x + 'px';
+                    z.el.style.top = z.y + 'px';
+                    
+                    if (!z.attacking) {
+                        z.attacking = true;
+                        z.el.classList.add('attacking');
+                    }
+                }
+            });
+            
+            // Drain health from attacking zombies (once per second)
+            const attackingZombies = zombies.filter(z => z.attacking && !z.el.classList.contains('dying'));
+            if (attackingZombies.length > 0 && !gamePaused) {
+                if (!window.lastDamageTime || Date.now() - window.lastDamageTime > 1000) {
+                    window.lastDamageTime = Date.now();
+                    health -= 5 * attackingZombies.length;
+                    
+                    document.getElementById('hero').classList.add('hurt');
+                    setTimeout(() => document.getElementById('hero').classList.remove('hurt'), 300);
+                    playSound('hit');
+                    
+                    updateHUD();
+                    
+                    if (health <= 0) {
+                        gameOver();
+                    }
+                }
+            }
+        }
+        
+        // ==========================================================================
+        // UI
+        // ==========================================================================
+        function updateHUD() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').textContent = streak + '⚡';
+            document.getElementById('questions').textContent = questionsAnswered;
+            document.getElementById('incorrect').textContent = incorrectAnswers;
+            
+            const fill = document.getElementById('health-fill');
+            fill.style.width = Math.max(0, health) + '%';
+            fill.className = health > 60 ? '' : health > 30 ? 'hurt' : 'danger';
+        }
+        
+        function updateMissedDisplay() {
+            const container = document.getElementById('missed-equations');
+            container.innerHTML = '';
+            
+            // Show last 5 missed equations
+            const recent = missedEquations.slice(-5);
+            recent.forEach(eq => {
+                const div = document.createElement('div');
+                div.className = 'missed-equation';
+                div.textContent = eq;
+                container.appendChild(div);
+            });
+        }
+        
+        function gameOver() {
+            gameState = 'gameover';
+            gamePaused = true;
+            playSound('die');
+            
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-streak').textContent = bestStreak;
+            document.getElementById('final-questions').textContent = questionsAnswered;
+            
+            // Show missed equations on game over
+            const finalMissed = document.getElementById('final-missed-equations');
+            finalMissed.innerHTML = '';
+            if (missedEquations.length > 0) {
+                document.getElementById('final-missed-section').style.display = 'block';
+                missedEquations.forEach(eq => {
+                    const div = document.createElement('div');
+                    div.className = 'missed-equation';
+                    div.textContent = eq;
+                    finalMissed.appendChild(div);
+                });
+            } else {
+                document.getElementById('final-missed-section').style.display = 'none';
+            }
+            
+            const go = document.getElementById('game-over');
+            go.classList.remove('hidden', 'won');
+            go.querySelector('h1').textContent = questionsAnswered >= 10 ? "MATH MASTER!" : 'GAME OVER';
+            if (questionsAnswered >= 10) go.classList.add('won');
+        }
+        
+        // ==========================================================================
+        // GAME LOOP
+        // ==========================================================================
+        function update() {
+            if (gameState === 'playing' && !gamePaused) moveZombies();
+            if (gameState === 'playing') gameLoop = requestAnimationFrame(update);
+        }
+        
+        // ==========================================================================
+        // START
+        // ==========================================================================
+        function startGame() {
+            initAudio();
+            gameState = 'playing';
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            health = 100;
+            questionsAnswered = 0;
+            incorrectAnswers = 0;
+            missedEquations = [];
+            zombieSpeed = 0.3;
+            gamePaused = false;
+            
+            document.getElementById('missed-equations').innerHTML = '';
+            
+            zombies.forEach(z => z.el.remove());
+            zombies = [];
+            
+            updateHUD();
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-over').classList.add('hidden');
+            
+            if (gameLoop) cancelAnimationFrame(gameLoop);
+            
+            spawnNewQuestion();
+            gameLoop = requestAnimationFrame(update);
+        }
+        
+        // ==========================================================================
+        // EVENTS
+        // ==========================================================================
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1433 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 5.06 - Locating Unit Fractions on a Number Line                          ║
+║  Students identify which number line correctly shows a unit fraction 1/d     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎯 Fraction Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #prompt {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+        }
+
+        /* Problem display - shows the fraction we're looking for */
+        #problem-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 16px 48px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .fraction-num {
+            border-bottom: 4px solid #333;
+            padding-bottom: 4px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .fraction-den {
+            padding-top: 4px;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* ========== CHOICES - Number Line Buttons ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 24px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Number line SVG styling - fill the choice buttons */
+        .number-line-svg {
+            width: 100%;
+            height: auto;
+            max-height: 80px;
+        }
+
+        .choice .number-line-svg {
+            width: 95%;
+            max-width: none;
+        }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 5px;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Correct popup styling */
+        #correct-popup .popup-content {
+            border: 4px solid #2ed573;
+        }
+
+        #correct-popup .popup-title {
+            color: #333;
+            font-size: 64px;
+        }
+
+        .correct-answer-box {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2ed573;
+            background: #e8f8f0;
+            padding: 16px 32px;
+            border-radius: 16px;
+            margin: 16px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .correct-answer-box .fraction {
+            font-size: 36px;
+        }
+
+        .correct-answer-box .fraction-num,
+        .correct-answer-box .fraction-den {
+            color: #2ed573;
+        }
+
+        .correct-answer-box .fraction-num {
+            border-bottom-color: #2ed573;
+        }
+
+        /* Wrong popup styling */
+        #wrong-popup .popup-content {
+            border: 4px solid #E8A838;
+        }
+
+        #wrong-popup .popup-title {
+            color: #D4882A;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+            padding: 16px;
+            background: #f0f8ff;
+            border-radius: 12px;
+        }
+
+        #correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2ed573;
+        }
+
+        /* Streak popup styling */
+        #streak-popup .popup-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        #streak-popup .popup-title,
+        #streak-popup .popup-subtitle {
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd93d;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
+
+        .streak-hype {
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        #start-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 32px;
+        }
+
+        /* Demo area on start screen */
+        .demo-area {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 32px;
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .demo-title {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .demo-fraction {
+            font-size: 48px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .demo-explanation {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .demo-number-line {
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 16px 48px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to { top: 110vh; transform: rotate(720deg); }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 65px; }
+        .flying-emoji-correct.streak-high { font-size: 80px; }
+        .flying-emoji-correct.streak-ultra { font-size: 100px; }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #problem-display { font-size: 36px; padding: 12px 24px; }
+            #prompt { font-size: 16px; }
+            .choice { font-size: 18px; min-height: 100px; padding: 12px; }
+            #start-title { font-size: 36px; }
+            #end-title { font-size: 32px; }
+            .number-line-svg { max-width: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div id="start-title">🎯 Fraction Finder</div>
+            <div id="start-subtitle">Find the unit fraction on the number line!</div>
+            
+            <div class="demo-area">
+                <div class="demo-title">Example: Where is <span class="demo-fraction"><span class="fraction"><span class="fraction-num">1</span><span class="fraction-den">4</span></span></span> ?</div>
+                <div class="demo-explanation">
+                    The denominator (4) tells us how many <strong>equal parts</strong> to split 0 to 1 into.
+                    <br><br>
+                    <span class="fraction"><span class="fraction-num">1</span><span class="fraction-den">4</span></span> is at the <strong>first tick mark</strong> after 0!
+                </div>
+                <svg class="demo-number-line" viewBox="0 0 280 70">
+                    <!-- Main line -->
+                    <line x1="20" y1="40" x2="260" y2="40" stroke="#333" stroke-width="3"/>
+                    <!-- Tick marks for fourths -->
+                    <line x1="20" y1="30" x2="20" y2="50" stroke="#333" stroke-width="3"/>
+                    <line x1="80" y1="30" x2="80" y2="50" stroke="#333" stroke-width="3"/>
+                    <line x1="140" y1="30" x2="140" y2="50" stroke="#333" stroke-width="3"/>
+                    <line x1="200" y1="30" x2="200" y2="50" stroke="#333" stroke-width="3"/>
+                    <line x1="260" y1="30" x2="260" y2="50" stroke="#333" stroke-width="3"/>
+                    <!-- Labels -->
+                    <text x="20" y="65" text-anchor="middle" font-size="14" font-weight="bold">0</text>
+                    <text x="260" y="65" text-anchor="middle" font-size="14" font-weight="bold">1</text>
+                    <!-- Point at 1/4 -->
+                    <circle cx="80" cy="40" r="8" fill="#2ed573"/>
+                    <!-- Arrow pointing to 1/4 -->
+                    <text x="80" y="18" text-anchor="middle" font-size="12" fill="#2ed573" font-weight="bold">1/4</text>
+                </svg>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🚀</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">🎯 Fraction Finder</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt">Which number line shows...</div>
+            
+            <!-- Problem display - the fraction to find -->
+            <div id="problem-display">
+                <span class="fraction">
+                    <span class="fraction-num" id="target-num">1</span>
+                    <span class="fraction-den" id="target-den">4</span>
+                </span>
+            </div>
+            
+            <!-- Choices grid - number lines as buttons -->
+            <div id="choices"></div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box">
+                    <span class="fraction">
+                        <span class="fraction-num" id="correct-frac-num">1</span>
+                        <span class="fraction-den" id="correct-frac-den">4</span>
+                    </span>
+                    <span>✓</span>
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">The correct number line:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">On fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        // Mr. Signer's growth mindset board - ONLY for WRONG answers
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain and become a thinker!"
+        ];
+
+        // Hype messages - ONLY for CORRECT answers (2026 Gen Alpha slang)
+        const correctHypeMessages = [
+            "W!",
+            "Huge W!",
+            "Slay!",
+            "Goated!",
+            "Fire!",
+            "Slaps!",
+            "No cap!",
+            "Valid!",
+            "Let's go!",
+            "Sigma!"
+        ];
+
+        // Streak hype messages - for streak celebrations
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "We are all MATHEMATICIANS!" },
+            { streak: 12, hype: "SIGMA BRAIN!" }
+        ];
+
+        // Wrong answer popup emojis (message comes from growthMessages)
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+
+        // ==========================================================================
+        // DOM ELEMENTS
+        // ==========================================================================
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const endScreen = document.getElementById('end-screen');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const choicesContainer = document.getElementById('choices');
+
+        // ==========================================================================
+        // CUSTOMIZE: PROBLEM GENERATION
+        // Two question types from the curriculum:
+        // Type A: "Which number line shows 1/d?" (Problem 4 style)
+        // Type B: "What fraction does the point show?" (identify fraction from number line)
+        // ==========================================================================
+        function generateProblem() {
+            // Denominators from curriculum: 2, 3, 4, 6, 8
+            const denominators = [2, 3, 4, 6, 8];
+            const denominator = denominators[Math.floor(Math.random() * denominators.length)];
+            
+            // Randomly choose question type (50/50 split)
+            const questionType = Math.random() < 0.5 ? 'findNumberLine' : 'identifyFraction';
+            
+            return {
+                numerator: 1,
+                denominator: denominator,
+                answer: denominator,
+                display: `1/${denominator}`,
+                questionType: questionType
+            };
+        }
+
+        // ==========================================================================
+        // HELPER: Create SVG number line
+        // ==========================================================================
+        function createNumberLineSVG(divisions, pointPosition, endLabel, isCorrect, largeMode = false) {
+            // divisions: how many parts to divide into
+            // pointPosition: which tick (0-based, 0 = at 0, 1 = first tick after 0, etc.)
+            // endLabel: what label to show at the end (1 or the denominator for wrong type)
+            // largeMode: if true, use larger elements for the problem display
+            
+            const width = 280;
+            const height = largeMode ? 85 : 70;
+            const lineY = largeMode ? 45 : 38;
+            const startX = 30;
+            const endX = 250;
+            const lineLength = endX - startX;
+            const tickHeight = largeMode ? 20 : 16;
+            const lineWidth = largeMode ? 4 : 3;
+            const dotRadius = largeMode ? 8 : 6;  // Smaller dots
+            const fontSize = largeMode ? 20 : 16;
+            
+            let svg = `<svg class="number-line-svg" viewBox="0 0 ${width} ${height}">`;
+            
+            // Main horizontal line
+            svg += `<line x1="${startX}" y1="${lineY}" x2="${endX}" y2="${lineY}" stroke="white" stroke-width="${lineWidth}"/>`;
+            
+            // Tick marks
+            for (let i = 0; i <= divisions; i++) {
+                const x = startX + (lineLength * i / divisions);
+                svg += `<line x1="${x}" y1="${lineY - tickHeight/2}" x2="${x}" y2="${lineY + tickHeight/2}" stroke="white" stroke-width="${lineWidth}"/>`;
+            }
+            
+            // Labels: 0 at start, endLabel at end
+            const labelY = lineY + tickHeight/2 + fontSize + 4;
+            svg += `<text x="${startX}" y="${labelY}" text-anchor="middle" font-size="${fontSize}" font-weight="bold" fill="white">0</text>`;
+            svg += `<text x="${endX}" y="${labelY}" text-anchor="middle" font-size="${fontSize}" font-weight="bold" fill="white">${endLabel}</text>`;
+            
+            // Point (dot) at position
+            if (pointPosition >= 0 && pointPosition <= divisions) {
+                const pointX = startX + (lineLength * pointPosition / divisions);
+                svg += `<circle cx="${pointX}" cy="${lineY}" r="${dotRadius}" fill="#ffd93d"/>`;
+            }
+            
+            svg += `</svg>`;
+            return svg;
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: CHOICE GENERATION
+        // Type A: Create 4 number line options based on common misconceptions
+        // Type B: Create 4 fraction options for "what fraction is shown?"
+        // ==========================================================================
+        function generateChoices(problem) {
+            if (problem.questionType === 'identifyFraction') {
+                return generateFractionChoices(problem);
+            } else {
+                return generateNumberLineChoices(problem);
+            }
+        }
+        
+        // Type B: "What fraction does this point represent?"
+        function generateFractionChoices(problem) {
+            const d = problem.denominator;
+            const choices = [];
+            const usedFractions = new Set();
+            
+            // CORRECT: 1/d
+            choices.push({
+                display: `1/${d}`,
+                fractionNum: 1,
+                fractionDen: d,
+                isCorrect: true
+            });
+            usedFractions.add(`1/${d}`);
+            
+            // WRONG: Other unit fractions with different denominators
+            const otherDenominators = [2, 3, 4, 6, 8].filter(x => x !== d);
+            // Shuffle other denominators
+            for (let i = otherDenominators.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [otherDenominators[i], otherDenominators[j]] = [otherDenominators[j], otherDenominators[i]];
+            }
+            
+            for (const otherD of otherDenominators) {
+                if (choices.length >= 4) break;
+                const key = `1/${otherD}`;
+                if (!usedFractions.has(key)) {
+                    choices.push({
+                        display: key,
+                        fractionNum: 1,
+                        fractionDen: otherD,
+                        isCorrect: false
+                    });
+                    usedFractions.add(key);
+                }
+            }
+            
+            // Shuffle
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            
+            return choices.slice(0, 4);
+        }
+        
+        // Type A: "Which number line shows 1/d?"
+        function generateNumberLineChoices(problem) {
+            const d = problem.denominator;
+            const choices = [];
+            const usedConfigs = new Set();
+            
+            // Helper to create a unique key for each configuration
+            function configKey(divisions, position, endLabel) {
+                return `${divisions}-${position}-${endLabel}`;
+            }
+            
+            // CORRECT: d divisions (0 to 1), point at position 1 (first tick after 0)
+            const correctConfig = { divisions: d, position: 1, endLabel: '1' };
+            choices.push({
+                svg: createNumberLineSVG(d, 1, '1', true, false),
+                isCorrect: true,
+                config: correctConfig
+            });
+            usedConfigs.add(configKey(d, 1, '1'));
+            
+            // WRONG TYPE 1: Endpoint error - line goes 0 to d instead of 0 to 1
+            // Show d divisions, point at 1, but end label is d (misunderstanding the whole)
+            const wrongEndpoint = { divisions: d, position: 1, endLabel: d.toString() };
+            if (!usedConfigs.has(configKey(d, 1, d.toString()))) {
+                choices.push({
+                    svg: createNumberLineSVG(d, 1, d.toString(), false, false),
+                    isCorrect: false,
+                    config: wrongEndpoint
+                });
+                usedConfigs.add(configKey(d, 1, d.toString()));
+            }
+            
+            // WRONG TYPE 2: Position error - point at position 2 instead of 1
+            const wrongPosition = { divisions: d, position: 2, endLabel: '1' };
+            if (!usedConfigs.has(configKey(d, 2, '1'))) {
+                choices.push({
+                    svg: createNumberLineSVG(d, 2, '1', false, false),
+                    isCorrect: false,
+                    config: wrongPosition
+                });
+                usedConfigs.add(configKey(d, 2, '1'));
+            }
+            
+            // WRONG TYPE 3: Division error - different number of divisions
+            // Pick a different denominator and put point at its first tick
+            const otherDenominators = [2, 3, 4, 6, 8].filter(x => x !== d);
+            
+            // Shuffle other denominators to get variety
+            for (let i = otherDenominators.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [otherDenominators[i], otherDenominators[j]] = [otherDenominators[j], otherDenominators[i]];
+            }
+            
+            for (const otherD of otherDenominators) {
+                if (choices.length >= 4) break;
+                const key = configKey(otherD, 1, '1');
+                if (!usedConfigs.has(key)) {
+                    choices.push({
+                        svg: createNumberLineSVG(otherD, 1, '1', false, false),
+                        isCorrect: false,
+                        config: { divisions: otherD, position: 1, endLabel: '1' }
+                    });
+                    usedConfigs.add(key);
+                }
+            }
+            
+            // If we still need more choices (edge cases), add more position errors
+            let pos = 3;
+            while (choices.length < 4 && pos <= d) {
+                const key = configKey(d, pos, '1');
+                if (!usedConfigs.has(key)) {
+                    choices.push({
+                        svg: createNumberLineSVG(d, pos, '1', false, false),
+                        isCorrect: false,
+                        config: { divisions: d, position: pos, endLabel: '1' }
+                    });
+                    usedConfigs.add(key);
+                }
+                pos++;
+            }
+            
+            // Shuffle choices
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            
+            return choices.slice(0, 4);
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: DISPLAY CORRECT ANSWER
+        // Show the correct answer in the wrong popup (handles both types)
+        // ==========================================================================
+        function buildCorrectAnswerDisplay() {
+            const d = currentProblem.denominator;
+            
+            if (currentProblem.questionType === 'identifyFraction') {
+                // Type B: Show the correct fraction
+                document.getElementById('correct-answer-display').innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <span class="fraction" style="font-size: 36px; color: #2ed573;">
+                            <span class="fraction-num" style="border-bottom: 3px solid #2ed573;">1</span>
+                            <span class="fraction-den">${d}</span>
+                        </span>
+                        <div style="font-size: 14px; color: #666; margin-top: 8px;">
+                            The number line is divided into ${d} equal parts.
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Type A: Show the correct number line
+                const correctSvg = createNumberLineSVG(d, 1, '1', true, false);
+                const styledSvg = correctSvg.replace(/fill="white"/g, 'fill="#333"').replace(/stroke="white"/g, 'stroke="#333"').replace(/fill="#ffd93d"/g, 'fill="#2ed573"');
+                
+                document.getElementById('correct-answer-display').innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                        <div style="font-size: 24px; font-weight: 700;">
+                            <span class="fraction" style="color: #2ed573;">
+                                <span class="fraction-num" style="border-bottom-color: #2ed573;">1</span>
+                                <span class="fraction-den">${d}</span>
+                            </span>
+                        </div>
+                        <div style="background: #e8f8f0; padding: 12px; border-radius: 12px;">
+                            ${styledSvg}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM - Customized for both question types
+        // ==========================================================================
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const choices = generateChoices(currentProblem);
+            
+            // Update prompt and display based on question type
+            if (currentProblem.questionType === 'identifyFraction') {
+                // Type B: Show a number line (0 to 1), ask what fraction is shown
+                document.getElementById('prompt').textContent = 'What fraction does the point show?';
+                
+                // Show the number line as the problem display - EXTRA LARGE for visibility
+                const d = currentProblem.denominator;
+                const problemSvg = createNumberLineSVG(d, 1, '1', true, true); // largeMode = true
+                const styledSvg = problemSvg
+                    .replace(/fill="white"/g, 'fill="#333"')
+                    .replace(/stroke="white"/g, 'stroke="#333"');
+                document.getElementById('problem-display').innerHTML = `
+                    <div style="background: #f8f9fa; padding: 30px 40px; border-radius: 16px; width: 100%;">
+                        <svg viewBox="0 0 280 85" style="width: 100%; height: auto; min-height: 80px;">
+                            ${styledSvg.replace(/<svg[^>]*>/, '').replace('</svg>', '')}
+                        </svg>
+                    </div>
+                `;
+                document.getElementById('problem-display').style.fontSize = '24px';
+                document.getElementById('problem-display').style.padding = '16px';
+                document.getElementById('problem-display').style.width = '100%';
+                document.getElementById('problem-display').style.maxWidth = '100%';
+                document.getElementById('problem-display').style.background = 'linear-gradient(135deg, #ffd93d, #ffb347)';
+                
+                // Update choices - fraction text buttons
+                choicesContainer.innerHTML = '';
+                choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice';
+                    btn.innerHTML = `
+                        <span class="fraction" style="font-size: 32px;">
+                            <span class="fraction-num" style="border-bottom: 3px solid white;">${choice.fractionNum}</span>
+                            <span class="fraction-den">${choice.fractionDen}</span>
+                        </span>
+                    `;
+                    btn.addEventListener('click', () => handleChoice(btn, choice));
+                    choicesContainer.appendChild(btn);
+                });
+                
+            } else {
+                // Type A: Show a fraction, ask which number line shows it
+                document.getElementById('prompt').textContent = 'Which number line shows...';
+                
+                // Show the fraction as the problem display
+                document.getElementById('problem-display').innerHTML = `
+                    <span class="fraction">
+                        <span class="fraction-num" id="target-num">${currentProblem.numerator}</span>
+                        <span class="fraction-den" id="target-den">${currentProblem.denominator}</span>
+                    </span>
+                `;
+                document.getElementById('problem-display').style.fontSize = '48px';
+                document.getElementById('problem-display').style.padding = '16px 48px';
+                document.getElementById('problem-display').style.width = '';
+                document.getElementById('problem-display').style.maxWidth = '';
+                
+                // Update choices - each button contains an SVG number line
+                choicesContainer.innerHTML = '';
+                choices.forEach(choice => {
+                    const btn = document.createElement('button');
+                    btn.className = 'choice';
+                    btn.innerHTML = choice.svg;
+                    btn.addEventListener('click', () => handleChoice(btn, choice));
+                    choicesContainer.appendChild(btn);
+                });
+            }
+            
+            canAnswer = true;
+        }
+
+        // ==========================================================================
+        // HANDLE CHOICE - Do not modify
+        // ==========================================================================
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+
+                questionsAnswered++;
+
+                setTimeout(() => {
+                    showCorrectPopup();
+                }, 400);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        // ==========================================================================
+        // POPUPS - Do not modify
+        // ==========================================================================
+        function showCorrectPopup() {
+            const hypeMessages = [
+                { emoji: '🧢', title: 'NO CAP!' },
+                { emoji: '🔥', title: 'FIRE!' },
+                { emoji: '💪', title: 'W!' },
+                { emoji: '👑', title: 'SLAY!' },
+                { emoji: '✨', title: 'VALID!' },
+                { emoji: '🎯', title: 'GOATED!' },
+                { emoji: '💥', title: 'SLAPS!' },
+                { emoji: '🚀', title: 'LET\'S GO!' }
+            ];
+            const msg = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            document.getElementById('correct-frac-num').textContent = currentProblem.numerator;
+            document.getElementById('correct-frac-den').textContent = currentProblem.denominator;
+            
+            document.getElementById('correct-popup').classList.add('show');
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = 
+                wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            
+            const message = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-title').textContent = message;
+            document.getElementById('wrong-subtitle').textContent = '';
+            
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hypeMsg = "Straight fire!";
+            for (const s of streakHypeMessages) {
+                if (streak >= s.streak) hypeMsg = s.hype;
+            }
+            document.getElementById('streak-hype').textContent = hypeMsg;
+            
+            let emojiCount, confettiCount;
+            if (streak >= 15) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 12) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 6) {
+                emojiCount = 10;
+                confettiCount = 15;
+            } else {
+                emojiCount = 6;
+                confettiCount = 10;
+            }
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(confettiCount);
+            spawnCorrectEmojis(emojiCount, streak);
+        }
+
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(50);
+        }
+
+        function checkGameEnd() {
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS - Do not modify
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            const shouldCelebrate = streak > 0 && (
+                (streak <= 15 && streak % 3 === 0) ||
+                (streak > 15 && streak % 10 === 5)
+            );
+            if (shouldCelebrate) {
+                showStreakCelebration();
+            } else {
+                checkGameEnd();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // ==========================================================================
+        // START / RESTART - Do not modify
+        // ==========================================================================
+        function startGame() {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+        playAgainBtn.addEventListener('click', () => { startGame(); });
+
+        // ==========================================================================
+        // 🧪 MATH VALIDATOR - Press Ctrl+T to run tests
+        // ==========================================================================
+        function runMathTests(numTests = 500, verbose = true) {
+            if (verbose) console.log('🧪 Running ' + numTests + ' tests...');
+            
+            const results = {
+                passed: 0, failed: 0, errors: [],
+                typeCount: {}, questionTypes: {}, positions: [0,0,0,0],
+                minAnswer: Infinity, maxAnswer: -Infinity
+            };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // Basic checks
+                if (choices.length !== 4) issues.push(choices.length + ' choices');
+                const correctCount = choices.filter(c => c.isCorrect).length;
+                if (correctCount !== 1) issues.push(correctCount + ' correct');
+                
+                if (problem.questionType === 'findNumberLine') {
+                    // Type A: Check for duplicate SVGs
+                    const svgSet = new Set(choices.map(c => c.svg));
+                    if (svgSet.size !== choices.length) issues.push('dup number lines');
+                    
+                    // Verify correct answer has proper configuration
+                    const correctChoice = choices.find(c => c.isCorrect);
+                    if (correctChoice && correctChoice.config) {
+                        const config = correctChoice.config;
+                        if (config.divisions !== problem.denominator) issues.push('wrong divisions');
+                        if (config.position !== 1) issues.push('wrong position');
+                        if (config.endLabel !== '1') issues.push('wrong endpoint');
+                    }
+                } else {
+                    // Type B: Check for duplicate fractions
+                    const fracSet = new Set(choices.map(c => c.display));
+                    if (fracSet.size !== choices.length) issues.push('dup fractions');
+                    
+                    // Verify correct answer
+                    const correctChoice = choices.find(c => c.isCorrect);
+                    if (correctChoice) {
+                        if (correctChoice.fractionNum !== 1) issues.push('wrong numerator');
+                        if (correctChoice.fractionDen !== problem.denominator) issues.push('wrong denominator');
+                    }
+                }
+                
+                // Track results
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 5) {
+                    results.errors.push('#' + (i+1) + ': ' + issues.join(', ') + ' (d=' + problem.denominator + ', type=' + problem.questionType + ')');
+                }
+                
+                // Track distribution
+                const type = 'd=' + problem.denominator;
+                results.typeCount[type] = (results.typeCount[type] || 0) + 1;
+                results.questionTypes[problem.questionType] = (results.questionTypes[problem.questionType] || 0) + 1;
+                const correctIdx = choices.findIndex(c => c.isCorrect);
+                if (correctIdx >= 0 && correctIdx < 4) results.positions[correctIdx]++;
+                
+                // Track edge cases
+                results.minAnswer = Math.min(results.minAnswer, problem.denominator);
+                results.maxAnswer = Math.max(results.maxAnswer, problem.denominator);
+            }
+            
+            // Build result message
+            let msg = results.failed === 0 
+                ? '✅ ALL ' + numTests + ' TESTS PASSED!'
+                : '❌ ' + results.failed + '/' + numTests + ' FAILED:\n' + results.errors.join('\n');
+            
+            msg += '\n\nDenominator Distribution: ' + JSON.stringify(results.typeCount);
+            msg += '\nQuestion Types: ' + JSON.stringify(results.questionTypes);
+            msg += '\nPositions: ' + results.positions.map((p,i) => 'P' + (i+1) + ':' + Math.round(p/numTests*100) + '%').join(' ');
+            msg += '\nDenominators: ' + results.minAnswer + ' to ' + results.maxAnswer;
+            
+            if (verbose) {
+                console.log(msg);
+                alert(msg);
+            }
+            return results.failed === 0;
+        }
+        
+        // Ctrl+T to run tests
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                runMathTests();
+            }
+        });
+    </script>
+</body>
+</html>

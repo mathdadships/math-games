@@ -1,0 +1,1642 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 4.17 - Division: Build Up! (Two-Part Questions)                          ║
+║  Students solve division by thinking multiplication (build-up strategy)      ║
+║  Part 1: Division (45 ÷ 3 = ?)                                              ║
+║  Part 2: Multiplication Check (3 × ? = 45)                                  ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🦉 Division: Build Up!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            flex: 1;
+            display: none;
+        }
+
+        #main-card.show { display: block; }
+
+        /* Two-part layout */
+        .two-part-layout {
+            display: flex;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        @media (max-width: 700px) {
+            .two-part-layout {
+                flex-direction: column;
+            }
+        }
+
+        /* Each part */
+        .part {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            border-radius: 16px;
+            background: #f8f9ff;
+            border: 3px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .part.active {
+            border-color: #667eea;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .part.complete {
+            border-color: #2ed573;
+            background: #f0fff4;
+        }
+
+        .part.locked {
+            opacity: 0.5;
+        }
+
+        /* Part header */
+        .part-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .part-number {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .part.active .part-number {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .part.complete .part-number {
+            background: #2ed573;
+            color: white;
+        }
+
+        .part-label {
+            font-size: 13px;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .part.active .part-label { color: #667eea; }
+        .part.complete .part-label { color: #2ed573; }
+
+        /* Problem display */
+        .problem-box {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 10px 16px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .answer-highlight {
+            display: inline-block;
+            font-size: 42px;
+            font-weight: 700;
+            color: #2ed573;
+            animation: pulseAnswer 0.8s ease-in-out infinite;
+            vertical-align: middle;
+            line-height: 1;
+            margin: 0 4px;
+            text-shadow: 
+                -2px -2px 0 #000,
+                2px -2px 0 #000,
+                -2px 2px 0 #000,
+                2px 2px 0 #000;
+        }
+
+        @keyframes pulseAnswer {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .answer-highlight.synced {
+            animation: pulseSynced 0.8s ease-in-out infinite;
+        }
+
+        @keyframes pulseSynced {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+        }
+
+        /* Animation areas */
+        .animation-area {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #eee;
+        }
+
+        /* Part 1: Card stacks */
+        .cards-container {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .card {
+            width: 48px;
+            border: 3px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+            background: white;
+            transition: all 0.6s ease;
+        }
+
+        .card.show { border-color: #667eea; }
+        .card.complete { border-color: #2ed573; }
+
+        /* Simple card for single-digit quotients */
+        .card.simple {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 50px;
+            background: linear-gradient(135deg, #e8f4fd, #d4e8fc);
+        }
+
+        .card.simple.show {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #5a67d8;
+        }
+
+        .card.simple.complete {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            border-color: #1abc9c;
+        }
+
+        .card-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: transparent;
+            transition: all 0.5s ease;
+        }
+
+        .card.simple.show .card-value {
+            color: white;
+        }
+
+        .card.simple.complete .card-value {
+            color: white;
+        }
+
+        .card-top {
+            padding: 10px 4px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            background: #e8f4fd;
+            color: transparent;
+            transition: all 0.5s ease;
+        }
+
+        .card-top.show { color: #333; }
+        .card.complete .card-top { background: #d4f4e2; color: #2ed573; }
+
+        .card-bottom {
+            padding: 10px 4px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            background: #fff8e8;
+            color: transparent;
+            transition: all 0.5s ease;
+        }
+
+        .card-bottom.show { color: #333; }
+        .card.complete .card-bottom { background: #e8f8f0; color: #2ed573; }
+
+        /* Part 2: Num boxes */
+        .boxes-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .box-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+            min-height: 38px;
+        }
+
+        .plus-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 24px;
+        }
+
+        .plus-sign {
+            font-size: 20px;
+            font-weight: 700;
+            color: #667eea;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+
+        .plus-sign.show {
+            opacity: 1;
+        }
+
+        .num-box {
+            width: 40px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.5s ease;
+            border: 3px solid #ccc;
+            background: white;
+            color: transparent;
+        }
+
+        .num-box.show { color: white; }
+
+        .num-box.tens { background: #e8f4fd; }
+        .num-box.tens.show {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #5a67d8;
+        }
+
+        .num-box.ones { background: #fff8e8; }
+        .num-box.ones.show {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-color: #d35400;
+        }
+
+        .box-equation {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+            opacity: 0;
+            transition: all 0.5s ease;
+            margin-left: 6px;
+            white-space: nowrap;
+        }
+
+        .box-equation.show { opacity: 1; }
+
+        /* Choices */
+        .choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 10px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .choice:hover:not(:disabled) {
+            transform: scale(1.03);
+            filter: brightness(1.1);
+        }
+
+        .choice:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 24px;
+        }
+
+        .demo-layout {
+            display: flex;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        @media (max-width: 700px) {
+            .demo-layout { flex-direction: column; }
+            #start-title { font-size: 32px; }
+        }
+
+        .demo-part {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 14px;
+            border-radius: 14px;
+            background: #f8f9ff;
+            border: 3px solid #667eea;
+        }
+
+        .demo-part-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .demo-part-number {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .demo-part-label {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .demo-problem {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 10px 16px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .demo-animation-area {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #eee;
+        }
+
+        .demo-cards-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .demo-card-box {
+            width: 44px;
+            border: 3px solid #ccc;
+            border-radius: 6px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #e8f4fd, #d4e8fc);
+            transition: all 0.5s ease;
+        }
+
+        .demo-card-box.simple {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 46px;
+        }
+
+        .demo-card-box.show {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .demo-card-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: transparent;
+            transition: all 0.4s ease;
+        }
+
+        .demo-card-box.show .demo-card-value {
+            color: white;
+        }
+
+        .demo-card-top {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            background: #e8f4fd;
+            color: transparent;
+            transition: all 0.4s ease;
+        }
+
+        .demo-card-top.show { color: #333; }
+
+        .demo-card-bottom {
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 700;
+            background: #fff8e8;
+            color: transparent;
+            transition: all 0.4s ease;
+        }
+
+        .demo-card-bottom.show { color: #333; }
+
+        .demo-boxes-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+        }
+
+        .demo-plus-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 20px;
+        }
+
+        .demo-plus-sign {
+            font-size: 18px;
+            font-weight: 700;
+            color: #667eea;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .demo-plus-sign.show {
+            opacity: 1;
+        }
+
+        .demo-box-row {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .demo-num-box {
+            width: 38px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 6px;
+            transition: all 0.4s ease;
+            border: 3px solid #ccc;
+            background: white;
+            color: transparent;
+        }
+
+        .demo-num-box.show { color: white; }
+        .demo-num-box.tens { background: #e8f4fd; }
+        .demo-num-box.tens.show {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-color: #5a67d8;
+        }
+        .demo-num-box.ones { background: #fff8e8; }
+        .demo-num-box.ones.show {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-color: #d35400;
+        }
+
+        .demo-equation {
+            font-size: 13px;
+            font-weight: 700;
+            color: #333;
+            opacity: 0;
+            transition: all 0.4s ease;
+            margin-left: 6px;
+        }
+
+        .demo-equation.show { opacity: 1; }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 16px 48px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover { transform: scale(1.05); }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .popup-overlay.show { display: flex; }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji { font-size: 64px; margin-bottom: 16px; }
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .popup-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .correct-answer-box {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 16px 0;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+        }
+
+        .wrong-answer-display {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .wrong-answer-display .label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .wrong-answer-display .answer {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2ed573;
+        }
+
+        /* Streak popup */
+        #streak-popup .popup-content {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+        }
+
+        #streak-popup .popup-title,
+        #streak-popup .popup-subtitle {
+            color: white;
+        }
+
+        #streak-count {
+            font-size: 72px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to { top: 110vh; transform: rotate(720deg); }
+        }
+
+        .flying-emoji {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUp 1.2s ease-out forwards;
+        }
+
+        @keyframes flyUp {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            .problem-box { font-size: 20px; }
+            .choice { font-size: 16px; padding: 10px; }
+            #start-title { font-size: 28px; }
+            #end-title { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div id="start-title">🦉 Division: Build Up!</div>
+            
+            <div class="demo-card">
+                <div class="demo-layout">
+                    <!-- Part 1 Demo -->
+                    <div class="demo-part">
+                        <div class="demo-part-header">
+                            <div class="demo-part-number">1</div>
+                            <div class="demo-part-label">Division</div>
+                        </div>
+                        <div class="demo-problem">20 ÷ 5 = ?</div>
+                        <div class="demo-animation-area">
+                            <div class="demo-cards-row" id="demo-cards"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Part 2 Demo -->
+                    <div class="demo-part">
+                        <div class="demo-part-header">
+                            <div class="demo-part-number">2</div>
+                            <div class="demo-part-label">Multiplication Check</div>
+                        </div>
+                        <div class="demo-problem">5 × ? = 20</div>
+                        <div class="demo-animation-area">
+                            <div class="demo-boxes-stage">
+                                <div class="demo-box-row" id="demo-tens-row"></div>
+                                <div class="demo-plus-row">
+                                    <div class="demo-plus-sign" id="demo-plus-sign">+</div>
+                                </div>
+                                <div class="demo-box-row" id="demo-ones-row"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🦉</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">🦉 Division: Build Up!</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div class="two-part-layout">
+                <!-- PART 1: Division -->
+                <div class="part active" id="part1">
+                    <div class="part-header">
+                        <div class="part-number">1</div>
+                        <div class="part-label">Division</div>
+                    </div>
+                    <div class="problem-box" id="problem1">? ÷ ? = ?</div>
+                    <div class="animation-area">
+                        <div class="cards-container" id="cards1"></div>
+                    </div>
+                    <div class="choices" id="choices1"></div>
+                </div>
+
+                <!-- PART 2: Multiplication Check -->
+                <div class="part locked" id="part2">
+                    <div class="part-header">
+                        <div class="part-number">2</div>
+                        <div class="part-label">Multiplication Check</div>
+                    </div>
+                    <div class="problem-box" id="problem2">? × ? = ?</div>
+                    <div class="animation-area">
+                        <div class="boxes-stage" id="boxes-stage">
+                            <div class="box-row" id="row-tens"></div>
+                            <div class="plus-row">
+                                <div class="plus-sign" id="plus-sign">+</div>
+                            </div>
+                            <div class="box-row" id="row-ones"></div>
+                        </div>
+                    </div>
+                    <div class="choices" id="choices2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box">
+                    <span id="correct-answer-text"></span>
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Keep trying!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                <div id="correct-answer-area">
+                    <div class="wrong-answer-display">
+                        <div class="label">The answer is:</div>
+                        <div class="answer" id="wrong-correct-answer"></div>
+                    </div>
+                </div>
+                <button class="popup-btn btn-amber" id="try-again-btn">Try Again</button>
+                <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div id="streak-count">3</div>
+                <div class="popup-title" id="streak-hype">Straight fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 🚀</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🦉</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work with division!</div>
+            <div id="end-stats">
+                Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span>
+            </div>
+            <button id="play-again-btn">Play Again 🎮</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================================================
+        // AUDIO
+        // ==========================================================================
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // ==========================================================================
+        // EFFECTS
+        // ==========================================================================
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnEmojis(count) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '🔥', '💪', '🎯', '🚀', '👑'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji';
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGES
+        // ==========================================================================
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain!"
+        ];
+
+        const hypeMessages = [
+            { emoji: '🧢', title: 'NO CAP!' },
+            { emoji: '🔥', title: 'FIRE!' },
+            { emoji: '💪', title: 'W!' },
+            { emoji: '👑', title: 'SLAY!' },
+            { emoji: '✨', title: 'VALID!' },
+            { emoji: '🎯', title: 'GOATED!' },
+            { emoji: '💥', title: 'SLAPS!' },
+            { emoji: '🚀', title: "LET'S GO!" }
+        ];
+
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "SIGMA BRAIN!" }
+        ];
+
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let currentProblem = null;
+        let part1Complete = false;
+        let part2Complete = false;
+        let canAnswer = true;
+        let questionNumber = 0;
+
+        // ==========================================================================
+        // PROBLEM GENERATION
+        // ==========================================================================
+        function generateProblem() {
+            // Divisors: 3, 4, 5, 6
+            // Quotients: 2-10 (not greater than 10th product)
+            const divisors = [3, 4, 5, 6];
+            const divisor = divisors[Math.floor(Math.random() * divisors.length)];
+            const quotient = 2 + Math.floor(Math.random() * 9); // 2-10
+            const dividend = divisor * quotient;
+
+            return {
+                dividend,
+                divisor,
+                quotient
+            };
+        }
+
+        function generateChoices(correct) {
+            const choices = new Set([correct]);
+            
+            // Common wrong answers
+            const wrongs = [
+                correct + 1,
+                correct - 1,
+                correct + 2,
+                correct - 2,
+                10,
+                correct + 10,
+                correct - 10
+            ].filter(w => w > 0 && w !== correct);
+
+            while (choices.size < 4 && wrongs.length > 0) {
+                const idx = Math.floor(Math.random() * wrongs.length);
+                choices.add(wrongs.splice(idx, 1)[0]);
+            }
+
+            // Fill remaining if needed
+            let fill = correct + 3;
+            while (choices.size < 4) {
+                if (fill > 0 && !choices.has(fill)) choices.add(fill);
+                fill++;
+            }
+
+            return shuffle([...choices].map(v => ({ value: v, isCorrect: v === correct })));
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM
+        // ==========================================================================
+        function loadProblem() {
+            questionNumber++;
+            currentProblem = generateProblem();
+            part1Complete = false;
+            part2Complete = false;
+            canAnswer = true;
+
+            const { dividend, divisor, quotient, ones } = currentProblem;
+            const showAnimations = questionNumber <= 3;
+
+            // Reset Part 1
+            document.getElementById('part1').className = 'part active';
+            document.getElementById('problem1').textContent = `${dividend} ÷ ${divisor} = ?`;
+            
+            // Build Part 1 cards (show/hide animation area)
+            const cards1 = document.getElementById('cards1');
+            const animArea1 = cards1.parentElement;
+            
+            if (showAnimations) {
+                animArea1.style.display = 'flex';
+                cards1.innerHTML = '';
+                for (let i = 0; i < divisor; i++) {
+                    const card = document.createElement('div');
+                    card.className = 'card simple';
+                    card.id = `card-${i}`;
+                    card.innerHTML = `<div class="card-value" id="card-val-${i}">${quotient}</div>`;
+                    cards1.appendChild(card);
+                }
+            } else {
+                animArea1.style.display = 'none';
+            }
+
+            // Build Part 1 choices
+            const choices1 = generateChoices(quotient);
+            const choicesEl1 = document.getElementById('choices1');
+            choicesEl1.innerHTML = '';
+            choices1.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = choice.value;
+                btn.onclick = () => handlePart1Answer(choice.isCorrect, btn, choice.value);
+                choicesEl1.appendChild(btn);
+            });
+
+            // Reset Part 2
+            document.getElementById('part2').className = 'part locked';
+            document.getElementById('problem2').textContent = `${divisor} × ? = ${dividend}`;
+
+            // Build Part 2 boxes (show/hide animation area)
+            const boxesStage = document.getElementById('boxes-stage');
+            const animArea2 = boxesStage.parentElement;
+            
+            if (showAnimations) {
+                animArea2.style.display = 'flex';
+                const rowTens = document.getElementById('row-tens');
+                const rowOnes = document.getElementById('row-ones');
+                const plusRow = document.getElementById('plus-sign').parentElement;
+                
+                // Hide the ones row and plus sign - just use tens row for simple quotients
+                rowOnes.style.display = 'none';
+                plusRow.style.display = 'none';
+                rowTens.innerHTML = '';
+
+                for (let i = 0; i < divisor; i++) {
+                    const box = document.createElement('div');
+                    box.className = 'num-box tens';
+                    box.id = `box-${i}`;
+                    box.textContent = quotient;
+                    rowTens.appendChild(box);
+                }
+
+                // Add equation
+                const eq = document.createElement('div');
+                eq.className = 'box-equation';
+                eq.id = 'eq-tens';
+                eq.textContent = `= ${divisor} × ${quotient}`;
+                rowTens.appendChild(eq);
+            } else {
+                animArea2.style.display = 'none';
+            }
+
+            // Build Part 2 choices
+            const choices2 = generateChoices(quotient);
+            const choicesEl2 = document.getElementById('choices2');
+            choicesEl2.innerHTML = '';
+            choices2.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = choice.value;
+                btn.disabled = true;
+                btn.onclick = () => handlePart2Answer(choice.isCorrect, btn, choice.value);
+                choicesEl2.appendChild(btn);
+            });
+
+            // Start Part 1 animation only for first 3 questions
+            if (showAnimations) {
+                setTimeout(() => animatePart1(), 500);
+            }
+        }
+
+        // ==========================================================================
+        // ANIMATIONS
+        // ==========================================================================
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function animatePart1() {
+            if (part1Complete) return;
+            
+            const { divisor } = currentProblem;
+
+            // Show cards one by one (simple cards just need .show class)
+            for (let i = 0; i < divisor; i++) {
+                if (part1Complete) return;
+                document.getElementById(`card-${i}`).classList.add('show');
+                await sleep(400);
+            }
+        }
+
+        async function animatePart2() {
+            if (part2Complete) return;
+            
+            const { divisor } = currentProblem;
+
+            // Show boxes one by one
+            for (let i = 0; i < divisor; i++) {
+                if (part2Complete) return;
+                document.getElementById(`box-${i}`).classList.add('show');
+                await sleep(350);
+            }
+            await sleep(300);
+            document.getElementById('eq-tens').classList.add('show');
+        }
+
+        // ==========================================================================
+        // ANSWER HANDLERS
+        // ==========================================================================
+        async function handlePart1Answer(isCorrect, btn, value) {
+            if (!canAnswer || part1Complete) return;
+            canAnswer = false;
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                part1Complete = true;
+                playSound('correct');
+
+                // Disable other buttons
+                document.querySelectorAll('#choices1 .choice').forEach(b => {
+                    if (!b.classList.contains('correct')) b.disabled = true;
+                });
+
+                const { divisor, dividend, quotient } = currentProblem;
+                const showAnimations = questionNumber <= 3;
+
+                // Ensure all cards shown and complete (only if animations are enabled)
+                if (showAnimations) {
+                    for (let i = 0; i < divisor; i++) {
+                        const card = document.getElementById(`card-${i}`);
+                        card.classList.add('show');
+                        card.classList.add('complete');
+                    }
+                    await sleep(200);
+                }
+
+                // Update Part 1 display with pulsing answer (keep yellow, just show answer)
+                document.getElementById('part1').classList.remove('active');
+                document.getElementById('problem1').innerHTML = 
+                    `${dividend} ÷ ${divisor} = <span class="answer-highlight" id="answer1">${quotient}</span> ✓`;
+
+                // Add 5 points for Part 1
+                score += 5;
+                document.getElementById('score').textContent = score;
+
+                await sleep(showAnimations ? 400 : 200);
+
+                // Unlock Part 2
+                document.getElementById('part2').classList.remove('locked');
+                document.getElementById('part2').classList.add('active');
+                document.querySelectorAll('#choices2 .choice').forEach(b => b.disabled = false);
+                canAnswer = true;
+
+                // Start Part 2 animation only for first 3 questions
+                if (showAnimations) {
+                    setTimeout(() => animatePart2(), 300);
+                }
+
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                document.getElementById('streak').textContent = '0 🔥';
+                document.getElementById('streak-display').classList.remove('hot');
+                
+                await sleep(300);
+                showWrongPopup();
+            }
+        }
+
+        async function handlePart2Answer(isCorrect, btn, value) {
+            if (!canAnswer || part2Complete) return;
+            canAnswer = false;
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                part2Complete = true;
+                playSound('correct');
+
+                // Disable other buttons
+                document.querySelectorAll('#choices2 .choice').forEach(b => {
+                    if (!b.classList.contains('correct')) b.disabled = true;
+                });
+
+                const { divisor, dividend, quotient } = currentProblem;
+                const showAnimations = questionNumber <= 3;
+
+                // Ensure all boxes shown (only if animations are enabled)
+                if (showAnimations) {
+                    for (let i = 0; i < divisor; i++) {
+                        document.getElementById(`box-${i}`).classList.add('show');
+                    }
+                    document.getElementById('eq-tens').classList.add('show');
+                }
+
+                // Update Part 2 display with pulsing answer (keep yellow, just show answer)
+                document.getElementById('part2').classList.remove('active');
+                document.getElementById('problem2').innerHTML = 
+                    `${divisor} × <span class="answer-highlight" id="answer2">${quotient}</span> = ${dividend} ✓`;
+
+                // Sync both answers to pulse together
+                document.getElementById('answer1').classList.add('synced');
+                document.getElementById('answer2').classList.add('synced');
+
+                // Add 5 points for Part 2
+                score += 5;
+                document.getElementById('score').textContent = score;
+
+                // Update streak
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                document.getElementById('streak').textContent = streak + ' 🔥';
+                if (streak >= 3) {
+                    document.getElementById('streak-display').classList.add('hot');
+                }
+
+                await sleep(showAnimations ? 800 : 500);
+                showCorrectPopup();
+
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                document.getElementById('streak').textContent = '0 🔥';
+                document.getElementById('streak-display').classList.remove('hot');
+                
+                await sleep(300);
+                showWrongPopup();
+            }
+        }
+
+        // ==========================================================================
+        // POPUPS
+        // ==========================================================================
+        function showCorrectPopup() {
+            const msg = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            document.getElementById('correct-answer-text').textContent = 
+                `${currentProblem.dividend} ÷ ${currentProblem.divisor} = ${currentProblem.quotient} ✓`;
+            
+            document.getElementById('correct-popup').classList.add('show');
+            spawnEmojis(5);
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = 
+                wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            document.getElementById('wrong-title').textContent = 
+                growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-subtitle').textContent = '';
+            
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hypeMsg = "Straight fire!";
+            for (const s of streakHypeMessages) {
+                if (streak >= s.streak) hypeMsg = s.hype;
+            }
+            document.getElementById('streak-hype').textContent = hypeMsg;
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(15);
+            spawnEmojis(8);
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            
+            const shouldCelebrate = streak > 0 && streak % 3 === 0;
+            if (shouldCelebrate) {
+                showStreakCelebration();
+            } else {
+                loadProblem();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', function() {
+            document.getElementById('wrong-correct-answer').textContent = currentProblem.quotient;
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            this.textContent = 'Next Question →';
+            this.onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('show-answer-btn').onclick = null;
+                loadProblem();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            loadProblem();
+        });
+
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            document.getElementById('end-screen').classList.remove('show');
+            startGame();
+        });
+
+        // ==========================================================================
+        // START GAME
+        // ==========================================================================
+        function startGame() {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionNumber = 0;
+            document.getElementById('score').textContent = '0';
+            document.getElementById('streak').textContent = '0 🔥';
+            document.getElementById('streak-display').classList.remove('hot');
+            document.getElementById('main-card').classList.add('show');
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // DEMO ANIMATION
+        // ==========================================================================
+        function buildDemo() {
+            // Build demo cards (5 for 20 ÷ 5 = 4)
+            const demoCards = document.getElementById('demo-cards');
+            demoCards.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const card = document.createElement('div');
+                card.className = 'demo-card-box simple';
+                card.id = `demo-card-${i}`;
+                card.innerHTML = `<div class="demo-card-value" id="demo-card-val-${i}">4</div>`;
+                demoCards.appendChild(card);
+            }
+
+            // Build demo boxes (single row)
+            const demoTens = document.getElementById('demo-tens-row');
+            demoTens.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const box = document.createElement('div');
+                box.className = 'demo-num-box tens';
+                box.id = `demo-box-${i}`;
+                box.textContent = '4';
+                demoTens.appendChild(box);
+            }
+            const eq = document.createElement('div');
+            eq.className = 'demo-equation';
+            eq.id = 'demo-eq';
+            eq.textContent = '= 5 × 4';
+            demoTens.appendChild(eq);
+
+            // Hide unused elements
+            const demoOnes = document.getElementById('demo-ones-row');
+            if (demoOnes) demoOnes.style.display = 'none';
+            const demoPlusSign = document.getElementById('demo-plus-sign');
+            if (demoPlusSign) demoPlusSign.parentElement.style.display = 'none';
+        }
+
+        async function runDemoAnimation() {
+            await sleep(800);
+
+            // Part 1: Show cards one by one
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`demo-card-${i}`).classList.add('show');
+                await sleep(350);
+            }
+            
+            await sleep(600);
+
+            // Part 2: Show boxes one by one
+            for (let i = 0; i < 5; i++) {
+                document.getElementById(`demo-box-${i}`).classList.add('show');
+                await sleep(300);
+            }
+            await sleep(300);
+            document.getElementById('demo-eq').classList.add('show');
+        }
+
+        // ==========================================================================
+        // INIT
+        // ==========================================================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            document.getElementById('start-screen').classList.add('hidden');
+            startGame();
+        });
+
+        // Build and run demo
+        buildDemo();
+        runDemoAnimation();
+    </script>
+</body>
+</html>

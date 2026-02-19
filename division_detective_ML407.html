@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Division Detective 🔍</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Fredoka', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            user-select: none;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0 15px;
+        }
+
+        /* Header */
+        #header {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            border-radius: 0 0 15px 15px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #fff;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 9px;
+            color: #aaa;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 6px 14px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: streakPulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes streakPulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.03); }
+        }
+
+        #streak-value {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        /* Game area */
+        #game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            min-height: 0;
+            gap: 12px;
+        }
+
+        /* Problem card */
+        #problem-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .problem-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 12px;
+        }
+
+        .division-problem {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 36px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,184,148,0.3);
+        }
+
+        /* Two-step display */
+        .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .step-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .step-row.active {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
+        .step-row.completed {
+            background: #d4edda;
+            border: 2px solid #28a745;
+        }
+
+        .step-row.locked {
+            opacity: 0.5;
+        }
+
+        .step-number {
+            background: #667eea;
+            color: #fff;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .step-row.completed .step-number {
+            background: #28a745;
+        }
+
+        .step-label {
+            font-size: 14px;
+            color: #666;
+            flex-shrink: 0;
+            min-width: 130px;
+            text-align: right;
+        }
+
+        .step-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+            flex: 1;
+        }
+
+        .step-value.empty {
+            color: #aaa;
+        }
+
+        /* Choices */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .choice {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            border: 3px solid transparent;
+        }
+
+        .choice:hover {
+            transform: scale(1.03);
+            border-color: #667eea;
+        }
+
+        .choice:active {
+            transform: scale(0.98);
+        }
+
+        .choice.correct {
+            background: #00ff88;
+            border-color: #00cc6a;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: #ff6b6b;
+            border-color: #ee5253;
+            animation: wrongShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .choice-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* For quotient choices - bigger numbers */
+        #choices.quotient-mode {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        #choices.quotient-mode .choice {
+            padding: 20px 10px;
+        }
+
+        #choices.quotient-mode .choice-text {
+            font-size: 28px;
+        }
+
+        /* Feedback */
+        #wrong-feedback {
+            display: none;
+            background: linear-gradient(135deg, #ff6b6b, #ee5253);
+            border-radius: 10px;
+            padding: 10px 20px;
+            text-align: center;
+        }
+
+        #wrong-feedback.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #wrong-feedback .wrong-text {
+            font-family: 'Bangers', cursive;
+            font-size: 18px;
+            color: #fff;
+        }
+
+        /* Success popup */
+        #success-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            padding: 30px 50px;
+            border-radius: 25px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        #success-popup.show {
+            display: block;
+            animation: popIn 0.4s ease forwards;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            80% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        #success-popup .emoji {
+            font-size: 50px;
+        }
+
+        #success-popup .text {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            color: #fff;
+            margin: 10px 0 5px 0;
+        }
+
+        #success-popup .subtext {
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        #success-popup .solution {
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 20px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Start screen */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 25px;
+            text-align: center;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-screen h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        #start-screen .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 18px;
+            margin-bottom: 30px;
+            max-width: 350px;
+        }
+
+        .intro-card {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .intro-card .example-problem {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .intro-card .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 12px 0;
+            color: #fff;
+        }
+
+        .intro-card .step-num {
+            background: rgba(255,255,255,0.3);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .intro-card .step-text {
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .intro-card .step-text strong {
+            background: rgba(255,255,255,0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 18px 60px;
+            background: #fff;
+            color: #00b894;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            #app { padding: 0 10px; }
+            #header { padding: 8px 15px; }
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #streak-value { font-size: 20px; }
+            
+            #game-area { padding: 10px 0; gap: 10px; }
+            
+            #problem-card { padding: 18px; border-radius: 15px; }
+            .problem-label { font-size: 12px; margin-bottom: 8px; }
+            .division-problem { font-size: 28px; padding: 12px 24px; margin-bottom: 15px; }
+            
+            .step-row { padding: 10px 15px; gap: 10px; }
+            .step-number { width: 24px; height: 24px; font-size: 12px; }
+            .step-label { font-size: 12px; min-width: 100px; }
+            .step-value { font-size: 18px; }
+            
+            #choices { gap: 8px; }
+            .choice { padding: 14px 10px; border-radius: 10px; }
+            .choice-text { font-size: 18px; }
+            
+            #choices.quotient-mode .choice { padding: 16px 8px; }
+            #choices.quotient-mode .choice-text { font-size: 24px; }
+            
+            #start-screen { padding: 20px; }
+            #start-screen h1 { font-size: 34px; }
+            #start-screen .subtitle { font-size: 16px; }
+            .intro-card { padding: 20px; }
+            .intro-card .example-problem { font-size: 20px; }
+            .intro-card .step-text { font-size: 14px; }
+            #start-btn { font-size: 26px; padding: 15px 50px; }
+            
+            #success-popup { padding: 25px 35px; }
+            #success-popup .emoji { font-size: 40px; }
+            #success-popup .text { font-size: 24px; }
+            #success-popup .solution { font-size: 18px; padding: 10px 15px; }
+        }
+
+        /* Effects */
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 300;
+            animation: confettiFall 2s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .flying-emoji {
+            position: fixed;
+            font-size: 35px;
+            pointer-events: none;
+            z-index: 250;
+            animation: flyUp 0.8s ease-out forwards;
+        }
+
+        @keyframes flyUp {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            50% { transform: scale(1.3) translateY(-50px); opacity: 1; }
+            100% { transform: scale(1) translateY(-120px); opacity: 0; }
+        }
+
+        .screen-shake {
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>🔍 DIVISION DETECTIVE</h1>
+            <div class="subtitle">Use multiplication to crack division problems!</div>
+            
+            <div class="intro-card">
+                <div class="example-problem">24 ÷ 4 = ?</div>
+                
+                <div class="step">
+                    <span class="step-num">1</span>
+                    <span class="step-text">Think: "What times 4 equals 24?"</span>
+                </div>
+                
+                <div class="step">
+                    <span class="step-num">2</span>
+                    <span class="step-text">Find the multiplication fact:<br><strong>6 × 4 = 24</strong></span>
+                </div>
+                
+                <div class="step">
+                    <span class="step-num">3</span>
+                    <span class="step-text">The quotient is <strong>6</strong></span>
+                </div>
+            </div>
+            
+            <button id="start-btn">INVESTIGATE! 🔍</button>
+        </div>
+
+        <!-- Header -->
+        <div id="header">
+            <div id="title">🔍 Division Detective</div>
+            <div class="stat-row">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div id="streak-value">0🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game area -->
+        <div id="game-area">
+            <div id="problem-card">
+                <div class="problem-label">Solve this division problem</div>
+                <div class="division-problem" id="division-problem">24 ÷ 4 = ?</div>
+                
+                <div class="steps-container">
+                    <div class="step-row active" id="step-mult">
+                        <span class="step-number">1</span>
+                        <span class="step-label">multiplication fact:</span>
+                        <span class="step-value empty" id="mult-answer">???</span>
+                    </div>
+                    <div class="step-row locked" id="step-quotient">
+                        <span class="step-number">2</span>
+                        <span class="step-label">quotient:</span>
+                        <span class="step-value empty" id="quotient-answer">???</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="wrong-feedback">
+                <div class="wrong-text">✗ That multiplication doesn't help here!</div>
+            </div>
+
+            <div id="choices"></div>
+        </div>
+
+        <!-- Success popup -->
+        <div id="success-popup">
+            <div class="emoji">🎉</div>
+            <div class="text">CASE SOLVED!</div>
+            <div class="solution" id="solution-text">6 × 4 = 24, so 24 ÷ 4 = 6</div>
+            <div class="subtext" id="bonus-text">+25 points!</div>
+        </div>
+    </div>
+
+    <script>
+        // Audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+        
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                [523, 659, 784, 1047].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                });
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // Fact families for division problems
+        const factFamilies = [
+            { a: 2, b: 3, product: 6 }, { a: 2, b: 4, product: 8 }, { a: 2, b: 5, product: 10 },
+            { a: 2, b: 6, product: 12 }, { a: 2, b: 7, product: 14 }, { a: 2, b: 8, product: 16 },
+            { a: 2, b: 9, product: 18 }, { a: 3, b: 4, product: 12 }, { a: 3, b: 5, product: 15 },
+            { a: 3, b: 6, product: 18 }, { a: 3, b: 7, product: 21 }, { a: 3, b: 8, product: 24 },
+            { a: 3, b: 9, product: 27 }, { a: 4, b: 5, product: 20 }, { a: 4, b: 6, product: 24 },
+            { a: 4, b: 7, product: 28 }, { a: 4, b: 8, product: 32 }, { a: 4, b: 9, product: 36 },
+            { a: 5, b: 6, product: 30 }, { a: 5, b: 7, product: 35 }, { a: 5, b: 8, product: 40 },
+            { a: 5, b: 9, product: 45 }, { a: 6, b: 7, product: 42 }, { a: 6, b: 8, product: 48 },
+            { a: 6, b: 9, product: 54 }, { a: 7, b: 8, product: 56 }, { a: 7, b: 9, product: 63 },
+            { a: 8, b: 9, product: 72 }
+        ];
+
+        // State
+        let score = 0;
+        let streak = 0;
+        let currentProblem = null;
+        let currentStep = 0; // 0 = mult fact, 1 = quotient
+        let canAnswer = true;
+
+        // DOM
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak-value');
+        const streakDisplay = document.getElementById('streak-display');
+        const divisionProblemEl = document.getElementById('division-problem');
+        const stepMult = document.getElementById('step-mult');
+        const stepQuotient = document.getElementById('step-quotient');
+        const multAnswer = document.getElementById('mult-answer');
+        const quotientAnswer = document.getElementById('quotient-answer');
+        const choicesEl = document.getElementById('choices');
+        const wrongFeedback = document.getElementById('wrong-feedback');
+        const successPopup = document.getElementById('success-popup');
+        const solutionText = document.getElementById('solution-text');
+        const bonusText = document.getElementById('bonus-text');
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function generateProblem() {
+            const family = factFamilies[Math.floor(Math.random() * factFamilies.length)];
+            const { a, b, product } = family;
+            
+            // Pick which division: product ÷ a = b OR product ÷ b = a
+            const useA = Math.random() < 0.5;
+            const divisor = useA ? a : b;
+            const quotient = useA ? b : a;
+            
+            return {
+                dividend: product,
+                divisor: divisor,
+                quotient: quotient,
+                multFact: `${quotient} × ${divisor} = ${product}`,
+                family: family
+            };
+        }
+
+        function startNewProblem() {
+            currentProblem = generateProblem();
+            currentStep = 0;
+            canAnswer = true;
+            
+            // Update display
+            divisionProblemEl.textContent = `${currentProblem.dividend} ÷ ${currentProblem.divisor} = ?`;
+            
+            // Reset steps
+            stepMult.className = 'step-row active';
+            stepQuotient.className = 'step-row locked';
+            multAnswer.textContent = '???';
+            multAnswer.classList.add('empty');
+            quotientAnswer.textContent = '???';
+            quotientAnswer.classList.add('empty');
+            
+            wrongFeedback.classList.remove('show');
+            
+            loadMultiplicationChoices();
+        }
+
+        function loadMultiplicationChoices() {
+            choicesEl.className = '';
+            
+            const correct = currentProblem.multFact;
+            const { divisor, dividend } = currentProblem;
+            
+            // Generate distractor multiplication facts
+            const distractors = [];
+            
+            // Other facts with the same divisor but wrong products
+            for (let i = 2; i <= 9; i++) {
+                if (i !== currentProblem.quotient) {
+                    distractors.push(`${i} × ${divisor} = ${i * divisor}`);
+                }
+            }
+            
+            // Some completely different facts
+            const otherFamilies = factFamilies.filter(f => f.product !== dividend);
+            for (const other of otherFamilies.slice(0, 3)) {
+                distractors.push(`${other.a} × ${other.b} = ${other.product}`);
+            }
+            
+            // Pick 3 distractors
+            const shuffledDistractors = shuffleArray(distractors).slice(0, 3);
+            let choices = shuffleArray([correct, ...shuffledDistractors]);
+            
+            choicesEl.innerHTML = '';
+            choices.forEach(choice => {
+                const div = document.createElement('div');
+                div.className = 'choice';
+                div.innerHTML = `<div class="choice-text">${choice}</div>`;
+                div.addEventListener('click', () => handleMultChoice(choice, div));
+                choicesEl.appendChild(div);
+            });
+        }
+
+        function handleMultChoice(selected, element) {
+            if (!canAnswer) return;
+            
+            const correct = currentProblem.multFact;
+            const isCorrect = selected === correct;
+            
+            if (isCorrect) {
+                canAnswer = false;
+                playSound('correct');
+                element.classList.add('correct');
+                wrongFeedback.classList.remove('show');
+                
+                // Update step 1
+                stepMult.classList.remove('active');
+                stepMult.classList.add('completed');
+                multAnswer.textContent = correct;
+                multAnswer.classList.remove('empty');
+                
+                streak++;
+                score += 10 + streak;
+                updateDisplay();
+                
+                spawnEmoji('⭐');
+                
+                // Move to step 2
+                setTimeout(() => {
+                    currentStep = 1;
+                    stepQuotient.classList.remove('locked');
+                    stepQuotient.classList.add('active');
+                    loadQuotientChoices();
+                }, 600);
+            } else {
+                playSound('wrong');
+                element.classList.add('wrong');
+                streak = 0;
+                updateDisplay();
+                
+                wrongFeedback.querySelector('.wrong-text').textContent = "✗ That multiplication doesn't help here!";
+                wrongFeedback.classList.add('show');
+                
+                document.body.classList.add('screen-shake');
+                setTimeout(() => {
+                    document.body.classList.remove('screen-shake');
+                    element.classList.remove('wrong');
+                }, 400);
+            }
+        }
+
+        function loadQuotientChoices() {
+            canAnswer = true;
+            choicesEl.className = 'quotient-mode';
+            
+            const correct = currentProblem.quotient;
+            
+            // Generate number distractors
+            let distractors = [];
+            for (let i = correct - 3; i <= correct + 3; i++) {
+                if (i > 0 && i !== correct && i <= 12) {
+                    distractors.push(i);
+                }
+            }
+            // Add some other numbers
+            [2, 3, 4, 5, 6, 7, 8, 9].forEach(n => {
+                if (n !== correct && !distractors.includes(n)) distractors.push(n);
+            });
+            
+            distractors = shuffleArray(distractors).slice(0, 3);
+            let choices = shuffleArray([correct, ...distractors]);
+            
+            choicesEl.innerHTML = '';
+            choices.forEach(choice => {
+                const div = document.createElement('div');
+                div.className = 'choice';
+                div.innerHTML = `<div class="choice-text">${choice}</div>`;
+                div.addEventListener('click', () => handleQuotientChoice(choice, div));
+                choicesEl.appendChild(div);
+            });
+        }
+
+        function handleQuotientChoice(selected, element) {
+            if (!canAnswer) return;
+            
+            const correct = currentProblem.quotient;
+            const isCorrect = selected === correct;
+            
+            if (isCorrect) {
+                canAnswer = false;
+                playSound('complete');
+                element.classList.add('correct');
+                wrongFeedback.classList.remove('show');
+                
+                // Update step 2
+                stepQuotient.classList.remove('active');
+                stepQuotient.classList.add('completed');
+                quotientAnswer.textContent = correct;
+                quotientAnswer.classList.remove('empty');
+                
+                streak++;
+                score += 15 + streak;
+                updateDisplay();
+                
+                // Show success
+                setTimeout(() => {
+                    showSuccess();
+                }, 400);
+            } else {
+                playSound('wrong');
+                element.classList.add('wrong');
+                streak = 0;
+                updateDisplay();
+                
+                wrongFeedback.querySelector('.wrong-text').textContent = "✗ Look at the multiplication fact!";
+                wrongFeedback.classList.add('show');
+                
+                document.body.classList.add('screen-shake');
+                setTimeout(() => {
+                    document.body.classList.remove('screen-shake');
+                    element.classList.remove('wrong');
+                }, 400);
+            }
+        }
+
+        function showSuccess() {
+            const { dividend, divisor, quotient, multFact } = currentProblem;
+            solutionText.textContent = `${multFact}, so ${dividend} ÷ ${divisor} = ${quotient}`;
+            bonusText.textContent = `+${25 + streak} points!`;
+            
+            successPopup.classList.add('show');
+            spawnConfetti(25);
+            
+            setTimeout(() => {
+                successPopup.classList.remove('show');
+                startNewProblem();
+            }, 2000);
+        }
+
+        function updateDisplay() {
+            scoreEl.textContent = score;
+            streakEl.textContent = streak + '🔥';
+            
+            streakDisplay.classList.remove('hot');
+            if (streak >= 5) {
+                streakDisplay.classList.add('hot');
+            }
+        }
+
+        function spawnEmoji(emoji) {
+            const el = document.createElement('div');
+            el.className = 'flying-emoji';
+            el.textContent = emoji;
+            el.style.left = (30 + Math.random() * 40) + '%';
+            el.style.top = '50%';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (8 + Math.random() * 10) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 40);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            streak = 0;
+            updateDisplay();
+            startScreen.classList.add('hidden');
+            startNewProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+    </script>
+</body>
+</html>

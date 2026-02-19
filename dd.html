@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Intuition Division</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Header */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+        }
+
+        #progress-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .dot.done { background: #00ff88; }
+        .dot.current { background: #fff; transform: scale(1.3); }
+
+        #score {
+            font-size: 24px;
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        #streak {
+            font-size: 16px;
+            color: #ff6b6b;
+            margin-left: 8px;
+        }
+
+        /* Stage */
+        #stage {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            position: relative;
+        }
+
+        /* Items at top */
+        #items-area {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 25px;
+            max-width: 350px;
+            min-height: 60px;
+        }
+
+        .item {
+            font-size: 36px;
+            transition: all 0.4s ease;
+        }
+
+        .item.used {
+            opacity: 0.2;
+            transform: scale(0.5);
+        }
+
+        /* Boxes row */
+        #boxes-area {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .box {
+            background: linear-gradient(180deg, #8B5A2B 0%, #5D3A1A 100%);
+            border: 4px solid #4A2810;
+            border-radius: 12px;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            min-width: 65px;
+            min-height: 65px;
+            padding: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-content: center;
+            gap: 4px;
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .box .item {
+            font-size: 26px;
+            opacity: 0;
+            transform: scale(0) translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .box .item.show {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
+        .box.receiving {
+            transform: scale(1.08);
+            box-shadow: inset 0 -10px 20px rgba(0,0,0,0.3), 0 6px 20px rgba(255,200,100,0.5);
+        }
+
+        /* Question text */
+        #question-text {
+            font-size: 22px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+            min-height: 30px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        #question-text.show {
+            opacity: 1;
+        }
+
+        #question-text .highlight {
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        /* Choices */
+        #choices {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px;
+            flex-wrap: wrap;
+            min-height: 80px;
+        }
+
+        .choice {
+            background: #fff;
+            border-radius: 12px;
+            padding: 15px 25px;
+            font-size: 26px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 4px solid transparent;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .choice:active {
+            transform: scale(0.98);
+        }
+
+        .choice.correct {
+            background: #00ff88;
+            border-color: #00cc6a;
+            animation: popCorrect 0.5s ease;
+        }
+
+        .choice.wrong {
+            background: #ff6b6b;
+            border-color: #ee5253;
+            animation: shake 0.5s ease;
+        }
+
+        .choice.disabled {
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        @keyframes popCorrect {
+            50% { transform: scale(1.12); }
+        }
+
+        @keyframes shake {
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Start screen */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            cursor: pointer;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            50% { transform: translateY(-15px); }
+        }
+
+        #start-tap {
+            width: 70px;
+            height: 70px;
+            border: 4px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Success overlay */
+        #success-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            pointer-events: none;
+        }
+
+        #success-overlay.show { display: flex; }
+
+        #success-emoji {
+            font-size: 120px;
+            animation: successPop 0.8s ease forwards;
+        }
+
+        @keyframes successPop {
+            0% { transform: scale(0) rotate(-20deg); opacity: 1; }
+            50% { transform: scale(1.3) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            animation: fall 1.5s linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Teaching overlay */
+        #teaching-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+            padding: 20px;
+        }
+
+        #teaching-overlay.show { display: flex; }
+
+        #teaching-content {
+            text-align: center;
+            color: #fff;
+        }
+
+        #teaching-problem {
+            font-size: 28px;
+            margin-bottom: 20px;
+            color: #ffd93d;
+        }
+
+        #teaching-answer {
+            font-size: 48px;
+            font-weight: bold;
+            color: #00ff88;
+            margin-bottom: 10px;
+        }
+
+        #teaching-explanation {
+            font-size: 20px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 25px;
+        }
+
+        #got-it-btn {
+            padding: 15px 50px;
+            font-size: 36px;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .item { font-size: 30px; }
+            #items-area { gap: 6px; max-width: 280px; }
+            .box { min-width: 55px; min-height: 55px; padding: 6px; }
+            .box .item { font-size: 22px; }
+            #boxes-area { gap: 10px; }
+            .choice { padding: 12px 18px; font-size: 22px; min-width: 75px; }
+            #question-text { font-size: 18px; }
+            #score { font-size: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start screen -->
+    <div id="start-screen">
+        <div id="start-icon">➗</div>
+        <div id="start-tap"></div>
+    </div>
+
+    <div id="app">
+        <div id="header">
+            <div id="progress-dots"></div>
+            <div>
+                <span id="score">0</span>
+                <span id="streak"></span>
+            </div>
+        </div>
+
+        <div id="stage">
+            <div id="items-area"></div>
+            <div id="boxes-area"></div>
+            <div id="question-text"></div>
+        </div>
+
+        <div id="choices"></div>
+    </div>
+
+    <!-- Success overlay -->
+    <div id="success-overlay">
+        <div id="success-emoji">⭐</div>
+    </div>
+
+    <!-- Teaching overlay -->
+    <div id="teaching-overlay">
+        <div id="teaching-content">
+            <div id="teaching-problem"></div>
+            <div id="teaching-answer"></div>
+            <div id="teaching-explanation"></div>
+            <button id="got-it-btn">👍</button>
+        </div>
+    </div>
+
+    <script>
+        // Audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'drop') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400 + Math.random() * 200, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            }
+        }
+
+        // Fruits
+        const fruits = ['🍎', '🍊', '🍋', '🍇', '🍓', '🥝', '🍑'];
+        const fruitNames = {
+            '🍎': 'apples', '🍊': 'oranges', '🍋': 'lemons', '🍇': 'grapes',
+            '🍓': 'strawberries', '🥝': 'kiwis', '🍑': 'peaches'
+        };
+
+        // Levels
+        const levels = [
+            { total: 4, groups: 2 },
+            { total: 6, groups: 2 },
+            { total: 6, groups: 3 },
+            { total: 8, groups: 2 },
+            { total: 8, groups: 4 },
+            { total: 9, groups: 3 },
+            { total: 10, groups: 2 },
+            { total: 10, groups: 5 },
+            { total: 12, groups: 3 },
+            { total: 12, groups: 4 },
+        ];
+
+        // State
+        let currentLevel = 0;
+        let score = 0;
+        let streak = 0;
+        let currentFruit = '🍎';
+        let currentProblem = null;
+        let phase = 'watch'; // 'watch', 'expression', 'answer'
+        let canAnswer = false;
+
+        // DOM
+        const startScreen = document.getElementById('start-screen');
+        const progressDots = document.getElementById('progress-dots');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const itemsArea = document.getElementById('items-area');
+        const boxesArea = document.getElementById('boxes-area');
+        const questionText = document.getElementById('question-text');
+        const choicesEl = document.getElementById('choices');
+        const successOverlay = document.getElementById('success-overlay');
+        const teachingOverlay = document.getElementById('teaching-overlay');
+        const gotItBtn = document.getElementById('got-it-btn');
+
+        // Init
+        function init() {
+            progressDots.innerHTML = '';
+            for (let i = 0; i < 10; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                progressDots.appendChild(dot);
+            }
+        }
+
+        // Load level
+        function loadLevel() {
+            const config = levels[currentLevel % levels.length];
+            currentFruit = fruits[Math.floor(Math.random() * fruits.length)];
+            
+            const total = config.total;
+            const groups = config.groups;
+            const perGroup = total / groups;
+
+            currentProblem = { total, groups, perGroup };
+            phase = 'watch';
+            canAnswer = false;
+
+            // Update dots
+            document.querySelectorAll('.dot').forEach((dot, i) => {
+                dot.classList.remove('done', 'current');
+                if (i < currentLevel % 10) dot.classList.add('done');
+                if (i === currentLevel % 10) dot.classList.add('current');
+            });
+
+            // Clear
+            itemsArea.innerHTML = '';
+            boxesArea.innerHTML = '';
+            choicesEl.innerHTML = '';
+            questionText.textContent = '';
+            questionText.classList.remove('show');
+
+            // Create items
+            for (let i = 0; i < total; i++) {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.textContent = currentFruit;
+                itemsArea.appendChild(item);
+            }
+
+            // Create boxes
+            for (let i = 0; i < groups; i++) {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.dataset.index = i;
+                boxesArea.appendChild(box);
+            }
+
+            // Start animation after brief pause
+            setTimeout(() => animateSplit(), 600);
+        }
+
+        // Animate split
+        function animateSplit() {
+            const { total, groups, perGroup } = currentProblem;
+            const items = itemsArea.querySelectorAll('.item');
+            const boxes = boxesArea.querySelectorAll('.box');
+
+            let itemIndex = 0;
+            let delay = 0;
+
+            for (let round = 0; round < perGroup; round++) {
+                for (let g = 0; g < groups; g++) {
+                    const item = items[itemIndex];
+                    const box = boxes[g];
+
+                    setTimeout(() => {
+                        item.classList.add('used');
+                        box.classList.add('receiving');
+                        setTimeout(() => box.classList.remove('receiving'), 250);
+
+                        const newItem = document.createElement('div');
+                        newItem.className = 'item';
+                        newItem.textContent = currentFruit;
+                        box.appendChild(newItem);
+                        setTimeout(() => newItem.classList.add('show'), 30);
+
+                        playSound('drop');
+                    }, delay);
+
+                    itemIndex++;
+                    delay += 180;
+                }
+            }
+
+            // After animation, show expression question
+            setTimeout(() => showExpressionQuestion(), delay + 500);
+        }
+
+        // Show expression question
+        function showExpressionQuestion() {
+            phase = 'expression';
+            const { total, groups } = currentProblem;
+            const fruitName = fruitNames[currentFruit] || 'fruits';
+
+            // Show question text
+            questionText.innerHTML = `<span class="highlight">${total} ${fruitName}</span> divided into <span class="highlight">${groups} baskets</span>`;
+            questionText.classList.add('show');
+
+            // Generate choices
+            const correct = `${total} ÷ ${groups}`;
+            const wrongs = generateWrongExpressions(total, groups);
+            const allChoices = [correct, ...wrongs].sort(() => Math.random() - 0.5);
+
+            choicesEl.innerHTML = '';
+            allChoices.forEach(expr => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = expr;
+                btn.dataset.correct = expr === correct;
+                btn.addEventListener('click', () => handleExpressionChoice(btn));
+                choicesEl.appendChild(btn);
+            });
+
+            canAnswer = true;
+        }
+
+        // Generate wrong expressions
+        function generateWrongExpressions(total, groups) {
+            const perGroup = total / groups;
+            const wrongs = new Set();
+            
+            if (perGroup !== groups) wrongs.add(`${total} ÷ ${perGroup}`);
+            wrongs.add(`${total} × ${groups}`);
+            wrongs.add(`${groups} × ${perGroup}`);
+            [2,3,4,5,6].forEach(d => {
+                if (d !== groups && d !== perGroup) wrongs.add(`${total} ÷ ${d}`);
+            });
+
+            return [...wrongs].slice(0, 3);
+        }
+
+        // Handle expression choice
+        function handleExpressionChoice(btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const isCorrect = btn.dataset.correct === 'true';
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                document.querySelectorAll('.choice').forEach(c => c.classList.add('disabled'));
+
+                // Small celebration
+                spawnConfetti(5);
+
+                // Move to answer question
+                setTimeout(() => showAnswerQuestion(), 800);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '';
+
+                // Show teaching
+                setTimeout(() => showTeaching('expression'), 500);
+            }
+        }
+
+        // Show answer question
+        function showAnswerQuestion() {
+            phase = 'answer';
+            const { total, groups, perGroup } = currentProblem;
+
+            // Update question text
+            questionText.innerHTML = `How many in <span class="highlight">each basket</span>?`;
+
+            // Generate choices
+            const wrongs = new Set();
+            wrongs.add(groups);
+            wrongs.add(total);
+            if (perGroup > 1) wrongs.add(perGroup - 1);
+            wrongs.add(perGroup + 1);
+            wrongs.add(perGroup * 2);
+
+            const wrongArray = [...wrongs].filter(w => w !== perGroup && w > 0).slice(0, 3);
+            const allChoices = [perGroup, ...wrongArray].sort(() => Math.random() - 0.5);
+
+            choicesEl.innerHTML = '';
+            allChoices.forEach(num => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = num;
+                btn.dataset.correct = num === perGroup;
+                btn.addEventListener('click', () => handleAnswerChoice(btn));
+                choicesEl.appendChild(btn);
+            });
+
+            canAnswer = true;
+        }
+
+        // Handle answer choice
+        function handleAnswerChoice(btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const isCorrect = btn.dataset.correct === 'true';
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                
+                streak++;
+                score += 100 + (streak - 1) * 25;
+                scoreEl.textContent = score;
+                streakEl.textContent = streak >= 2 ? `🔥${streak}` : '';
+
+                document.querySelectorAll('.choice').forEach(c => c.classList.add('disabled'));
+
+                // Big celebration
+                showSuccess();
+
+                // Next level
+                setTimeout(() => {
+                    currentLevel++;
+                    loadLevel();
+                }, 1200);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '';
+
+                // Show teaching
+                setTimeout(() => showTeaching('answer'), 500);
+            }
+        }
+
+        // Show teaching overlay
+        function showTeaching(type) {
+            const { total, groups, perGroup } = currentProblem;
+            const fruitName = fruitNames[currentFruit] || 'fruits';
+
+            const problemText = `${total} ${fruitName} ÷ ${groups} baskets`;
+            
+            if (type === 'expression') {
+                document.getElementById('teaching-problem').textContent = problemText;
+                document.getElementById('teaching-answer').textContent = `${total} ÷ ${groups}`;
+                document.getElementById('teaching-explanation').textContent = `${total} divided into ${groups} groups`;
+            } else {
+                document.getElementById('teaching-problem').textContent = `${total} ÷ ${groups} = ?`;
+                document.getElementById('teaching-answer').textContent = `${total} ÷ ${groups} = ${perGroup}`;
+                document.getElementById('teaching-explanation').textContent = `${perGroup} in each basket`;
+            }
+
+            teachingOverlay.classList.add('show');
+
+            gotItBtn.onclick = () => {
+                teachingOverlay.classList.remove('show');
+                // Retry current phase
+                if (type === 'expression') {
+                    // Reset and replay from animation
+                    resetForReplay();
+                } else {
+                    // Just retry answer question
+                    showAnswerQuestion();
+                }
+            };
+        }
+
+        // Reset for replay
+        function resetForReplay() {
+            const { total, groups } = currentProblem;
+
+            // Reset items
+            itemsArea.innerHTML = '';
+            for (let i = 0; i < total; i++) {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.textContent = currentFruit;
+                itemsArea.appendChild(item);
+            }
+
+            // Clear boxes
+            boxesArea.querySelectorAll('.box').forEach(box => box.innerHTML = '');
+
+            // Clear question
+            questionText.classList.remove('show');
+            choicesEl.innerHTML = '';
+
+            // Replay animation
+            setTimeout(() => animateSplit(), 400);
+        }
+
+        // Success animation
+        function showSuccess() {
+            successOverlay.classList.add('show');
+            setTimeout(() => successOverlay.classList.remove('show'), 800);
+            spawnConfetti(15);
+        }
+
+        // Confetti
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.textContent = ['⭐', '✨', '💫', '🎉'][Math.floor(Math.random() * 4)];
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.top = '-20px';
+                    c.style.fontSize = (18 + Math.random() * 14) + 'px';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // Start game
+        function startGame() {
+            initAudio();
+            startScreen.classList.add('hidden');
+            currentLevel = 0;
+            score = 0;
+            streak = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '';
+            loadLevel();
+        }
+
+        startScreen.addEventListener('click', startGame);
+        startScreen.addEventListener('touchend', (e) => { e.preventDefault(); startGame(); });
+
+        init();
+    </script>
+</body>
+</html>

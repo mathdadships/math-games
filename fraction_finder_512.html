@@ -1,0 +1,2417 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 5.12 - DETERMINING EQUIVALENT FRACTIONS                                  ║
+║  80's Arcade Style Game                                                      ║
+║  Curriculum: Amplify Desmos Grade 3 Unit 5 Lesson 12                         ║
+║  Visual: Number lines (not fraction bars)                                    ║
+║  Question: "Which fraction is equivalent to [fraction]?"                     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🕹️ FRACTION FINDER</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== 80s ARCADE HEADER ========== */
+        #header {
+            display: none; /* Hidden initially, shown after start */
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+            border-bottom: 4px solid #ff00ff;
+            box-shadow: 0 4px 0 #00ffff;
+        }
+
+        #header.show {
+            display: flex;
+        }
+
+        #title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #ff00ff;
+            text-shadow: 
+                0 0 10px #ff00ff,
+                0 0 20px #ff00ff,
+                0 0 30px #ff00ff;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 8px 16px;
+            border: 2px solid #00ffff;
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            color: #00ffff;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+        }
+
+        .streak-display {
+            border-color: #00ffff;
+        }
+
+        .streak-display.hot {
+            border-color: #ff6600;
+            background: rgba(255, 102, 0, 0.2);
+            animation: hotPulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes hotPulse {
+            to { box-shadow: 0 0 20px #ff6600; }
+        }
+
+        /* ========== MAIN CARD - TRANSPARENT ========== */
+        #main-card {
+            display: none; /* Hidden initially */
+            background: transparent;
+            border: none;
+            box-shadow: none;
+            padding: 20px 10px;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #main-card.show {
+            display: flex;
+        }
+
+        /* ========== PROMPT BOX ========== */
+        #prompt {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            color: #00ffff;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .prompt-fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+            vertical-align: middle;
+        }
+
+        .prompt-line {
+            width: 20px;
+            height: 2px;
+            background: #ffff00;
+            margin: 2px 0;
+        }
+
+        /* ========== NUMBER LINE VISUAL ========== */
+        #visual-helper {
+            width: 100%;
+            max-width: 700px;
+            background: #0a0a1a;
+            border: 3px solid #00ffff;
+            padding: 20px 20px 40px 20px;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+            min-height: 560px;
+        }
+
+        .number-line-container {
+            position: relative;
+            margin: 90px 30px 140px 30px;
+        }
+
+        /* Second number line for hover preview */
+        #hover-numberline-container {
+            position: relative;
+            margin: 90px 30px 40px 30px;
+            opacity: 1;
+        }
+
+        #hover-numberline-container .number-line {
+            position: relative;
+            height: 4px;
+            background: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .hover-ticks-hidden {
+            opacity: 0;
+        }
+
+        #hover-numberline-container.answer-reveal {
+            animation: pulseGlow 1s ease infinite alternate;
+        }
+
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 10px rgba(255, 0, 255, 0.3); }
+            to { box-shadow: 0 0 25px rgba(255, 0, 255, 0.6); }
+        }
+
+        .hover-fraction-label {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            line-height: 1;
+        }
+
+        .hover-fraction-label .num { display: block; }
+        .hover-fraction-label .frac-line {
+            width: 30px;
+            height: 3px;
+            background: #ff00ff;
+            box-shadow: 0 0 10px #ff00ff;
+            margin: 4px 0;
+        }
+        .hover-fraction-label .denom { display: block; }
+
+        .hover-fraction-point {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 18px;
+            height: 18px;
+            background: #ff00ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ff00ff, 0 0 25px #ff00ff;
+            z-index: 10;
+        }
+
+        .number-line {
+            position: relative;
+            height: 4px;
+            background: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .number-line-endpoint {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 24px;
+            background: #00ffff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        }
+
+        .number-line-endpoint.left { left: 0; }
+        .number-line-endpoint.right { right: 0; }
+
+        .tick-mark {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 36px;
+            background: #00ffff;
+            z-index: 5;
+        }
+
+        .tick-mark.major {
+            height: 44px;
+            width: 4px;
+            background: #00ffff;
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #00ffff;
+            text-shadow: 0 0 5px #00ffff;
+            white-space: nowrap;
+        }
+
+        /* Minor tick marks for fraction divisions */
+        .tick-mark.minor {
+            height: 30px;
+            width: 2px;
+            background: rgba(0, 255, 255, 0.7);
+        }
+
+        .fraction-point {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: #ffff00;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff00;
+            animation: pointPulse 0.8s ease infinite alternate;
+            z-index: 10;
+        }
+
+        @keyframes pointPulse {
+            to { box-shadow: 0 0 25px #ffff00, 0 0 40px #ffff00; }
+        }
+
+        .fraction-label {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+            line-height: 1;
+        }
+
+        .fraction-label .num { display: block; }
+        .fraction-label .frac-line {
+            width: 35px;
+            height: 3px;
+            background: #ffff00;
+            box-shadow: 0 0 10px #ffff00;
+            margin: 4px 0;
+        }
+        .fraction-label .denom { display: block; }
+
+        .question-text {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            text-align: center;
+            margin-top: 20px;
+            text-transform: uppercase;
+        }
+
+        .question-text.answered {
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        /* Highlight on correct */
+        .number-line-container.highlight-correct .fraction-point {
+            background: #00ff00;
+            box-shadow: 0 0 25px #00ff00, 0 0 40px #00ff00;
+        }
+        .number-line-container.highlight-correct .fraction-label {
+            color: #00ff00;
+            text-shadow: 0 0 15px #00ff00;
+        }
+        .number-line-container.highlight-correct .fraction-label .frac-line {
+            background: #00ff00;
+            box-shadow: 0 0 15px #00ff00;
+        }
+
+        /* ========== CHOICES - ARCADE BUTTONS ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 700px;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(180deg, #2a2a4a 0%, #1a1a2a 100%);
+            color: #00ffff;
+            border: 3px solid #00ffff;
+            border-radius: 0;
+            padding: 15px 10px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 
+                0 4px 0 #006666,
+                0 0 10px rgba(0, 255, 255, 0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 110px;
+        }
+
+        .choice:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 0 #006666,
+                0 0 20px rgba(0, 255, 255, 0.6);
+            background: linear-gradient(180deg, #3a3a5a 0%, #2a2a3a 100%);
+        }
+
+        .choice:active {
+            transform: translateY(4px);
+            box-shadow: 
+                0 0 0 #006666,
+                0 0 10px rgba(0, 255, 255, 0.3);
+        }
+
+        .choice.correct {
+            background: linear-gradient(180deg, #00aa00 0%, #006600 100%) !important;
+            border-color: #00ff00 !important;
+            color: #fff !important;
+            box-shadow: 
+                0 4px 0 #004400,
+                0 0 30px rgba(0, 255, 0, 0.8) !important;
+            animation: correctFlash 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(180deg, #E8A838 0%, #D4882A 100%) !important;
+            border-color: #F5C563 !important;
+            color: #fff !important;
+            box-shadow: 
+                0 4px 0 #996622,
+                0 0 20px rgba(232, 168, 56, 0.5) !important;
+            animation: wrongShake 0.4s ease;
+        }
+
+        @keyframes correctFlash {
+            0%, 50%, 100% { opacity: 1; }
+            25%, 75% { opacity: 0.7; }
+        }
+
+        @keyframes wrongShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .choice-fraction {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .choice-fraction .num,
+        .choice-fraction .den {
+            display: block;
+        }
+
+        .choice-fraction .line {
+            width: 28px;
+            height: 3px;
+            background: currentColor;
+            margin: 4px 0;
+        }
+
+        /* ========== POPUPS - ARCADE STYLE ========== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: linear-gradient(180deg, #1a1a2e 0%, #0a0a1e 100%);
+            border: 4px solid #ff00ff;
+            padding: 30px;
+            text-align: center;
+            max-width: 500px;
+            width: 95%;
+            animation: popIn 0.3s ease;
+            box-shadow: 0 0 50px rgba(255, 0, 255, 0.5);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.5); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .popup-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            color: #00ffff;
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px #00ffff;
+        }
+
+        .popup-subtitle {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            padding: 14px 24px;
+            border: 3px solid;
+            cursor: pointer;
+            transition: all 0.1s;
+            margin: 5px;
+            background: #000;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            border-color: #00ffff;
+            color: #00ffff;
+        }
+
+        .btn-primary:hover {
+            background: #00ffff;
+            color: #000;
+        }
+
+        .btn-amber {
+            border-color: #E8A838;
+            color: #E8A838;
+        }
+
+        .btn-amber:hover {
+            background: #E8A838;
+            color: #000;
+        }
+
+        .btn-secondary {
+            border-color: #666;
+            color: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #666;
+            color: #000;
+        }
+
+        .btn-green {
+            border-color: #00ff00;
+            color: #00ff00;
+        }
+
+        .btn-green:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        /* ========== INLINE CORRECT FEEDBACK (not overlay) ========== */
+        #correct-feedback {
+            display: none;
+            width: 100%;
+            max-width: 700px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.5);
+            text-align: center;
+            animation: feedbackSlideIn 0.3s ease;
+        }
+
+        #correct-feedback.show {
+            display: block;
+        }
+
+        @keyframes feedbackSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        /* ========== SHOW ME FEEDBACK (inline) ========== */
+        #showme-feedback {
+            display: none;
+            width: 100%;
+            max-width: 700px;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 3px solid #00ffff;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.5);
+            text-align: center;
+            animation: feedbackSlideIn 0.3s ease;
+        }
+
+        #showme-feedback.show {
+            display: block;
+        }
+
+        .showme-feedback-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .showme-emoji {
+            font-size: 40px;
+        }
+
+        .showme-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+        }
+
+        .showme-answer-box {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            padding: 16px 24px;
+            margin: 16px 0;
+            text-shadow: 0 0 10px #00ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .showme-answer-box .eq-frac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .showme-answer-box .eq-line {
+            width: 30px;
+            height: 3px;
+            background: #00ff00;
+            margin: 4px 0;
+        }
+
+        .showme-explanation {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .correct-feedback-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .correct-emoji {
+            font-size: 40px;
+        }
+
+        .correct-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 15px #00ff00;
+        }
+
+        .correct-answer-box {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            padding: 16px 24px;
+            margin: 16px 0;
+            text-shadow: 0 0 10px #00ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .correct-answer-box .eq-frac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .correct-answer-box .eq-line {
+            width: 30px;
+            height: 3px;
+            background: #00ff00;
+            margin: 4px 0;
+        }
+
+        /* ========== WRONG POPUP VISUAL DEMO ========== */
+        #visual-demo-area {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 255, 255, 0.05);
+            border: 2px solid #00ffff;
+        }
+
+        .demo-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #00ffff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Number line demo for wrong popup */
+        .demo-nl-container {
+            position: relative;
+            margin: 60px 20px 50px 20px;
+        }
+
+        .demo-nl {
+            position: relative;
+            height: 4px;
+            background: #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .demo-nl-tick {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 30px;
+            background: #00ffff;
+        }
+
+        .demo-nl-tick.major {
+            height: 36px;
+            width: 4px;
+        }
+
+        .demo-nl-tick-label {
+            position: absolute;
+            top: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #00ffff;
+        }
+
+        .demo-nl-point {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            z-index: 10;
+        }
+
+        .demo-nl-point.yellow {
+            background: #ffff00;
+            box-shadow: 0 0 15px #ffff00;
+        }
+
+        .demo-nl-point.magenta {
+            background: #ff00ff;
+            box-shadow: 0 0 15px #ff00ff;
+        }
+
+        .demo-nl-point-label {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 8px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            line-height: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .demo-nl-point-label.yellow {
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+        }
+
+        .demo-nl-point-label.magenta {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .demo-nl-point-label .demo-frac-line {
+            width: 20px;
+            height: 2px;
+            margin: 2px 0;
+        }
+
+        .demo-nl-point-label.yellow .demo-frac-line {
+            background: #ffff00;
+        }
+
+        .demo-nl-point-label.magenta .demo-frac-line {
+            background: #ff00ff;
+        }
+
+        .demo-same-marker {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #00ff00;
+            text-align: center;
+            margin: 15px 0;
+            animation: arrowBounce 0.6s ease infinite;
+        }
+
+        @keyframes arrowBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(3px); }
+        }
+
+        .demo-result {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            margin-top: 15px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .demo-result.show {
+            opacity: 1;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+        }
+
+        #correct-answer-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #00ff00;
+            margin-bottom: 10px;
+        }
+
+        #correct-answer-display {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        #correct-answer-display .eq-frac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        #correct-answer-display .eq-line {
+            width: 25px;
+            height: 3px;
+            background: #00ff00;
+            margin: 3px 0;
+        }
+
+        /* ========== STREAK POPUP ========== */
+        .streak-number {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 48px;
+            color: #ff6600;
+            text-shadow: 0 0 20px #ff6600;
+            margin: 10px 0;
+        }
+
+        .streak-hype {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+            margin-bottom: 20px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 20px);
+            width: 100%;
+            text-align: center;
+            padding: 30px;
+        }
+
+        #start-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 52px;
+            color: #ff00ff;
+            text-shadow: 
+                0 0 20px #ff00ff,
+                0 0 40px #ff00ff,
+                0 0 60px #ff00ff;
+            margin-bottom: 12px;
+            animation: titleGlow 1s ease infinite alternate;
+        }
+
+        #start-title-sub {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 28px;
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            margin-bottom: 50px;
+        }
+
+        @keyframes titleGlow {
+            to { text-shadow: 0 0 30px #ff00ff, 0 0 60px #ff00ff; }
+        }
+
+        #start-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            padding: 24px 60px;
+            background: linear-gradient(180deg, #ff00ff 0%, #aa00aa 100%);
+            color: white;
+            border: 5px solid #ffff00;
+            cursor: pointer;
+            transition: all 0.1s;
+            box-shadow: 0 8px 0 #666600;
+            margin-top: 40px;
+        }
+
+        #start-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 11px 0 #666600;
+        }
+
+        #start-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 5px 0 #666600;
+        }
+
+        .blink {
+            animation: blink 0.8s ease infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* Demo on start screen */
+        #demo-container {
+            background: #0a0a1a;
+            border: 4px solid #00ffff;
+            padding: 40px 50px;
+            margin: 30px 0;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+        }
+
+        #demo-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #00ffff;
+            margin-bottom: 30px;
+        }
+
+        .demo-numberline {
+            position: relative;
+            height: 6px;
+            background: #00ffff;
+            margin: 50px 25px 40px 25px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .demo-tick {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 3px;
+            height: 32px;
+            background: #00ffff;
+        }
+
+        .demo-tick.demo-tick-major {
+            height: 44px;
+            width: 4px;
+        }
+
+        .demo-tick-label {
+            position: absolute;
+            top: 38px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #00ffff;
+        }
+
+        .demo-point {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 22px;
+            height: 22px;
+            background: #ffff00;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #ffff00;
+        }
+
+        .demo-point.magenta {
+            background: #ff00ff;
+            box-shadow: 0 0 15px #ff00ff;
+        }
+
+        .demo-point-label {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-bottom: 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 22px;
+            color: #ffff00;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .demo-point-label.yellow {
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+        }
+
+        .demo-point-label.magenta {
+            color: #ff00ff;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+
+        .demo-point-label .demo-line {
+            width: 35px;
+            height: 3px;
+            background: #ffff00;
+            margin: 5px 0;
+        }
+
+        .demo-point-label .demo-line.yellow {
+            background: #ffff00;
+            box-shadow: 0 0 8px #ffff00;
+        }
+
+        .demo-point-label .demo-line.magenta {
+            background: #ff00ff;
+            box-shadow: 0 0 8px #ff00ff;
+        }
+
+        .demo-explain {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+            margin-top: 30px;
+            line-height: 2;
+            text-align: center;
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: calc(100vh - 40px);
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        #end-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            color: #00ff00;
+            text-shadow: 0 0 20px #00ff00;
+            margin-bottom: 10px;
+        }
+
+        #end-subtitle {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #ff00ff;
+            margin-bottom: 30px;
+        }
+
+        #end-stats {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #00ffff;
+            margin-bottom: 30px;
+        }
+
+        #play-again-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            padding: 16px 30px;
+            background: linear-gradient(180deg, #00aa00 0%, #006600 100%);
+            color: white;
+            border: 4px solid #00ff00;
+            cursor: pointer;
+            box-shadow: 0 6px 0 #004400;
+            transition: all 0.1s;
+        }
+
+        #play-again-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 9px 0 #004400;
+        }
+
+        /* ========== CONFETTI ========== */
+        .confetti {
+            position: fixed;
+            top: -20px;
+            animation: confettiFall 2s linear forwards;
+            z-index: 2000;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to {
+                top: 110vh;
+                transform: rotate(720deg);
+            }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 65px; }
+        .flying-emoji-correct.streak-high { font-size: 80px; }
+        .flying-emoji-correct.streak-ultra { font-size: 100px; }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 600px) {
+            #title { font-size: 10px; }
+            .stat-value { font-size: 14px; }
+            #choices { grid-template-columns: repeat(2, 1fr); }
+            .choice { min-height: 90px; font-size: 14px; }
+            .fraction-label { font-size: 14px; }
+            .fraction-label .frac-line { width: 28px; }
+            .question-text { font-size: 10px; }
+            #start-title { font-size: 32px; }
+            #start-title-sub { font-size: 18px; }
+            #start-btn { font-size: 18px; padding: 18px 40px; }
+            #end-title { font-size: 14px; }
+            #demo-container { padding: 25px 20px; }
+            #demo-label { font-size: 11px; }
+            .demo-point-label { font-size: 18px; }
+            .demo-point-label .demo-line { width: 28px; }
+            .demo-explain { font-size: 11px; }
+            #prompt { font-size: 9px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div id="start-title">FRACTION</div>
+            <div id="start-title-sub">FINDER</div>
+            
+            <div id="demo-container">
+                <div id="demo-label">>>> FIND THE EQUIVALENT FRACTION <<<</div>
+                
+                <!-- Demo: Top number line with 1/2 -->
+                <div class="demo-numberline" style="margin-top: 80px;">
+                    <div class="demo-tick demo-tick-major" style="left: 0%;"><div class="demo-tick-label">0</div></div>
+                    <div class="demo-tick" style="left: 50%;"></div>
+                    <div class="demo-tick demo-tick-major" style="left: 100%;"><div class="demo-tick-label">1</div></div>
+                    <div class="demo-point" style="left: 50%;">
+                        <div class="demo-point-label yellow">
+                            <span>1</span>
+                            <div class="demo-line yellow"></div>
+                            <span>2</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Demo: Bottom number line with 2/4 -->
+                <div class="demo-numberline" style="margin-top: 120px;">
+                    <div class="demo-tick demo-tick-major" style="left: 0%;"></div>
+                    <div class="demo-tick" style="left: 25%;"></div>
+                    <div class="demo-tick" style="left: 50%;"></div>
+                    <div class="demo-tick" style="left: 75%;"></div>
+                    <div class="demo-tick demo-tick-major" style="left: 100%;"></div>
+                    <div class="demo-point magenta" style="left: 50%;">
+                        <div class="demo-point-label magenta">
+                            <span>2</span>
+                            <div class="demo-line magenta"></div>
+                            <span>4</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="demo-explain">
+                    SAME SPOT = EQUIVALENT!<br>
+                    1/2 = 2/4
+                </div>
+            </div>
+            
+            <button id="start-btn">START <span class="blink">▶</span></button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">FRACTION FINDER</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">SCORE</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">STREAK</div>
+                    <div class="stat-value" id="streak">0🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt">WHICH FRACTION IS EQUIVALENT?</div>
+            
+            <!-- Visual helper with number line -->
+            <div id="visual-helper"></div>
+            
+            <!-- Choices grid -->
+            <div id="choices"></div>
+            
+            <!-- ========== CORRECT FEEDBACK (inline, not overlay) ========== -->
+            <div id="correct-feedback">
+                <div class="correct-feedback-header">
+                    <span class="correct-emoji" id="correct-emoji">⭐</span>
+                    <span class="correct-title" id="correct-title">NICE!</span>
+                </div>
+                <div class="correct-answer-box" id="correct-answer-text"></div>
+                <button class="popup-btn btn-green" id="correct-next-btn">NEXT ▶</button>
+            </div>
+            
+            <!-- ========== SHOW ME FEEDBACK (inline, for wrong answers) ========== -->
+            <div id="showme-feedback">
+                <div class="showme-feedback-header">
+                    <span class="showme-emoji">💡</span>
+                    <span class="showme-title">THE ANSWER IS:</span>
+                </div>
+                <div class="showme-answer-box" id="showme-answer-text"></div>
+                <div class="showme-explanation" id="showme-explanation">SAME POINT ON THE NUMBER LINE = EQUIVALENT!</div>
+                <button class="popup-btn btn-primary" id="showme-next-btn">GOT IT! NEXT ▶</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">NOT QUITE!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                
+                <!-- Visual demo showing equivalent fractions -->
+                <div id="visual-demo-area">
+                    <div class="demo-label">SAME POINT ON THE NUMBER LINE:</div>
+                    <div class="demo-numberline-pair" id="demo-comparison"></div>
+                    <div class="demo-result" id="demo-result"></div>
+                </div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">THE ANSWER IS:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div id="wrong-buttons">
+                    <button class="popup-btn btn-amber" id="try-again-btn">TRY AGAIN</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">SHOW ME 👁️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">ON FIRE!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">KEEP GOING! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">YOU'RE A MATHEMATICIAN!</div>
+            <div id="end-subtitle">FRACTION MASTER</div>
+            <div id="end-stats">SCORE: <span id="final-score">0</span> | BEST STREAK: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">PLAY AGAIN ▶</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff00ff','#00ffff','#ffff00','#00ff00','#ff6600'][Math.floor(Math.random()*5)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        // Mr. Signer's growth mindset board - ONLY for WRONG answers
+        const growthMessages = [
+            "MISTAKES IN MATH ARE OK!",
+            "THE PROCESS IS MORE IMPORTANT THAN THE ANSWER!",
+            "MATH IS HARD, BUT I CAN DO IT!",
+            "THERE'S ALWAYS MORE THAN ONE WAY TO SOLVE IT!",
+            "I CAN LEARN ANYTHING IN MATH!",
+            "I BELIEVE I CAN BE GOOD AT MATH!",
+            "IF I DON'T GET IT THE FIRST TIME, I CAN TRY A NEW WAY!",
+            "MATH HELPS ME BUILD MY BRAIN!"
+        ];
+
+        // Streak hype messages - for streak celebrations
+        const streakHypeMessages = [
+            { streak: 3, hype: "STRAIGHT FIRE!" },
+            { streak: 6, hype: "GOATED!" },
+            { streak: 9, hype: "LEGENDARY!" },
+            { streak: 12, hype: "UNSTOPPABLE!" },
+            { streak: 15, hype: "FRACTION GOD!" }
+        ];
+
+        // Hype messages - ONLY for CORRECT answers
+        const hypeMessages = [
+            { emoji: '🧢', title: 'NO CAP!' },
+            { emoji: '🔥', title: 'FIRE!' },
+            { emoji: '💪', title: 'SLAY!' },
+            { emoji: '✨', title: 'GOATED!' },
+            { emoji: '🎯', title: 'ON POINT!' },
+            { emoji: '⭐', title: 'AMAZING!' },
+            { emoji: '🚀', title: 'ZOOMING!' },
+            { emoji: '💥', title: 'BOOM!' },
+            { emoji: '👑', title: 'ROYALTY!' },
+            { emoji: '💎', title: 'BRILLIANT!' }
+        ];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let currentProblem = null;
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        const TOTAL_QUESTIONS = 10;
+        let canAnswer = true;
+        let countAnimationTimeout = null;
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const header = document.getElementById('header');
+        const mainCard = document.getElementById('main-card');
+        const visualHelper = document.getElementById('visual-helper');
+        const choicesContainer = document.getElementById('choices');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const wrongPopup = document.getElementById('wrong-popup');
+        const streakPopup = document.getElementById('streak-popup');
+        const endScreen = document.getElementById('end-screen');
+
+        // ==========================================================================
+        // FRACTION PAIRS - ML 5.12 CURRICULUM
+        // Includes proper fractions (< 1) and improper fractions (> 1)
+        // ==========================================================================
+        const fractionPairs = [
+            // Halves family
+            { given: {num: 1, denom: 2}, equiv: {num: 2, denom: 4} },
+            { given: {num: 1, denom: 2}, equiv: {num: 4, denom: 8} },
+            { given: {num: 1, denom: 2}, equiv: {num: 3, denom: 6} },
+            { given: {num: 2, denom: 4}, equiv: {num: 1, denom: 2} },
+            { given: {num: 2, denom: 4}, equiv: {num: 4, denom: 8} },
+            { given: {num: 4, denom: 8}, equiv: {num: 1, denom: 2} },
+            { given: {num: 4, denom: 8}, equiv: {num: 2, denom: 4} },
+            { given: {num: 3, denom: 6}, equiv: {num: 1, denom: 2} },
+            
+            // Thirds family
+            { given: {num: 1, denom: 3}, equiv: {num: 2, denom: 6} },
+            { given: {num: 2, denom: 6}, equiv: {num: 1, denom: 3} },
+            { given: {num: 2, denom: 3}, equiv: {num: 4, denom: 6} },
+            { given: {num: 4, denom: 6}, equiv: {num: 2, denom: 3} },
+            
+            // Fourths family
+            { given: {num: 1, denom: 4}, equiv: {num: 2, denom: 8} },
+            { given: {num: 2, denom: 8}, equiv: {num: 1, denom: 4} },
+            { given: {num: 3, denom: 4}, equiv: {num: 6, denom: 8} },
+            { given: {num: 6, denom: 8}, equiv: {num: 3, denom: 4} },
+            { given: {num: 2, denom: 4}, equiv: {num: 4, denom: 8} },
+            { given: {num: 4, denom: 8}, equiv: {num: 2, denom: 4} },
+            
+            // Improper fractions (> 1) - per Lesson Practice 5.12
+            { given: {num: 3, denom: 2}, equiv: {num: 6, denom: 4} },
+            { given: {num: 6, denom: 4}, equiv: {num: 3, denom: 2} },
+            { given: {num: 7, denom: 4}, equiv: {num: 14, denom: 8} },
+            { given: {num: 14, denom: 8}, equiv: {num: 7, denom: 4} },
+            { given: {num: 5, denom: 3}, equiv: {num: 10, denom: 6} },
+            { given: {num: 10, denom: 6}, equiv: {num: 5, denom: 3} },
+            { given: {num: 4, denom: 3}, equiv: {num: 8, denom: 6} },
+            { given: {num: 8, denom: 6}, equiv: {num: 4, denom: 3} },
+            { given: {num: 5, denom: 4}, equiv: {num: 10, denom: 8} },
+            { given: {num: 10, denom: 8}, equiv: {num: 5, denom: 4} },
+        ];
+
+        // ==========================================================================
+        // PROBLEM GENERATION
+        // ==========================================================================
+        function generateProblem() {
+            const pair = fractionPairs[Math.floor(Math.random() * fractionPairs.length)];
+            
+            // Calculate value for number line positioning
+            const value = pair.given.num / pair.given.denom;
+            
+            // Determine endpoint for number line (1, 2, or 3)
+            let endpoint = 1;
+            if (value > 1) endpoint = 2;
+            if (value > 2) endpoint = 3;
+            
+            return {
+                givenNum: pair.given.num,
+                givenDenom: pair.given.denom,
+                equivNum: pair.equiv.num,
+                equivDenom: pair.equiv.denom,
+                value: value,
+                endpoint: endpoint,
+                answer: `${pair.equiv.num}/${pair.equiv.denom}`
+            };
+        }
+
+        // ==========================================================================
+        // CHOICE GENERATION - Creates 4 choices with different denominators
+        // ==========================================================================
+        function generateChoices(problem) {
+            const correct = { 
+                num: problem.equivNum, 
+                denom: problem.equivDenom,
+                display: `${problem.equivNum}/${problem.equivDenom}`, 
+                isCorrect: true 
+            };
+            
+            const wrongs = [];
+            const usedFractions = new Set([correct.display, `${problem.givenNum}/${problem.givenDenom}`]);
+            
+            // Get the value we need to NOT match
+            const correctValue = problem.equivNum / problem.equivDenom;
+            
+            // Generate wrong answer candidates - fractions that look plausible but are NOT equivalent
+            const wrongCandidates = [];
+            
+            // Strategy 1: Same denominator as correct, wrong numerator
+            const sameDenomsWrongs = [
+                problem.equivNum - 1,
+                problem.equivNum + 1,
+                problem.equivNum + 2,
+                Math.floor(problem.equivNum / 2) || 1
+            ];
+            for (const num of sameDenomsWrongs) {
+                if (num > 0 && num !== problem.equivNum) {
+                    const frac = `${num}/${problem.equivDenom}`;
+                    if (!usedFractions.has(frac) && Math.abs(num/problem.equivDenom - correctValue) > 0.001) {
+                        wrongCandidates.push({ num, denom: problem.equivDenom, display: frac });
+                    }
+                }
+            }
+            
+            // Strategy 2: Different denominator families that are NOT equivalent
+            const denominators = [2, 3, 4, 6, 8];
+            for (const denom of denominators) {
+                if (denom === problem.equivDenom) continue;
+                
+                // Generate some numerators for this denominator
+                const maxNum = Math.ceil(problem.endpoint * denom);
+                for (let num = 1; num <= maxNum; num++) {
+                    const frac = `${num}/${denom}`;
+                    const fracValue = num / denom;
+                    
+                    // Make sure it's NOT equivalent to the correct answer
+                    if (!usedFractions.has(frac) && Math.abs(fracValue - correctValue) > 0.001) {
+                        wrongCandidates.push({ num, denom, display: frac });
+                    }
+                }
+            }
+            
+            // Shuffle and pick 3 unique wrong answers
+            for (let i = wrongCandidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [wrongCandidates[i], wrongCandidates[j]] = [wrongCandidates[j], wrongCandidates[i]];
+            }
+            
+            for (const candidate of wrongCandidates) {
+                if (wrongs.length >= 3) break;
+                if (!usedFractions.has(candidate.display)) {
+                    wrongs.push({ 
+                        num: candidate.num,
+                        denom: candidate.denom,
+                        display: candidate.display, 
+                        isCorrect: false 
+                    });
+                    usedFractions.add(candidate.display);
+                }
+            }
+            
+            // Fallback if we don't have enough
+            let fallbackNum = 1;
+            let fallbackDenom = 2;
+            while (wrongs.length < 3) {
+                const frac = `${fallbackNum}/${fallbackDenom}`;
+                const fracValue = fallbackNum / fallbackDenom;
+                if (!usedFractions.has(frac) && Math.abs(fracValue - correctValue) > 0.001) {
+                    wrongs.push({ 
+                        num: fallbackNum,
+                        denom: fallbackDenom,
+                        display: frac, 
+                        isCorrect: false 
+                    });
+                    usedFractions.add(frac);
+                }
+                fallbackNum++;
+                if (fallbackNum > fallbackDenom) {
+                    fallbackNum = 1;
+                    fallbackDenom++;
+                    if (fallbackDenom > 8) fallbackDenom = 2;
+                }
+                if (fallbackNum > 20) break; // Safety
+            }
+            
+            // Shuffle all choices
+            const choices = [correct, ...wrongs];
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            return choices;
+        }
+
+        // ==========================================================================
+        // DISPLAY CORRECT ANSWER (for wrong popup)
+        // ==========================================================================
+        function buildCorrectAnswerDisplay() {
+            const display = document.getElementById('correct-answer-display');
+            display.innerHTML = `
+                <span class="eq-frac">
+                    <span>${currentProblem.givenNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.givenDenom}</span>
+                </span>
+                <span>=</span>
+                <span class="eq-frac">
+                    <span>${currentProblem.equivNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.equivDenom}</span>
+                </span>
+            `;
+        }
+
+        // ==========================================================================
+        // BUILD VISUAL DISPLAY - NUMBER LINE
+        // ==========================================================================
+        function buildVisualDisplay() {
+            const p = currentProblem;
+            
+            // Calculate position as percentage
+            const position = (p.value / p.endpoint) * 100;
+            
+            // Build tick marks for whole numbers (major ticks)
+            let ticksHTML = '';
+            for (let i = 0; i <= p.endpoint; i++) {
+                const pos = (i / p.endpoint) * 100;
+                ticksHTML += `
+                    <div class="tick-mark major" style="left: ${pos}%;">
+                        <div class="tick-label">${i}</div>
+                    </div>
+                `;
+            }
+            
+            // Add minor tick marks based on the given fraction's denominator
+            // This helps students see where the fraction sits
+            const denom = p.givenDenom;
+            for (let whole = 0; whole < p.endpoint; whole++) {
+                for (let part = 1; part < denom; part++) {
+                    const tickValue = whole + part / denom;
+                    const tickPos = (tickValue / p.endpoint) * 100;
+                    // Always show the tick marks - the fraction point will be on top
+                    ticksHTML += `<div class="tick-mark minor" style="left: ${tickPos}%;"></div>`;
+                }
+            }
+            
+            visualHelper.innerHTML = `
+                <div class="number-line-container" id="nl-container">
+                    <div class="number-line">
+                        ${ticksHTML}
+                        <div class="fraction-point" style="left: ${position}%;">
+                            <div class="fraction-label">
+                                <span class="num">${p.givenNum}</span>
+                                <div class="frac-line"></div>
+                                <span class="denom">${p.givenDenom}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="hover-numberline-container" class="always-visible">
+                    <div class="number-line" id="hover-number-line">
+                        <div id="hover-ticks" class="hover-ticks-hidden"></div>
+                        <div class="hover-fraction-point" id="hover-point" style="left: 0%; display: none;">
+                            <div class="hover-fraction-label" id="hover-label">
+                                <span class="num" id="hover-num">?</span>
+                                <div class="frac-line"></div>
+                                <span class="denom" id="hover-denom">?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add major ticks to hover line (these stay constant)
+            let hoverMajorHTML = '';
+            for (let i = 0; i <= p.endpoint; i++) {
+                const pos = (i / p.endpoint) * 100;
+                hoverMajorHTML += `
+                    <div class="tick-mark major" style="left: ${pos}%;">
+                        <div class="tick-label">${i}</div>
+                    </div>
+                `;
+            }
+            document.getElementById('hover-number-line').insertAdjacentHTML('afterbegin', hoverMajorHTML);
+        }
+
+        // ==========================================================================
+        // BUILD VISUAL DEMO (for wrong popup) - Shows two fractions at same point
+        // ==========================================================================
+        function buildVisualDemo() {
+            const p = currentProblem;
+            const container = document.getElementById('demo-comparison');
+            
+            // Calculate position percentage
+            const position = (p.value / p.endpoint) * 100;
+            
+            // Build tick marks
+            let ticksHTML = '';
+            for (let i = 0; i <= p.endpoint; i++) {
+                const pos = (i / p.endpoint) * 100;
+                ticksHTML += `
+                    <div class="demo-nl-tick major" style="left: ${pos}%;">
+                        <div class="demo-nl-tick-label">${i}</div>
+                    </div>
+                `;
+            }
+            
+            // Build minor ticks for given denominator
+            for (let whole = 0; whole < p.endpoint; whole++) {
+                for (let part = 1; part < p.givenDenom; part++) {
+                    const tickValue = whole + part / p.givenDenom;
+                    const tickPos = (tickValue / p.endpoint) * 100;
+                    ticksHTML += `<div class="demo-nl-tick" style="left: ${tickPos}%;"></div>`;
+                }
+            }
+            
+            container.innerHTML = `
+                <div class="demo-nl-container">
+                    <div class="demo-nl">
+                        ${ticksHTML}
+                        <div class="demo-nl-point yellow" style="left: ${position}%;">
+                            <div class="demo-nl-point-label yellow">
+                                <span>${p.givenNum}</span>
+                                <div class="demo-frac-line"></div>
+                                <span>${p.givenDenom}</span>
+                            </div>
+                        </div>
+                        <div class="demo-nl-point magenta" style="left: ${position}%; top: calc(50% + 25px);">
+                            <div class="demo-nl-point-label magenta" style="top: 100%; bottom: auto; margin-top: 8px; margin-bottom: 0;">
+                                <span>${p.equivNum}</span>
+                                <div class="demo-frac-line"></div>
+                                <span>${p.equivDenom}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="demo-same-marker">▲ SAME POINT! ▲</div>
+            `;
+            
+            document.getElementById('demo-result').textContent = '';
+            document.getElementById('demo-result').classList.remove('show');
+        }
+
+        function animateDemo() {
+            const p = currentProblem;
+            const result = document.getElementById('demo-result');
+            
+            // Show result
+            result.textContent = `${p.givenNum}/${p.givenDenom} = ${p.equivNum}/${p.equivDenom}`;
+            result.classList.add('show');
+            
+            // Show the equation area
+            setTimeout(() => {
+                buildCorrectAnswerDisplay();
+                document.getElementById('correct-answer-area').style.display = 'block';
+                document.getElementById('wrong-buttons').innerHTML = `
+                    <button class="popup-btn btn-green" id="got-it-btn">GOT IT! NEXT ▶</button>
+                `;
+                document.getElementById('got-it-btn').onclick = () => {
+                    document.getElementById('wrong-popup').classList.remove('show');
+                    resetWrongPopup();
+                    questionsAnswered++;
+                    checkGameEnd();
+                };
+            }, 500);
+        }
+
+        function resetWrongPopup() {
+            document.getElementById('visual-demo-area').style.display = 'none';
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('wrong-buttons').innerHTML = `
+                <button class="popup-btn btn-amber" id="try-again-btn">TRY AGAIN</button>
+                <button class="popup-btn btn-secondary" id="show-answer-btn">SHOW ME 👁️</button>
+            `;
+            
+            // Re-attach event listeners
+            document.getElementById('try-again-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+                canAnswer = true;
+            };
+            
+            document.getElementById('show-answer-btn').onclick = showVisualAnswer;
+        }
+
+        function showVisualAnswer() {
+            // Close the wrong popup
+            wrongPopup.classList.remove('show');
+            
+            // Disable choices so user can't click them
+            document.querySelectorAll('.choice').forEach(btn => {
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.5';
+            });
+            
+            // Highlight the correct choice
+            document.querySelectorAll('.choice').forEach(btn => {
+                const choiceNum = parseInt(btn.querySelector('.num').textContent);
+                const choiceDenom = parseInt(btn.querySelector('.den').textContent);
+                if (choiceNum === currentProblem.equivNum && choiceDenom === currentProblem.equivDenom) {
+                    btn.classList.add('correct');
+                    btn.style.opacity = '1';
+                }
+            });
+            
+            // Show the equivalent fraction on the number line (magenta point)
+            showAnswerOnNumberLine();
+            
+            // Build and show the inline showme feedback
+            document.getElementById('showme-answer-text').innerHTML = `
+                <span class="eq-frac">
+                    <span>${currentProblem.givenNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.givenDenom}</span>
+                </span>
+                <span>=</span>
+                <span class="eq-frac">
+                    <span>${currentProblem.equivNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.equivDenom}</span>
+                </span>
+            `;
+            
+            document.getElementById('showme-feedback').classList.add('show');
+        }
+        
+        function showAnswerOnNumberLine() {
+            const p = currentProblem;
+            const hoverContainer = document.getElementById('hover-numberline-container');
+            const hoverPoint = document.getElementById('hover-point');
+            const hoverNum = document.getElementById('hover-num');
+            const hoverDenom = document.getElementById('hover-denom');
+            const hoverTicks = document.getElementById('hover-ticks');
+            
+            // Calculate position for the equivalent fraction
+            const value = p.equivNum / p.equivDenom;
+            let position = (value / p.endpoint) * 100;
+            position = Math.max(0, Math.min(100, position));
+            
+            // Generate minor ticks for the equivalent fraction's denominator
+            let minorTicksHTML = '';
+            for (let whole = 0; whole < p.endpoint; whole++) {
+                for (let part = 1; part < p.equivDenom; part++) {
+                    const tickValue = whole + part / p.equivDenom;
+                    const tickPos = (tickValue / p.endpoint) * 100;
+                    if (tickPos <= 100) {
+                        minorTicksHTML += `<div class="tick-mark minor" style="left: ${tickPos}%;"></div>`;
+                    }
+                }
+            }
+            hoverTicks.innerHTML = minorTicksHTML;
+            
+            // Show ticks
+            hoverTicks.classList.remove('hover-ticks-hidden');
+            
+            // Update the hover point to show the correct answer
+            hoverPoint.style.left = position + '%';
+            hoverPoint.style.display = 'block';
+            hoverNum.textContent = p.equivNum;
+            hoverDenom.textContent = p.equivDenom;
+            
+            // Add answer reveal styling
+            hoverContainer.classList.add('answer-reveal');
+        }
+        
+        function hideShowmeFeedback() {
+            const showmeFeedback = document.getElementById('showme-feedback');
+            if (showmeFeedback) {
+                showmeFeedback.classList.remove('show');
+            }
+            const hoverContainer = document.getElementById('hover-numberline-container');
+            if (hoverContainer) {
+                hoverContainer.classList.remove('answer-reveal');
+            }
+            const hoverTicks = document.getElementById('hover-ticks');
+            if (hoverTicks) {
+                hoverTicks.classList.add('hover-ticks-hidden');
+            }
+            const hoverPoint = document.getElementById('hover-point');
+            if (hoverPoint) {
+                hoverPoint.style.display = 'none';
+            }
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM
+        // ==========================================================================
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const choices = generateChoices(currentProblem);
+            
+            // Hide any previous correct feedback
+            hideCorrectFeedback();
+            
+            // Hide any previous showme feedback
+            hideShowmeFeedback();
+            
+            // Update prompt with the specific fraction
+            document.getElementById('prompt').innerHTML = `WHICH FRACTION IS EQUIVALENT TO <span class="prompt-fraction"><span class="prompt-num">${currentProblem.givenNum}</span><span class="prompt-line"></span><span class="prompt-denom">${currentProblem.givenDenom}</span></span>?`;
+            
+            // Build visual display
+            buildVisualDisplay();
+            
+            // Update choices with stacked fraction display
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.innerHTML = `
+                    <div class="choice-fraction">
+                        <span class="num">${choice.num}</span>
+                        <div class="line"></div>
+                        <span class="den">${choice.denom}</span>
+                    </div>
+                `;
+                btn.addEventListener('click', () => handleChoice(btn, choice));
+                
+                // Add hover handlers for second number line
+                btn.addEventListener('mouseenter', () => showHoverFraction(choice));
+                btn.addEventListener('mouseleave', () => hideHoverFraction());
+                
+                // Touch support for mobile
+                btn.addEventListener('touchstart', () => showHoverFraction(choice));
+                
+                choicesContainer.appendChild(btn);
+            });
+            
+            canAnswer = true;
+        }
+
+        // ==========================================================================
+        // HOVER FRACTION DISPLAY
+        // ==========================================================================
+        function showHoverFraction(choice) {
+            const p = currentProblem;
+            const hoverPoint = document.getElementById('hover-point');
+            const hoverNum = document.getElementById('hover-num');
+            const hoverDenom = document.getElementById('hover-denom');
+            const hoverTicks = document.getElementById('hover-ticks');
+            
+            // Calculate position for this fraction
+            const value = choice.num / choice.denom;
+            let position = (value / p.endpoint) * 100;
+            
+            // Clamp position to stay within visible number line (0-100%)
+            position = Math.max(0, Math.min(100, position));
+            
+            // Generate minor ticks based on the HOVERED fraction's denominator
+            let minorTicksHTML = '';
+            const hoverDenomValue = choice.denom;
+            for (let whole = 0; whole < p.endpoint; whole++) {
+                for (let part = 1; part < hoverDenomValue; part++) {
+                    const tickValue = whole + part / hoverDenomValue;
+                    const tickPos = (tickValue / p.endpoint) * 100;
+                    if (tickPos <= 100) {
+                        minorTicksHTML += `<div class="tick-mark minor" style="left: ${tickPos}%;"></div>`;
+                    }
+                }
+            }
+            hoverTicks.innerHTML = minorTicksHTML;
+            
+            // Show ticks on hover
+            hoverTicks.classList.remove('hover-ticks-hidden');
+            
+            // Only show the fraction point for the first 2 questions
+            if (questionsAnswered < 2) {
+                hoverPoint.style.left = position + '%';
+                hoverPoint.style.display = 'block';
+                hoverNum.textContent = choice.num;
+                hoverDenom.textContent = choice.denom;
+            } else {
+                hoverPoint.style.display = 'none';
+            }
+        }
+
+        function hideHoverFraction() {
+            // Hide the hover point
+            const hoverPoint = document.getElementById('hover-point');
+            if (hoverPoint) {
+                hoverPoint.style.display = 'none';
+            }
+            
+            // Hide the ticks
+            const hoverTicks = document.getElementById('hover-ticks');
+            if (hoverTicks) {
+                hoverTicks.classList.add('hover-ticks-hidden');
+            }
+        }
+
+        // ==========================================================================
+        // HANDLE CHOICE
+        // ==========================================================================
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + '🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+
+                questionsAnswered++;
+
+                setTimeout(() => {
+                    showCorrectFeedback();
+                }, 400);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0🔥';
+                streakDisplay.classList.remove('hot');
+                
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        // ==========================================================================
+        // POPUPS
+        // ==========================================================================
+        function showCorrectFeedback() {
+            const hype = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            document.getElementById('correct-emoji').textContent = hype.emoji;
+            document.getElementById('correct-title').textContent = hype.title;
+            
+            document.getElementById('correct-answer-text').innerHTML = `
+                <span class="eq-frac">
+                    <span>${currentProblem.givenNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.givenDenom}</span>
+                </span>
+                <span>=</span>
+                <span class="eq-frac">
+                    <span>${currentProblem.equivNum}</span>
+                    <div class="eq-line"></div>
+                    <span>${currentProblem.equivDenom}</span>
+                </span>
+            `;
+            
+            document.getElementById('correct-feedback').classList.add('show');
+            
+            // Highlight number line
+            document.getElementById('nl-container').classList.add('highlight-correct');
+            
+            // Effects
+            spawnCorrectEmojis(3 + Math.min(streak, 7), streak);
+            if (streak >= 3) spawnConfetti(15);
+            
+            // Check for streak milestone
+            const milestone = streakHypeMessages.find(m => m.streak === streak);
+            if (milestone) {
+                setTimeout(() => showStreakPopup(milestone), 600);
+            }
+        }
+
+        function hideCorrectFeedback() {
+            document.getElementById('correct-feedback').classList.remove('show');
+        }
+
+        function showWrongPopup() {
+            const growth = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-subtitle').textContent = growth;
+            wrongPopup.classList.add('show');
+            
+            // Reset popup state
+            resetWrongPopup();
+        }
+
+        function showStreakPopup(milestone) {
+            document.getElementById('streak-count').textContent = milestone.streak;
+            document.getElementById('streak-hype').textContent = milestone.hype;
+            playSound('streak');
+            streakPopup.classList.add('show');
+            spawnConfetti(30);
+        }
+
+        function checkGameEnd() {
+            if (questionsAnswered >= TOTAL_QUESTIONS) {
+                setTimeout(() => {
+                    showEndScreen();
+                }, 500);
+            } else {
+                loadProblem();
+            }
+        }
+
+        function showEndScreen() {
+            mainCard.classList.remove('show');
+            header.classList.remove('show');
+            endScreen.style.display = 'flex';
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            playSound('complete');
+            spawnConfetti(50);
+        }
+
+        // ==========================================================================
+        // EVENT LISTENERS
+        // ==========================================================================
+        document.getElementById('start-btn').addEventListener('click', () => {
+            initAudio();
+            startScreen.style.display = 'none';
+            header.classList.add('show');
+            mainCard.classList.add('show');
+            loadProblem();
+        });
+
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            hideCorrectFeedback();
+            checkGameEnd();
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            wrongPopup.classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', showVisualAnswer);
+
+        document.getElementById('showme-next-btn').addEventListener('click', () => {
+            hideShowmeFeedback();
+            questionsAnswered++;
+            checkGameEnd();
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            streakPopup.classList.remove('show');
+        });
+
+        document.getElementById('play-again-btn').addEventListener('click', () => {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0🔥';
+            streakDisplay.classList.remove('hot');
+            endScreen.style.display = 'none';
+            header.classList.add('show');
+            mainCard.classList.add('show');
+            loadProblem();
+        });
+
+        // ==========================================================================
+        // AUTOMATED TESTING
+        // ==========================================================================
+        function runMathTests(numTests = 500, verbose = true) {
+            if (verbose) console.log('🧪 Running ' + numTests + ' comprehensive tests...');
+            
+            const results = {
+                passed: 0, 
+                failed: 0, 
+                errors: [],
+                // Distribution tracking
+                positions: [0,0,0,0],
+                // Fraction tracking
+                givenFractions: {},
+                equivFractions: {},
+                // Edge case tracking
+                properCount: 0,
+                improperCount: 0
+            };
+            
+            const validDenominators = [2, 3, 4, 6, 8];
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // ========== TEST 1: Exactly 4 choices ==========
+                if (choices.length !== 4) {
+                    issues.push(`Expected 4 choices, got ${choices.length}`);
+                }
+                
+                // ========== TEST 2: Exactly 1 correct answer ==========
+                const correctCount = choices.filter(c => c.isCorrect).length;
+                if (correctCount !== 1) {
+                    issues.push(`Expected 1 correct, got ${correctCount}`);
+                }
+                
+                // ========== TEST 3: No duplicate display strings ==========
+                const displays = choices.map(c => c.display);
+                if (new Set(displays).size !== displays.length) {
+                    issues.push(`Duplicate displays: ${displays.join(', ')}`);
+                }
+                
+                // ========== TEST 4: Given and equiv are mathematically equivalent ==========
+                const givenValue = problem.givenNum / problem.givenDenom;
+                const equivValue = problem.equivNum / problem.equivDenom;
+                if (Math.abs(givenValue - equivValue) > 0.0001) {
+                    issues.push(`Not equivalent: ${problem.givenNum}/${problem.givenDenom} ≠ ${problem.equivNum}/${problem.equivDenom}`);
+                }
+                
+                // ========== TEST 5: Correct choice matches equiv ==========
+                const correctChoice = choices.find(c => c.isCorrect);
+                if (correctChoice && (correctChoice.num !== problem.equivNum || correctChoice.denom !== problem.equivDenom)) {
+                    issues.push(`Correct choice ${correctChoice.num}/${correctChoice.denom} ≠ equiv ${problem.equivNum}/${problem.equivDenom}`);
+                }
+                
+                // ========== TEST 6: All wrong choices are NOT equivalent ==========
+                for (const c of choices) {
+                    if (!c.isCorrect) {
+                        const wrongValue = c.num / c.denom;
+                        if (Math.abs(wrongValue - givenValue) < 0.0001) {
+                            issues.push(`Wrong answer IS equivalent: ${c.num}/${c.denom}`);
+                        }
+                    }
+                }
+                
+                // ========== TEST 7: Valid denominators ==========
+                if (!validDenominators.includes(problem.givenDenom)) {
+                    issues.push(`Invalid givenDenom: ${problem.givenDenom}`);
+                }
+                if (!validDenominators.includes(problem.equivDenom)) {
+                    issues.push(`Invalid equivDenom: ${problem.equivDenom}`);
+                }
+                
+                // ========== TEST 8: Given and equiv have different denominators ==========
+                if (problem.givenDenom === problem.equivDenom) {
+                    issues.push(`Same denom: ${problem.givenDenom}`);
+                }
+                
+                // ========== TEST 9: All numerators positive ==========
+                for (const c of choices) {
+                    if (c.num <= 0) {
+                        issues.push(`Non-positive numerator: ${c.num}`);
+                    }
+                }
+                
+                // ========== TEST 10: Number line endpoint makes sense ==========
+                if (problem.endpoint < Math.ceil(problem.value)) {
+                    issues.push(`Endpoint ${problem.endpoint} too small for value ${problem.value}`);
+                }
+                
+                // ========== Track statistics ==========
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 10) {
+                    results.errors.push(`#${i+1}: ${issues.join('; ')} [${problem.givenNum}/${problem.givenDenom} → ${problem.equivNum}/${problem.equivDenom}]`);
+                }
+                
+                // Track distribution
+                const givenKey = `${problem.givenNum}/${problem.givenDenom}`;
+                const equivKey = `${problem.equivNum}/${problem.equivDenom}`;
+                results.givenFractions[givenKey] = (results.givenFractions[givenKey] || 0) + 1;
+                results.equivFractions[equivKey] = (results.equivFractions[equivKey] || 0) + 1;
+                
+                const correctIdx = choices.findIndex(c => c.isCorrect);
+                if (correctIdx >= 0 && correctIdx < 4) results.positions[correctIdx]++;
+                
+                if (problem.value <= 1) results.properCount++;
+                else results.improperCount++;
+            }
+            
+            // ========== BUILD REPORT ==========
+            let report = '';
+            
+            if (results.failed === 0) {
+                report += `✅ ALL ${numTests} TESTS PASSED!\n\n`;
+            } else {
+                report += `❌ ${results.failed}/${numTests} TESTS FAILED\n\n`;
+                report += `First errors:\n${results.errors.join('\n')}\n\n`;
+            }
+            
+            // Position distribution
+            report += `📊 POSITION DISTRIBUTION:\n`;
+            for (let i = 0; i < 4; i++) {
+                const pct = Math.round(results.positions[i] / numTests * 100);
+                report += `   P${i+1}: ${pct}%\n`;
+            }
+            
+            // Proper vs improper
+            report += `\n📊 FRACTION TYPES:\n`;
+            report += `   Proper (≤1): ${results.properCount}\n`;
+            report += `   Improper (>1): ${results.improperCount}\n`;
+            
+            // Unique fractions
+            report += `\n📊 UNIQUE GIVEN FRACTIONS: ${Object.keys(results.givenFractions).length}\n`;
+            report += `📊 UNIQUE EQUIV FRACTIONS: ${Object.keys(results.equivFractions).length}\n`;
+            
+            if (verbose) {
+                console.log(report);
+                alert(results.failed === 0 
+                    ? `✅ ALL ${numTests} TESTS PASSED!\n\nPositions: ${results.positions.map((p,i) => `P${i+1}:${Math.round(p/numTests*100)}%`).join(' ')}\n\nProper: ${results.properCount} | Improper: ${results.improperCount}`
+                    : `❌ ${results.failed}/${numTests} FAILED\n\n${results.errors.slice(0,3).join('\n')}`
+                );
+            }
+            
+            return {
+                success: results.failed === 0,
+                passed: results.passed,
+                failed: results.failed,
+                report: report
+            };
+        }
+
+        // Ctrl+T to run tests
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                runMathTests(500, true);
+            }
+        });
+    </script>
+</body>
+</html>

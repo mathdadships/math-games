@@ -1,0 +1,1552 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 5.07 - Locating Non-Unit Fractions on a Number Line                      ║
+║  Students identify the fraction shown at a marked point on a number line     ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🔢 Fraction Finder</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #prompt {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+        }
+
+        /* Number line visual */
+        #visual-helper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .number-line-container {
+            width: 100%;
+        }
+
+        /* Hint area for second try */
+        #hint-area {
+            background: linear-gradient(135deg, #f0f4ff, #e8f0fe);
+            border-radius: 12px;
+            padding: 16px 24px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+
+        #hint-text {
+            font-size: 18px;
+            color: #667eea;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* ========== CHOICES ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 32px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Fraction display in choices */
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+        .fraction .numerator {
+            border-bottom: 3px solid currentColor;
+            padding-bottom: 4px;
+        }
+        .fraction .denominator {
+            padding-top: 4px;
+        }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 5px;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Correct popup styling */
+        #correct-popup .popup-content {
+            border: 4px solid #2ed573;
+        }
+
+        #correct-popup .popup-title {
+            color: #333;
+            font-size: 64px;
+        }
+
+        .correct-answer-box {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2ed573;
+            background: #e8f8f0;
+            padding: 16px 32px;
+            border-radius: 16px;
+            margin: 16px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Wrong popup styling */
+        #wrong-popup .popup-content {
+            border: 4px solid #E8A838;
+        }
+
+        #wrong-popup .popup-title {
+            color: #D4882A;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+            padding: 16px;
+            background: #f0f8ff;
+            border-radius: 12px;
+        }
+
+        #correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            font-size: 36px;
+            font-weight: 700;
+            color: #2ed573;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Streak popup styling */
+        #streak-popup .popup-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        #streak-popup .popup-title,
+        #streak-popup .popup-subtitle {
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd93d;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
+
+        .streak-hype {
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        #start-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        /* Demo container */
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            padding: 32px 40px;
+            margin-bottom: 24px;
+            max-width: 700px;
+            width: 95%;
+        }
+
+        .demo-title {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .demo-explanation {
+            font-size: 22px;
+            color: #764ba2;
+            margin-top: 20px;
+            font-weight: 600;
+            line-height: 1.6;
+        }
+
+        /* Kangaroo animation */
+        .demo-number-line {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        #kangaroo {
+            position: absolute;
+            font-size: 36px;
+            transform: scaleX(-1); /* Flip to face right */
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 16px 48px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to { top: 110vh; transform: rotate(720deg); }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 65px; }
+        .flying-emoji-correct.streak-high { font-size: 80px; }
+        .flying-emoji-correct.streak-ultra { font-size: 100px; }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #prompt { font-size: 16px; }
+            .choice { font-size: 24px; min-height: 80px; padding: 12px; }
+            #start-title { font-size: 36px; }
+            #end-title { font-size: 32px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div id="start-title">🔢 Fraction Finder</div>
+            
+            <div class="demo-container">
+                <div class="demo-title">Example:</div>
+                <div class="demo-number-line">
+                    <svg viewBox="0 0 400 125" width="100%">
+                        <!-- Number line -->
+                        <line x1="40" y1="50" x2="360" y2="50" stroke="#333" stroke-width="3"/>
+                        
+                        <!-- Tick marks for fourths (0 to 6/4) -->
+                        <line x1="40" y1="35" x2="40" y2="65" stroke="#333" stroke-width="3|}"/>
+                        <line x1="93" y1="42" x2="93" y2="58" stroke="#333" stroke-width="2|}"/>
+                        <line x1="147" y1="42" x2="147" y2="58" stroke="#333" stroke-width="2|}"/>
+                        <line x1="200" y1="42" x2="200" y2="58" stroke="#333" stroke-width="2|}"/>
+                        <line x1="253" y1="35" x2="253" y2="65" stroke="#333" stroke-width="3"/>
+                        <line x1="307" y1="42" x2="307" y2="58" stroke="#333" stroke-width="2"/>
+                        <line x1="360" y1="42" x2="360" y2="58" stroke="#333" stroke-width="2"/>
+                        
+                        <!-- Labels for whole numbers -->
+                        <text x="40" y="85" text-anchor="middle" font-family="Fredoka" font-size="24" font-weight="600" fill="#333">0</text>
+                        <text x="253" y="85" text-anchor="middle" font-family="Fredoka" font-size="24" font-weight="600" fill="#333">1</text>
+                        
+                        <!-- Dot at 6/4 -->
+                        <circle cx="360" cy="50" r="8" fill="#ffd93d" stroke="#333" stroke-width="2"/>
+                        
+                        <!-- Fraction labels that appear below tick marks -->
+                        <g id="jump1" opacity="0">
+                            <text x="93" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">1</text>
+                            <line x1="85" y1="106" x2="101" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="93" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                        <g id="jump2" opacity="0">
+                            <text x="147" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">2</text>
+                            <line x1="139" y1="106" x2="155" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="147" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                        <g id="jump3" opacity="0">
+                            <text x="200" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">3</text>
+                            <line x1="192" y1="106" x2="208" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="200" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                        <g id="jump4" opacity="0">
+                            <text x="253" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                            <line x1="245" y1="106" x2="261" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="253" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                        <g id="jump5" opacity="0">
+                            <text x="307" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">5</text>
+                            <line x1="299" y1="106" x2="315" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="307" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                        <g id="jump6" opacity="0">
+                            <text x="360" y="103" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">6</text>
+                            <line x1="352" y1="106" x2="368" y2="106" stroke="#333" stroke-width="2"/>
+                            <text x="360" y="119" text-anchor="middle" font-family="Fredoka" font-size="14" font-weight="bold" fill="#333">4</text>
+                        </g>
+                    </svg>
+                    <!-- Kangaroo outside SVG for better animation control -->
+                    <div id="kangaroo">🦘</div>
+                </div>
+                <div class="demo-explanation">
+                    4 equal parts per whole → denominator is 4<br>
+                    6 jumps → numerator is 6<br>
+                    Answer: <strong><span style="display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1;"><span style="border-bottom: 2px solid #764ba2;">6</span><span>4</span></span></strong>
+                </div>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🚀</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">🔢 Fraction Finder</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt">What fraction is shown?</div>
+            
+            <!-- Number line visual -->
+            <div id="visual-helper"></div>
+            
+            <!-- Hint area (shown after 2nd wrong attempt) -->
+            <div id="hint-area" style="display: none;">
+                <div id="hint-text"></div>
+            </div>
+            
+            <!-- Choices grid -->
+            <div id="choices"></div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box" id="correct-answer-box">
+                    <span id="correct-answer-text"></span> ✓
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">The answer is:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">On fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        // Mr. Signer's growth mindset board - ONLY for WRONG answers
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain and become a thinker!"
+        ];
+
+        // Hype messages - ONLY for CORRECT answers (2026 Gen Alpha slang)
+        const correctHypeMessages = [
+            "W!",
+            "Huge W!",
+            "Slay!",
+            "Goated!",
+            "Fire!",
+            "Slaps!",
+            "No cap!",
+            "Valid!",
+            "Let's go!",
+            "Sigma!"
+        ];
+
+        // Streak hype messages - for streak celebrations
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "We are all MATHEMATICIANS!" },
+            { streak: 12, hype: "SIGMA BRAIN!" }
+        ];
+
+        // Wrong answer popup emojis (message comes from growthMessages)
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+        let wrongAttempts = 0;
+
+        // ==========================================================================
+        // DOM ELEMENTS
+        // ==========================================================================
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const endScreen = document.getElementById('end-screen');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const choicesContainer = document.getElementById('choices');
+        const visualHelper = document.getElementById('visual-helper');
+
+        // ==========================================================================
+        // CUSTOMIZE: PROBLEM GENERATION
+        // ==========================================================================
+        function generateProblem() {
+            // Denominators: 2, 3, 4, 6, 8 (from curriculum)
+            const denominators = [2, 3, 4, 6, 8];
+            const denominator = denominators[Math.floor(Math.random() * denominators.length)];
+            
+            // Decide if we use 0-1 or 0-2 number line
+            // 70% chance of 0-1 (proper fractions), 30% chance of 0-2 (can include improper)
+            const useExtendedLine = Math.random() < 0.3;
+            
+            let numerator;
+            let maxWhole;
+            
+            if (useExtendedLine) {
+                // 0-2 line: numerator can be 1 to 2*denominator - 1 (but not exactly on 0 or 2)
+                maxWhole = 2;
+                // Pick numerator from 1 to 2*denominator - 1, avoiding whole numbers
+                const possibleNumerators = [];
+                for (let n = 1; n < 2 * denominator; n++) {
+                    if (n !== denominator) { // Skip 1 whole (n/n)
+                        possibleNumerators.push(n);
+                    }
+                }
+                numerator = possibleNumerators[Math.floor(Math.random() * possibleNumerators.length)];
+            } else {
+                // 0-1 line: numerator from 1 to denominator - 1
+                maxWhole = 1;
+                numerator = 1 + Math.floor(Math.random() * (denominator - 1));
+            }
+            
+            return {
+                numerator: numerator,
+                denominator: denominator,
+                maxWhole: maxWhole,
+                answer: numerator // For compatibility with test framework
+            };
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: CHOICE GENERATION
+        // ==========================================================================
+        function generateChoices(problem) {
+            const { numerator, denominator } = problem;
+            
+            const correct = {
+                numerator: numerator,
+                denominator: denominator,
+                display: `${numerator}/${denominator}`,
+                isCorrect: true
+            };
+            
+            const wrongs = [];
+            const usedFractions = new Set([`${numerator}/${denominator}`]);
+            
+            // Strategy 1: Wrong numerator (±1 or ±2) - same denominator
+            const numOffsets = [-2, -1, 1, 2];
+            for (const offset of numOffsets) {
+                const wrongNum = numerator + offset;
+                const key = `${wrongNum}/${denominator}`;
+                if (wrongNum > 0 && wrongNum <= problem.maxWhole * denominator && !usedFractions.has(key)) {
+                    wrongs.push({
+                        numerator: wrongNum,
+                        denominator: denominator,
+                        display: key,
+                        isCorrect: false
+                    });
+                    usedFractions.add(key);
+                    if (wrongs.length >= 2) break;
+                }
+            }
+            
+            // Strategy 2: Different denominator but similar visual position
+            const otherDenoms = [2, 3, 4, 6, 8].filter(d => d !== denominator);
+            for (const otherDenom of otherDenoms) {
+                if (wrongs.length >= 3) break;
+                // Find a fraction with similar value
+                const targetValue = numerator / denominator;
+                // Try numerators that give similar-looking positions
+                for (let n = 1; n < otherDenom * problem.maxWhole; n++) {
+                    const testValue = n / otherDenom;
+                    const key = `${n}/${otherDenom}`;
+                    // Must be somewhat close but not exact
+                    if (Math.abs(testValue - targetValue) > 0.05 && 
+                        Math.abs(testValue - targetValue) < 0.4 &&
+                        !usedFractions.has(key) &&
+                        testValue > 0 && testValue < problem.maxWhole) {
+                        wrongs.push({
+                            numerator: n,
+                            denominator: otherDenom,
+                            display: key,
+                            isCorrect: false
+                        });
+                        usedFractions.add(key);
+                        break;
+                    }
+                }
+            }
+            
+            // Fill remaining slots with more numerator variations
+            while (wrongs.length < 3) {
+                // Try other numerators with same denominator
+                for (let n = 1; n <= problem.maxWhole * denominator; n++) {
+                    const key = `${n}/${denominator}`;
+                    if (!usedFractions.has(key)) {
+                        wrongs.push({
+                            numerator: n,
+                            denominator: denominator,
+                            display: key,
+                            isCorrect: false
+                        });
+                        usedFractions.add(key);
+                        break;
+                    }
+                }
+                
+                // Safety: if still need more, try any valid fraction
+                if (wrongs.length < 3) {
+                    for (const d of [2, 3, 4, 6, 8]) {
+                        for (let n = 1; n < d * problem.maxWhole; n++) {
+                            const key = `${n}/${d}`;
+                            if (!usedFractions.has(key)) {
+                                wrongs.push({
+                                    numerator: n,
+                                    denominator: d,
+                                    display: key,
+                                    isCorrect: false
+                                });
+                                usedFractions.add(key);
+                                break;
+                            }
+                        }
+                        if (wrongs.length >= 3) break;
+                    }
+                }
+            }
+            
+            // Shuffle
+            const choices = [correct, ...wrongs.slice(0, 3)];
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            return choices;
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: BUILD NUMBER LINE VISUAL
+        // ==========================================================================
+        function buildNumberLine(problem) {
+            const { numerator, denominator, maxWhole } = problem;
+            
+            const width = 400;
+            const height = 80;
+            const margin = 40;
+            const lineY = 40;
+            const lineWidth = width - 2 * margin;
+            
+            // Calculate position of the dot
+            const fractionValue = numerator / denominator;
+            const dotX = margin + (fractionValue / maxWhole) * lineWidth;
+            
+            let svg = `<svg viewBox="0 0 ${width} ${height}" width="100%">`;
+            
+            // Main line
+            svg += `<line x1="${margin}" y1="${lineY}" x2="${width - margin}" y2="${lineY}" stroke="#333" stroke-width="3"/>`;
+            
+            // Tick marks for each unit fraction
+            const totalTicks = denominator * maxWhole;
+            for (let i = 0; i <= totalTicks; i++) {
+                const x = margin + (i / totalTicks) * lineWidth;
+                const isWholeNumber = i % denominator === 0;
+                const tickHeight = isWholeNumber ? 15 : 8;
+                const strokeWidth = isWholeNumber ? 3 : 2;
+                
+                svg += `<line x1="${x}" y1="${lineY - tickHeight}" x2="${x}" y2="${lineY + tickHeight}" stroke="#333" stroke-width="${strokeWidth}"/>`;
+                
+                // Label whole numbers
+                if (isWholeNumber) {
+                    const wholeNum = i / denominator;
+                    svg += `<text x="${x}" y="${lineY + 30}" text-anchor="middle" font-family="Fredoka" font-size="18" fill="#333">${wholeNum}</text>`;
+                }
+            }
+            
+            // The dot marking the fraction (yellow, small enough to see line through)
+            svg += `<circle cx="${dotX}" cy="${lineY}" r="6" fill="#ffd93d" stroke="#333" stroke-width="2"/>`;
+            
+            // Hidden kangaroo for hint animation
+            svg += `<text id="hint-kangaroo" x="${margin}" y="${lineY - 15}" font-size="24" text-anchor="middle" style="transform: scaleX(-1); transform-origin: ${margin}px ${lineY - 15}px; opacity: 0;">🦘</text>`;
+            
+            svg += '</svg>';
+            
+            return svg;
+        }
+
+        // ==========================================================================
+        // HINT KANGAROO ANIMATION
+        // ==========================================================================
+        function animateHintKangaroo() {
+            const { numerator, denominator, maxWhole } = currentProblem;
+            const container = document.querySelector('.number-line-container');
+            if (!container) return;
+            
+            // Remove any existing hint kangaroo div
+            const existingKangaroo = container.querySelector('.hint-kangaroo');
+            if (existingKangaroo) existingKangaroo.remove();
+            
+            // Create kangaroo element
+            const kangaroo = document.createElement('div');
+            kangaroo.className = 'hint-kangaroo';
+            kangaroo.textContent = '🦘';
+            kangaroo.style.cssText = `
+                position: absolute;
+                font-size: 28px;
+                transform: scaleX(-1) translateX(50%);
+                pointer-events: none;
+                z-index: 10;
+                transition: none;
+            `;
+            container.style.position = 'relative';
+            container.appendChild(kangaroo);
+            
+            // Calculate positions based on SVG layout
+            // SVG viewBox is 400 wide, margin is 40, lineWidth is 320
+            const svgWidth = 400;
+            const margin = 40;
+            const lineWidth = svgWidth - 2 * margin; // 320
+            const totalTicks = denominator * maxWhole;
+            
+            // Calculate percentage positions for each tick mark
+            const getTickPercent = (tickIndex) => {
+                const x = margin + (tickIndex / totalTicks) * lineWidth;
+                return (x / svgWidth) * 100;
+            };
+            
+            // Start at tick 0, end at tick = numerator
+            const startTick = 0;
+            const endTick = numerator;
+            
+            // Position kangaroo at start
+            kangaroo.style.left = getTickPercent(startTick) + '%';
+            kangaroo.style.top = '20%';
+            
+            // Animate hop by hop
+            let currentTick = 0;
+            const hopDuration = 350;
+            
+            function doHop() {
+                if (currentTick >= endTick) {
+                    // Done - remove kangaroo after a moment
+                    setTimeout(() => {
+                        kangaroo.style.transition = 'opacity 0.3s';
+                        kangaroo.style.opacity = '0';
+                        setTimeout(() => kangaroo.remove(), 300);
+                    }, 500);
+                    return;
+                }
+                
+                const hopStartPercent = getTickPercent(currentTick);
+                const hopEndPercent = getTickPercent(currentTick + 1);
+                const startTime = performance.now();
+                
+                function animateFrame(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / hopDuration, 1);
+                    
+                    // Horizontal movement
+                    const currentX = hopStartPercent + (hopEndPercent - hopStartPercent) * progress;
+                    
+                    // Vertical arc
+                    const arcHeight = 35;
+                    const verticalOffset = -arcHeight * 4 * progress * (1 - progress);
+                    
+                    kangaroo.style.left = currentX + '%';
+                    kangaroo.style.top = `calc(20% + ${verticalOffset}px)`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateFrame);
+                    } else {
+                        currentTick++;
+                        setTimeout(doHop, 150);
+                    }
+                }
+                
+                requestAnimationFrame(animateFrame);
+            }
+            
+            // Start after a brief delay
+            setTimeout(doHop, 200);
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: DISPLAY CORRECT ANSWER
+        // ==========================================================================
+        function buildCorrectAnswerDisplay() {
+            const { numerator, denominator } = currentProblem;
+            document.getElementById('correct-answer-display').innerHTML = createFractionHTML(numerator, denominator);
+        }
+
+        // Helper to create fraction HTML
+        function createFractionHTML(numerator, denominator) {
+            return `<span class="fraction"><span class="numerator">${numerator}</span><span class="denominator">${denominator}</span></span>`;
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM
+        // ==========================================================================
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const choices = generateChoices(currentProblem);
+            
+            // Reset wrong attempts and hide hint
+            wrongAttempts = 0;
+            document.getElementById('hint-area').style.display = 'none';
+            
+            // Update visual (number line)
+            visualHelper.innerHTML = `<div class="number-line-container">${buildNumberLine(currentProblem)}</div>`;
+            
+            // Update choices
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.innerHTML = createFractionHTML(choice.numerator, choice.denominator);
+                btn.addEventListener('click', () => handleChoice(btn, choice));
+                choicesContainer.appendChild(btn);
+            });
+            
+            canAnswer = true;
+        }
+
+        // ==========================================================================
+        // HANDLE CHOICE - Do not modify
+        // ==========================================================================
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+
+                questionsAnswered++;
+
+                setTimeout(() => {
+                    showCorrectPopup();
+                }, 400);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        // ==========================================================================
+        // POPUPS - Do not modify
+        // ==========================================================================
+        function showCorrectPopup() {
+            const hypeMessages = [
+                { emoji: '🧢', title: 'NO CAP!' },
+                { emoji: '🔥', title: 'FIRE!' },
+                { emoji: '💪', title: 'W!' },
+                { emoji: '👑', title: 'SLAY!' },
+                { emoji: '✨', title: 'VALID!' },
+                { emoji: '🎯', title: 'GOATED!' },
+                { emoji: '💥', title: 'SLAPS!' },
+                { emoji: '🚀', title: "LET'S GO!" }
+            ];
+            const msg = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            document.getElementById('correct-answer-box').innerHTML = createFractionHTML(currentProblem.numerator, currentProblem.denominator) + ' ✓';
+            
+            document.getElementById('correct-popup').classList.add('show');
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = 
+                wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            
+            const message = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-title').textContent = message;
+            document.getElementById('wrong-subtitle').textContent = '';
+            
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hypeMsg = "Straight fire!";
+            for (const s of streakHypeMessages) {
+                if (streak >= s.streak) hypeMsg = s.hype;
+            }
+            document.getElementById('streak-hype').textContent = hypeMsg;
+            
+            let emojiCount, confettiCount;
+            if (streak >= 15) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 12) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 6) {
+                emojiCount = 10;
+                confettiCount = 15;
+            } else {
+                emojiCount = 6;
+                confettiCount = 10;
+            }
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(confettiCount);
+            spawnCorrectEmojis(emojiCount, streak);
+        }
+
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(50);
+        }
+
+        function checkGameEnd() {
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS - Do not modify
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            const shouldCelebrate = streak > 0 && (
+                (streak <= 15 && streak % 3 === 0) ||
+                (streak > 15 && streak % 10 === 5)
+            );
+            if (shouldCelebrate) {
+                showStreakCelebration();
+            } else {
+                checkGameEnd();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+            wrongAttempts++;
+            
+            // Show hint kangaroo animation
+            animateHintKangaroo();
+            
+            // Show text hint on second attempt with full explanation
+            if (wrongAttempts >= 2) {
+                const { numerator, denominator } = currentProblem;
+                document.getElementById('hint-text').innerHTML = 
+                    `${denominator} equal parts per whole → denominator is ${denominator}<br>` +
+                    `${numerator} jumps to the dot → numerator is ${numerator}`;
+                document.getElementById('hint-area').style.display = 'block';
+            }
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // ==========================================================================
+        // START / RESTART - Do not modify
+        // ==========================================================================
+        function startGame() {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+        playAgainBtn.addEventListener('click', () => { startGame(); });
+
+        // ==========================================================================
+        // KANGAROO ANIMATION
+        // ==========================================================================
+        function animateKangaroo() {
+            const kangaroo = document.getElementById('kangaroo');
+            const jump1 = document.getElementById('jump1');
+            const jump2 = document.getElementById('jump2');
+            const jump3 = document.getElementById('jump3');
+            const jump4 = document.getElementById('jump4');
+            const jump5 = document.getElementById('jump5');
+            const jump6 = document.getElementById('jump6');
+            const container = document.querySelector('.demo-number-line');
+            
+            if (!kangaroo || !container) return;
+            
+            // Positions as percentages (matching SVG viewBox 0-400)
+            // 40/400=10%, 93/400=23.25%, 147/400=36.75%, 200/400=50%, 253/400=63.25%, 307/400=76.75%, 360/400=90%
+            const positions = [10, 23.25, 36.75, 50, 63.25, 76.75, 90]; // percentages
+            const jumpNums = [null, jump1, jump2, jump3, jump4, jump5, jump6];
+            
+            // Reset
+            if (jump1) jump1.setAttribute('opacity', '0');
+            if (jump2) jump2.setAttribute('opacity', '0');
+            if (jump3) jump3.setAttribute('opacity', '0');
+            if (jump4) jump4.setAttribute('opacity', '0');
+            if (jump5) jump5.setAttribute('opacity', '0');
+            if (jump6) jump6.setAttribute('opacity', '0');
+            
+            let currentPos = 0;
+            
+            // Set initial position
+            kangaroo.style.left = positions[0] + '%';
+            kangaroo.style.top = '15%';
+            kangaroo.style.transform = 'scaleX(-1) translateX(50%)';
+            
+            function doHop() {
+                if (currentPos >= 6) {
+                    // Restart after a pause
+                    setTimeout(() => {
+                        animateKangaroo();
+                    }, 5000);
+                    return;
+                }
+                
+                const startX = positions[currentPos];
+                const endX = positions[currentPos + 1];
+                const startTime = performance.now();
+                const hopDuration = 400; // ms (slightly faster for 6 hops)
+                
+                function animateFrame(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / hopDuration, 1);
+                    
+                    // Horizontal: linear movement
+                    const currentX = startX + (endX - startX) * progress;
+                    
+                    // Vertical: parabolic arc (goes up then down)
+                    const arcHeight = 45; // pixels
+                    const verticalOffset = -arcHeight * 4 * progress * (1 - progress);
+                    
+                    kangaroo.style.left = currentX + '%';
+                    kangaroo.style.top = `calc(15% + ${verticalOffset}px)`;
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animateFrame);
+                    } else {
+                        // Hop complete - show number
+                        currentPos++;
+                        if (jumpNums[currentPos]) {
+                            jumpNums[currentPos].setAttribute('opacity', '1');
+                        }
+                        
+                        // Next hop after brief pause
+                        setTimeout(doHop, 300);
+                    }
+                }
+                
+                requestAnimationFrame(animateFrame);
+            }
+            
+            // Start hopping after a brief delay
+            setTimeout(doHop, 500);
+        }
+        
+        // Start animation when page loads
+        setTimeout(animateKangaroo, 100);
+
+        // ==========================================================================
+        // 🧪 MATH VALIDATOR - Press Ctrl+T to run tests
+        // ==========================================================================
+        function runMathTests(numTests = 500, verbose = true) {
+            if (verbose) console.log('🧪 Running ' + numTests + ' tests...');
+            
+            const results = {
+                passed: 0, failed: 0, errors: [],
+                typeCount: {}, positions: [0,0,0,0],
+                minAnswer: Infinity, maxAnswer: -Infinity,
+                denominatorCounts: {}
+            };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // Basic checks
+                if (choices.length !== 4) issues.push(choices.length + ' choices');
+                const correctCount = choices.filter(c => c.isCorrect).length;
+                if (correctCount !== 1) issues.push(correctCount + ' correct');
+                
+                // Check for duplicate display strings
+                const displays = choices.map(c => c.display);
+                if (new Set(displays).size !== displays.length) issues.push('dup strings');
+                
+                // Check all fractions are valid
+                for (const c of choices) {
+                    if (c.numerator <= 0) issues.push('non-positive numerator: ' + c.numerator);
+                    if (c.denominator <= 0) issues.push('non-positive denominator: ' + c.denominator);
+                    if (c.numerator / c.denominator > problem.maxWhole) issues.push('value exceeds maxWhole');
+                }
+                
+                // Verify correct answer matches problem
+                const correct = choices.find(c => c.isCorrect);
+                if (correct) {
+                    if (correct.numerator !== problem.numerator) issues.push('numerator mismatch');
+                    if (correct.denominator !== problem.denominator) issues.push('denominator mismatch');
+                }
+                
+                // Track results
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 5) {
+                    results.errors.push('#' + (i+1) + ': ' + issues.join(', ') + ' | problem: ' + problem.numerator + '/' + problem.denominator);
+                }
+                
+                // Track distribution
+                const lineType = problem.maxWhole === 1 ? '0-1' : '0-2';
+                results.typeCount[lineType] = (results.typeCount[lineType] || 0) + 1;
+                
+                results.denominatorCounts[problem.denominator] = (results.denominatorCounts[problem.denominator] || 0) + 1;
+                
+                const correctIdx = choices.findIndex(c => c.isCorrect);
+                if (correctIdx >= 0 && correctIdx < 4) results.positions[correctIdx]++;
+                
+                // Track answer range
+                results.minAnswer = Math.min(results.minAnswer, problem.numerator / problem.denominator);
+                results.maxAnswer = Math.max(results.maxAnswer, problem.numerator / problem.denominator);
+            }
+            
+            // Build result message
+            let msg = results.failed === 0 
+                ? '✅ ALL ' + numTests + ' TESTS PASSED!'
+                : '❌ ' + results.failed + '/' + numTests + ' FAILED:\n' + results.errors.join('\n');
+            
+            msg += '\n\nLine types: ' + JSON.stringify(results.typeCount);
+            msg += '\nDenominators: ' + JSON.stringify(results.denominatorCounts);
+            msg += '\nPositions: ' + results.positions.map((p,i) => 'P' + (i+1) + ':' + Math.round(p/numTests*100) + '%').join(' ');
+            msg += '\nValues: ' + results.minAnswer.toFixed(2) + ' to ' + results.maxAnswer.toFixed(2);
+            
+            if (verbose) {
+                console.log(msg);
+                alert(msg);
+            }
+            return results.failed === 0;
+        }
+        
+        // Ctrl+T to run tests
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                runMathTests(500);
+            }
+        });
+    </script>
+</body>
+</html>

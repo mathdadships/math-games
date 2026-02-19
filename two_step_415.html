@@ -1,0 +1,1642 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 4.15 - Two-Step Story Problems                                           ║
+║  Students match word problems to the correct equation                        ║
+║  Format: starting ± (a × b) = letter                                         ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🧮 Two-Step Story Problems</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #prompt {
+            font-size: 20px;
+            color: #666;
+            text-align: center;
+        }
+
+        /* ========== STORY PROBLEM DISPLAY ========== */
+        #problem-display {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 20px 28px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+            text-align: center;
+            line-height: 1.5;
+            max-width: 100%;
+        }
+
+        /* ========== CHOICES ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 20px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .popup-overlay.show { display: flex; }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji { font-size: 64px; margin-bottom: 16px; }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 12px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 6px;
+            transition: transform 0.15s ease;
+        }
+
+        .popup-btn:hover { transform: scale(1.05); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #eee;
+            color: #333;
+        }
+
+        .correct-answer-box {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 16px 0;
+            display: inline-block;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+        }
+
+        #correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            background: linear-gradient(135deg, #2ed573, #1abc9c);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #f39c12;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.1);
+        }
+
+        .streak-hype {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
+
+        #start-subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 20px;
+            max-width: 500px;
+            line-height: 1.5;
+        }
+
+        /* ========== ANIMATED DEMO ========== */
+        #demo-card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            margin-bottom: 24px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .story-box {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            line-height: 1.6;
+            color: #333;
+            text-align: center;
+        }
+
+        .highlight {
+            transition: all 0.8s ease;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+
+        .highlight.start.active {
+            background: #a855f7;
+            color: white;
+        }
+
+        .highlight.change.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .highlight.result.active {
+            background: #22c55e;
+            color: white;
+        }
+
+        .keyword-gets {
+            transition: all 0.5s ease;
+            display: inline-block;
+        }
+
+        .keyword-gets.emphasized {
+            font-weight: 700;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 6px;
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.6), 0 0 24px rgba(245, 158, 11, 0.3);
+            animation: getsGlow 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes getsGlow {
+            from {
+                box-shadow: 0 0 12px rgba(245, 158, 11, 0.6), 0 0 24px rgba(245, 158, 11, 0.3);
+            }
+            to {
+                box-shadow: 0 0 18px rgba(245, 158, 11, 0.8), 0 0 36px rgba(245, 158, 11, 0.5);
+            }
+        }
+
+        /* Make the + sign match GETS when emphasized */
+        .eq-op.op-emphasized {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.6);
+            animation: getsGlow 1s ease-in-out infinite alternate;
+        }
+
+        .columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .column {
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .column.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .column.start {
+            background: linear-gradient(135deg, #a855f7, #7c3aed);
+            color: white;
+        }
+
+        .column.change {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+        }
+
+        .column.result {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .column-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.85;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .column-text {
+            font-size: 13px;
+            margin-bottom: 10px;
+            min-height: 40px;
+            line-height: 1.4;
+        }
+
+        .column-number {
+            font-size: 28px;
+            font-weight: 700;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .column-number.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .equation-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            padding: 16px;
+            background: #f0fdf4;
+            border-radius: 16px;
+            border: 3px solid #bbf7d0;
+        }
+
+        .eq-part {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .eq-part.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .eq-num {
+            padding: 6px 12px;
+            border-radius: 10px;
+        }
+
+        .eq-num.start { background: linear-gradient(135deg, #a855f7, #7c3aed); color: white; }
+        .eq-num.change { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; }
+        .eq-num.result { background: linear-gradient(135deg, #22c55e, #16a34a); color: white; }
+
+        .eq-op {
+            color: #666;
+        }
+
+        /* Equation transformation animation */
+        .eq-num.change {
+            position: relative;
+        }
+
+        .eq-transform {
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .eq-result-num {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+        }
+
+        .eq-num.change.collapsed .eq-transform:not(.eq-result-num) {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+
+        .eq-num.change.collapsed .eq-result-num {
+            opacity: 1;
+        }
+
+        .eq-part.fade-out {
+            opacity: 0 !important;
+            transform: scale(0.5) !important;
+            transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+            box-shadow: 0 4px 0 #d97706;
+        }
+
+        #start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #d97706;
+        }
+
+        #start-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #d97706;
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall {
+            to { top: 110vh; transform: rotate(720deg); }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 65px; }
+        .flying-emoji-correct.streak-high { font-size: 80px; }
+        .flying-emoji-correct.streak-ultra { font-size: 100px; }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        /* ========== MOBILE ========== */
+        @media (max-width: 480px) {
+            #title { font-size: 18px; }
+            .stat-value { font-size: 18px; }
+            #problem-display { font-size: 18px; padding: 16px 20px; }
+            #prompt { font-size: 16px; }
+            .choice { font-size: 16px; min-height: 70px; padding: 12px; }
+            #start-title { font-size: 32px; }
+            #end-title { font-size: 32px; }
+            #demo-card { padding: 16px; }
+            .story-box { font-size: 16px; padding: 16px; }
+            .columns { gap: 8px; }
+            .column { padding: 12px; }
+            .column-text { font-size: 11px; min-height: 36px; }
+            .column-number { font-size: 22px; }
+            .equation-row { font-size: 18px; gap: 6px; padding: 12px; }
+            .eq-num { padding: 4px 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN WITH ANIMATED DEMO ========== -->
+        <div id="start-screen">
+            <div id="start-title">🧮 Two-Step Stories</div>
+            <div id="start-subtitle">Turn word problems into equations, then solve!</div>
+            
+            <div id="demo-card">
+                <div class="story-box">
+                    <span class="highlight start" id="hl1">Maya has 135 bananas.</span> 
+                    <span class="highlight change" id="hl2">She <span class="keyword-gets" id="keywordGets">gets</span> 6 more baskets with 10 bananas in each basket.</span> 
+                    <span class="highlight result" id="hl3">How many bananas does Maya have now?</span>
+                </div>
+
+                <div class="columns">
+                    <div class="column start" id="col1">
+                        <div class="column-label">Start With</div>
+                        <div class="column-text">Maya has 135 bananas</div>
+                        <div class="column-number" id="num1">135</div>
+                    </div>
+                    <div class="column change" id="col2">
+                        <div class="column-label">Change</div>
+                        <div class="column-text">6 baskets × 10 bananas</div>
+                        <div class="column-number" id="num2">6 × 10</div>
+                    </div>
+                    <div class="column result" id="col3">
+                        <div class="column-label">Result</div>
+                        <div class="column-text">Total bananas</div>
+                        <div class="column-number" id="num3">195</div>
+                    </div>
+                </div>
+
+                <div class="equation-row">
+                    <span class="eq-part eq-num start" id="eq1">135</span>
+                    <span class="eq-part eq-op" id="eq2">+</span>
+                    <span class="eq-part eq-op" id="eq3">(</span>
+                    <span class="eq-part eq-num change" id="eq4">
+                        <span class="eq-transform" id="eq4-expr">6 × 10</span>
+                        <span class="eq-transform eq-result-num" id="eq4-result">60</span>
+                    </span>
+                    <span class="eq-part eq-op" id="eq5">)</span>
+                    <span class="eq-part eq-op" id="eq6">=</span>
+                    <span class="eq-part eq-num result" id="eq7">195</span>
+                </div>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🚀</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">🧮 Two-Step Stories</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt">Turn the word problem into an equation, then solve!</div>
+            
+            <div id="problem-display">Loading...</div>
+            
+            <div id="visual-helper"></div>
+            
+            <div id="choices"></div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box">
+                    <span id="correct-answer-text"></span> ✓
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle">Mistakes in math are OK!</div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">The answer is:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">On fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain and become a thinker!"
+        ];
+
+        const correctHypeMessages = [
+            "W!",
+            "Huge W!",
+            "Slay!",
+            "Goated!",
+            "Fire!",
+            "Slaps!",
+            "No cap!",
+            "Valid!",
+            "Let's go!",
+            "Sigma!"
+        ];
+
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "We are all MATHEMATICIANS!" },
+            { streak: 12, hype: "SIGMA BRAIN!" }
+        ];
+
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+
+        // ==========================================================================
+        // DOM ELEMENTS
+        // ==========================================================================
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const endScreen = document.getElementById('end-screen');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const choicesContainer = document.getElementById('choices');
+        const problemDisplay = document.getElementById('problem-display');
+
+        // ==========================================================================
+        // ANIMATED DEMO LOGIC
+        // ==========================================================================
+        let demoAnimationTimers = [];
+
+        function runDemoAnimation() {
+            // Clear any existing timers
+            demoAnimationTimers.forEach(t => clearTimeout(t));
+            demoAnimationTimers = [];
+
+            // Reset everything first
+            document.querySelectorAll('.highlight').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.column').forEach(el => el.classList.remove('visible'));
+            document.querySelectorAll('.column-number').forEach(el => el.classList.remove('visible'));
+            document.querySelectorAll('.eq-part').forEach(el => {
+                el.classList.remove('visible');
+                el.classList.remove('fade-out');
+            });
+            const keywordGets = document.getElementById('keywordGets');
+            if (keywordGets) keywordGets.classList.remove('emphasized');
+            
+            // Reset the + sign emphasis
+            const eq2 = document.getElementById('eq2');
+            if (eq2) eq2.classList.remove('op-emphasized');
+            
+            // Reset the equation transformation
+            const eq4 = document.getElementById('eq4');
+            if (eq4) eq4.classList.remove('collapsed');
+
+            const timeline = [
+                // Step 1: Highlight first sentence, show first column
+                { delay: 1000, action: () => {
+                    document.getElementById('hl1').classList.add('active');
+                }},
+                { delay: 1800, action: () => {
+                    document.getElementById('col1').classList.add('visible');
+                }},
+                { delay: 2600, action: () => {
+                    document.getElementById('num1').classList.add('visible');
+                }},
+
+                // Step 2: Highlight second sentence, show second column
+                { delay: 4200, action: () => {
+                    document.getElementById('hl2').classList.add('active');
+                }},
+                { delay: 5000, action: () => {
+                    document.getElementById('col2').classList.add('visible');
+                }},
+                { delay: 5800, action: () => {
+                    document.getElementById('num2').classList.add('visible');
+                }},
+
+                // Step 3: Show result column (but NOT the number yet - that comes with the equation answer)
+                { delay: 7400, action: () => {
+                    document.getElementById('hl3').classList.add('active');
+                    document.getElementById('col3').classList.add('visible');
+                }},
+
+                // Step 4: Build equation - show 135 + (6 × 10) =
+                { delay: 10000, action: () => document.getElementById('eq1').classList.add('visible') },
+                { delay: 10400, action: () => {
+                    document.getElementById('eq2').classList.add('visible');
+                    // Light up both GETS and + sign in matching orange
+                    document.getElementById('keywordGets').classList.add('emphasized');
+                    document.getElementById('eq2').classList.add('op-emphasized');
+                }},
+                { delay: 10800, action: () => document.getElementById('eq3').classList.add('visible') },
+                { delay: 11200, action: () => document.getElementById('eq4').classList.add('visible') },
+                { delay: 11600, action: () => document.getElementById('eq5').classList.add('visible') },
+                { delay: 12000, action: () => document.getElementById('eq6').classList.add('visible') },
+
+                // Step 5: Pause 2 seconds, then transform 6 × 10 → 60 and fade out parentheses
+                { delay: 14000, action: () => {
+                    document.getElementById('eq4').classList.add('collapsed');
+                    document.getElementById('eq3').classList.add('fade-out');
+                    document.getElementById('eq5').classList.add('fade-out');
+                }},
+
+                // Step 6: Pause 2 more seconds, then show BOTH answers (column and equation) together
+                { delay: 16000, action: () => {
+                    document.getElementById('num3').classList.add('visible');
+                    document.getElementById('eq7').classList.add('visible');
+                }},
+
+                // Loop: Long pause then restart
+                { delay: 26000, action: () => runDemoAnimation() }
+            ];
+
+            timeline.forEach(item => {
+                const timer = setTimeout(item.action, item.delay);
+                demoAnimationTimers.push(timer);
+            });
+        }
+
+        // Start animation on load
+        runDemoAnimation();
+
+        function stopDemoAnimation() {
+            demoAnimationTimers.forEach(t => clearTimeout(t));
+            demoAnimationTimers = [];
+        }
+
+        // ==========================================================================
+        // STORY PROBLEM TEMPLATES
+        // ==========================================================================
+        const storyTemplates = [
+            // ADDITION problems (starting + (a × b) = ?)
+            {
+                type: 'add',
+                template: (name, start, a, b, item, container) => {
+                    // Handle singular form of container (packs→pack, boxes→box, etc.)
+                    const singular = container.endsWith('es') ? container.slice(0, -2) : container.slice(0, -1);
+                    return `${name} has ${start} ${item}. ${name} gets ${a} more ${container} with ${b} ${item} in each ${singular}. How many ${item} does ${name} have now?`;
+                },
+                items: [
+                    { item: 'stickers', container: 'packs' },
+                    { item: 'baseball cards', container: 'packages' },
+                    { item: 'marbles', container: 'bags' },
+                    { item: 'crayons', container: 'boxes' },
+                    { item: 'pencils', container: 'packs' },
+                    { item: 'coins', container: 'rolls' },
+                    { item: 'beads', container: 'bags' },
+                    { item: 'books', container: 'boxes' }
+                ]
+            },
+            // SUBTRACTION problems (starting - (a × b) = ?)
+            {
+                type: 'sub',
+                template: (name, start, a, b, item, action) => 
+                    `${name} has ${start} ${item}. ${name} gives away ${a} ${action} with ${b} ${item} in each. How many ${item} does ${name} have now?`,
+                items: [
+                    { item: 'stickers', action: 'sheets' },
+                    { item: 'cookies', action: 'plates' },
+                    { item: 'apples', action: 'bags' },
+                    { item: 'candies', action: 'bags' },
+                    { item: 'erasers', action: 'boxes' },
+                    { item: 'oranges', action: 'baskets' },
+                    { item: 'trading cards', action: 'packs' },
+                    { item: 'toy cars', action: 'boxes' }
+                ]
+            }
+        ];
+
+        const names = ['Maya', 'Leo', 'Zoe', 'Kai', 'Emma', 'Noah', 'Ava', 'Liam', 'Mia', 'Ethan', 'Sofia', 'Lucas'];
+
+        // ==========================================================================
+        // CUSTOMIZE: PROBLEM GENERATION
+        // ==========================================================================
+        function generateProblem() {
+            // Pick random template type
+            const templateData = storyTemplates[Math.floor(Math.random() * storyTemplates.length)];
+            const isAddition = templateData.type === 'add';
+            
+            // Pick random item/container combo
+            const itemData = templateData.items[Math.floor(Math.random() * templateData.items.length)];
+            
+            // Pick random name
+            const name = names[Math.floor(Math.random() * names.length)];
+            
+            // Generate numbers matching curriculum ranges
+            let start, a, b, product, answer;
+            
+            if (isAddition) {
+                // For addition, any valid numbers work
+                start = 100 + Math.floor(Math.random() * 171); // 100-270
+                a = 2 + Math.floor(Math.random() * 8); // 2-9 (groups)
+                b = 5 + Math.floor(Math.random() * 11); // 5-15 (per group)
+                product = a * b;
+                answer = start + product;
+            } else {
+                // For subtraction, ensure start > a × b so answer stays positive
+                a = 2 + Math.floor(Math.random() * 8); // 2-9
+                b = 5 + Math.floor(Math.random() * 11); // 5-15
+                product = a * b;
+                // Start must be greater than product, with some buffer
+                // Min start = product + 20 (so answer is at least 20)
+                const minStart = product + 20;
+                const maxStart = 270;
+                if (minStart > maxStart) {
+                    // If product is too large, reduce b
+                    b = Math.floor((maxStart - 50) / a);
+                    product = a * b;
+                }
+                start = Math.max(minStart, 100) + Math.floor(Math.random() * Math.max(1, maxStart - Math.max(minStart, 100)));
+                start = Math.min(start, maxStart); // Cap at 270
+                answer = start - product;
+            }
+            
+            // Generate story text
+            let storyText;
+            if (isAddition) {
+                storyText = templateData.template(name, start, a, b, itemData.item, itemData.container);
+            } else {
+                storyText = templateData.template(name, start, a, b, itemData.item, itemData.action);
+            }
+            
+            // Pick a variable letter
+            const letters = ['n', 'm', 'p', 's', 't', 'x'];
+            const letter = letters[Math.floor(Math.random() * letters.length)];
+            
+            // Build correct equation string
+            const correctEquation = isAddition 
+                ? `${start} + (${a} × ${b}) = ${letter}`
+                : `${start} − (${a} × ${b}) = ${letter}`;
+            
+            return {
+                display: storyText,
+                answer: answer,
+                correctEquation: correctEquation,
+                isAddition: isAddition,
+                start: start,
+                a: a,
+                b: b,
+                product: product,
+                letter: letter
+            };
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: CHOICE GENERATION
+        // ==========================================================================
+        function generateChoices(problem) {
+            const { start, a, b, isAddition, answer } = problem;
+            
+            const correct = { 
+                display: answer, 
+                isCorrect: true 
+            };
+            
+            const wrongs = [];
+            const usedValues = new Set([answer]);
+            
+            // Helper: add wrong answer if valid
+            function addWrongIfValid(value) {
+                if (!usedValues.has(value) && value > 0 && Number.isInteger(value) && wrongs.length < 3) {
+                    wrongs.push({ display: value, isCorrect: false });
+                    usedValues.add(value);
+                    return true;
+                }
+                return false;
+            }
+            
+            // Common student errors as numeric results:
+            
+            // 1. Wrong operation (+ instead of -, or vice versa)
+            if (isAddition) {
+                addWrongIfValid(start - (a * b));  // Did subtraction instead
+            } else {
+                addWrongIfValid(start + (a * b));  // Did addition instead
+            }
+            
+            // 2. Added instead of multiplied (a + b instead of a × b)
+            if (isAddition) {
+                addWrongIfValid(start + (a + b));
+            } else {
+                addWrongIfValid(start - (a + b));
+            }
+            
+            // 3. Forgot to add/subtract the starting amount (just did the multiplication)
+            addWrongIfValid(a * b);
+            
+            // 4. Only did partial operation (added just one group)
+            if (isAddition) {
+                addWrongIfValid(start + b);
+            } else {
+                addWrongIfValid(start - b);
+            }
+            
+            // 5. Wrong multiplier - used (a × a)
+            if (isAddition) {
+                addWrongIfValid(start + (a * a));
+            } else {
+                addWrongIfValid(start - (a * a));
+            }
+            
+            // 6. Off by 10 on starting number
+            if (isAddition) {
+                addWrongIfValid((start + 10) + (a * b));
+                addWrongIfValid((start - 10) + (a * b));
+            } else {
+                addWrongIfValid((start + 10) - (a * b));
+                addWrongIfValid((start - 10) - (a * b));
+            }
+            
+            // 7. Off by one group
+            if (isAddition) {
+                addWrongIfValid(start + ((a + 1) * b));
+                addWrongIfValid(start + ((a - 1) * b));
+            } else {
+                addWrongIfValid(start - ((a + 1) * b));
+                addWrongIfValid(start - ((a - 1) * b));
+            }
+            
+            // 8. Fallback: nearby numbers
+            let offset = 1;
+            while (wrongs.length < 3 && offset < 20) {
+                addWrongIfValid(answer + offset * 10);
+                addWrongIfValid(answer - offset * 10);
+                offset++;
+            }
+            
+            // Take only 3 wrong answers
+            const finalWrongs = wrongs.slice(0, 3);
+            
+            // Shuffle
+            const choices = [correct, ...finalWrongs];
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            return choices;
+        }
+
+        // ==========================================================================
+        // CUSTOMIZE: DISPLAY CORRECT ANSWER
+        // ==========================================================================
+        function buildCorrectAnswerDisplay() {
+            const { correctEquation, start, a, b, product, answer, isAddition } = currentProblem;
+            const op = isAddition ? '+' : '−';
+            document.getElementById('correct-answer-display').innerHTML = 
+                `<div style="font-size: 36px; margin-bottom: 8px;">${answer}</div>
+                 <div style="font-size: 14px; opacity: 0.8;">${correctEquation}</div>
+                 <div style="font-size: 12px; opacity: 0.7; margin-top: 4px;">Step 1: ${a} × ${b} = ${product}</div>
+                 <div style="font-size: 12px; opacity: 0.7;">Step 2: ${start} ${op} ${product} = ${answer}</div>`;
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM - Do not modify
+        // ==========================================================================
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const choices = generateChoices(currentProblem);
+            
+            // Update display
+            problemDisplay.textContent = currentProblem.display;
+            
+            // Update choices
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.textContent = choice.display;
+                btn.addEventListener('click', () => handleChoice(btn, choice));
+                choicesContainer.appendChild(btn);
+            });
+            
+            canAnswer = true;
+        }
+
+        // ==========================================================================
+        // HANDLE CHOICE - Do not modify
+        // ==========================================================================
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+
+                // Spawn emojis based on streak
+                let emojiCount = streak >= 10 ? 25 : streak >= 6 ? 18 : streak >= 3 ? 12 : 6;
+                spawnCorrectEmojis(emojiCount, streak);
+                
+                if (streak >= 3) spawnConfetti(streak >= 10 ? 30 : streak >= 6 ? 20 : 10);
+
+                questionsAnswered++;
+
+                // Show correct popup with affirming message
+                setTimeout(() => {
+                    showCorrectPopup();
+                }, 400);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        // ==========================================================================
+        // POPUPS - Do not modify
+        // ==========================================================================
+        function showCorrectPopup() {
+            const hypeMessages = [
+                { emoji: '🧢', title: 'NO CAP!' },
+                { emoji: '🔥', title: 'FIRE!' },
+                { emoji: '💪', title: 'W!' },
+                { emoji: '👑', title: 'SLAY!' },
+                { emoji: '✨', title: 'VALID!' },
+                { emoji: '🎯', title: 'GOATED!' },
+                { emoji: '💥', title: 'SLAPS!' },
+                { emoji: '🚀', title: 'LET\'S GO!' }
+            ];
+            const msg = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            document.getElementById('correct-answer-text').textContent = currentProblem.answer;
+            
+            document.getElementById('correct-popup').classList.add('show');
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = 
+                wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            
+            const message = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-title').textContent = message;
+            document.getElementById('wrong-subtitle').textContent = '';
+            
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            
+            // Epic "We are all MATHEMATICIANS!" celebration at streak 9
+            if (streak === 9) {
+                showEpicCelebration();
+                return;
+            }
+            
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hype = "On fire!";
+            for (const sh of streakHypeMessages) {
+                if (streak >= sh.streak) hype = sh.hype;
+            }
+            document.getElementById('streak-hype').textContent = hype;
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(20);
+        }
+
+        let epicTimer = null;
+        
+        function showEpicCelebration() {
+            const epicDiv = document.createElement('div');
+            epicDiv.id = 'epic-mathematicians';
+            epicDiv.innerHTML = `
+                <div class="epic-content">
+                    <div class="epic-math">WE ARE ALL MATHEMATICIANS!</div>
+                    <div class="epic-streak">🔥 ${streak} STREAK 🔥</div>
+                    <button class="epic-btn" onclick="closeEpicCelebration()">KEEP GOING!</button>
+                </div>
+            `;
+            document.body.appendChild(epicDiv);
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes rainbowText {
+                    0% { color: #ff6b6b; }
+                    16% { color: #ffd93d; }
+                    33% { color: #6bcb77; }
+                    50% { color: #4d96ff; }
+                    66% { color: #9b59b6; }
+                    83% { color: #ff9ff3; }
+                    100% { color: #ff6b6b; }
+                }
+                @keyframes epicPulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.05); }
+                }
+                @keyframes epicFloat {
+                    0% { bottom: -50px; opacity: 0; }
+                    10% { opacity: 1; }
+                    90% { opacity: 1; }
+                    100% { bottom: 110vh; opacity: 0; }
+                }
+                #epic-mathematicians {
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                }
+                .epic-content {
+                    text-align: center;
+                    z-index: 10002;
+                }
+                .epic-math {
+                    font-family: 'Bangers', cursive;
+                    font-size: 52px;
+                    animation: rainbowText 1s linear infinite, epicPulse 0.5s ease infinite;
+                    text-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+                }
+                .epic-streak {
+                    font-family: 'Bangers', cursive;
+                    font-size: 28px;
+                    color: #ffd93d;
+                    margin-top: 10px;
+                }
+                .epic-btn {
+                    font-family: 'Bangers', cursive;
+                    font-size: 28px;
+                    padding: 16px 40px;
+                    background: #ffd93d;
+                    color: #333;
+                    border: none;
+                    border-radius: 16px;
+                    cursor: pointer;
+                    margin-top: 20px;
+                    animation: epicPulse 0.5s ease infinite;
+                }
+                .epic-floating-emoji {
+                    position: fixed;
+                    font-size: 60px;
+                    animation: epicFloat 3s linear forwards;
+                    pointer-events: none;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            const epicEmojis = ['🧮', '🎓', '🧠', '💯', '⭐', '✨', '🌟', '💫', '🔥', '👑', '🏆', '💎', '🚀', '🎯', '🦾', '🤓', '📐', '📏', '➕', '➖', '✖️', '➗'];
+            for (let i = 0; i < 60; i++) {
+                setTimeout(() => {
+                    const epicEl = document.getElementById('epic-mathematicians');
+                    if (!epicEl) return;
+                    const emoji = document.createElement('div');
+                    emoji.className = 'epic-floating-emoji';
+                    emoji.textContent = epicEmojis[Math.floor(Math.random() * epicEmojis.length)];
+                    emoji.style.left = Math.random() * 100 + 'vw';
+                    emoji.style.fontSize = (40 + Math.random() * 60) + 'px';
+                    emoji.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    epicEl.appendChild(emoji);
+                }, i * 50);
+            }
+            
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const conf = document.createElement('div');
+                    conf.style.cssText = `
+                        position: fixed;
+                        top: -10px;
+                        left: ${Math.random() * 100}vw;
+                        width: ${8 + Math.random() * 12}px;
+                        height: ${8 + Math.random() * 12}px;
+                        background: ${['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea','#ff85a2','#54e3ff'][Math.floor(Math.random()*8)]};
+                        border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+                        animation: confettiFall ${2 + Math.random()}s linear forwards;
+                        z-index: 10001;
+                    `;
+                    document.body.appendChild(conf);
+                    setTimeout(() => conf.remove(), 3000);
+                }, i * 20);
+            }
+            
+            epicTimer = setTimeout(() => {
+                closeEpicCelebration();
+            }, 10000);
+        }
+
+        function closeEpicCelebration() {
+            if (epicTimer) {
+                clearTimeout(epicTimer);
+                epicTimer = null;
+            }
+            const epic = document.getElementById('epic-mathematicians');
+            if (epic) epic.remove();
+            loadProblem();
+        }
+
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(50);
+        }
+
+        function checkGameEnd() {
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS - Do not modify
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            if (streak > 0 && streak % 3 === 0) {
+                showStreakCelebration();
+            } else {
+                checkGameEnd();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // ==========================================================================
+        // START / RESTART - Do not modify
+        // ==========================================================================
+        function startGame() {
+            stopDemoAnimation(); // Stop the looping animation
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+        playAgainBtn.addEventListener('click', () => { startGame(); });
+
+        // ==========================================================================
+        // 🧪 BUILT-IN MATH VALIDATOR - Press "T" or click button to run
+        // ==========================================================================
+        function runMathTests(numTests = 500) {
+            console.log('🧪 Running math validation...');
+            const results = { passed: 0, failed: 0, errors: [] };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // Check: 4 choices, 1 correct
+                if (choices.length !== 4) issues.push(`${choices.length} choices`);
+                if (choices.filter(c => c.isCorrect).length !== 1) issues.push('not 1 correct');
+                
+                // Check: no duplicate display values
+                if (new Set(choices.map(c => c.display)).size !== 4) issues.push('dup values');
+                
+                // Check all values are valid positive integers
+                for (const c of choices) {
+                    const val = c.display;
+                    if (typeof val !== 'number' || val < 0) issues.push(`invalid: ${val}`);
+                    if (!Number.isInteger(val)) issues.push(`decimal: ${val}`);
+                }
+                
+                // Check: correct answer matches problem answer
+                const correct = choices.find(c => c.isCorrect);
+                if (correct.display !== problem.answer) issues.push('answer mismatch');
+                
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 5) {
+                    results.errors.push(`#${i+1}: ${issues.join(', ')}`);
+                }
+            }
+            
+            // Results
+            const pass = results.failed === 0;
+            const msg = pass 
+                ? `✅ ALL ${numTests} TESTS PASSED!` 
+                : `❌ ${results.failed}/${numTests} FAILED:\n${results.errors.join('\n')}`;
+            console.log(msg);
+            alert(msg);
+            return pass;
+        }
+        
+        // Press "T" to run tests (dev only)
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 't' && e.ctrlKey) {
+                e.preventDefault();
+                runMathTests();
+            }
+        });
+    </script>
+</body>
+</html>

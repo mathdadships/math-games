@@ -1,0 +1,1823 @@
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  ML 5.05 - Representing Non-Unit Fractions                                   ║
+║  Students identify what fraction is shaded on fraction strip diagrams        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🎮 Shade Shifters</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        #game-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 20px);
+        }
+
+        /* ========== HEADER ========== */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 24px;
+            color: white;
+        }
+
+        #stats {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* ========== MAIN CARD ========== */
+        #main-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #prompt {
+            font-size: 22px;
+            color: #666;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* ========== FRACTION STRIP VISUAL ========== */
+        #visual-helper {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            background: linear-gradient(135deg, #f8f9ff, #eef1ff);
+            border-radius: 16px;
+            width: 100%;
+        }
+
+        .fraction-strip {
+            display: flex;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 70px;
+            flex: 1;
+            max-width: 48%;
+        }
+
+        .fraction-part {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px dashed #999;
+            flex: 1;
+            min-width: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            background: white;
+        }
+
+        .fraction-part:last-child {
+            border-right: none;
+        }
+
+        .fraction-part.shaded {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        /* Consistent fraction styling inside strips */
+        .strip-frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .strip-frac .strip-num,
+        .strip-frac .strip-den {
+            padding: 0 2px;
+        }
+
+        .strip-frac .strip-num {
+            border-bottom: 2px solid currentColor;
+            padding-bottom: 2px;
+            min-width: 14px;
+            text-align: center;
+        }
+
+        .strip-frac .strip-den {
+            padding-top: 2px;
+            min-width: 14px;
+            text-align: center;
+        }
+
+        /* ========== EQUATION HELPER (shows on wrong answer) ========== */
+        #equation-helper {
+            display: none;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 16px;
+            background: linear-gradient(135deg, #fff8e1, #ffecb3);
+            border-radius: 12px;
+            border: 2px solid #E8A838;
+            margin-top: 12px;
+            min-height: 60px;
+        }
+
+        #equation-helper.show {
+            display: flex;
+        }
+
+        .eq-unit-frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(102, 126, 234, 0.2);
+            padding: 4px 8px;
+            border-radius: 8px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s ease;
+        }
+
+        .eq-unit-frac.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .eq-unit-frac .eq-num,
+        .eq-unit-frac .eq-den {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            line-height: 1;
+            min-width: 16px;
+            text-align: center;
+        }
+
+        .eq-unit-frac .eq-num {
+            border-bottom: 2px solid #333;
+            padding-bottom: 2px;
+        }
+
+        .eq-unit-frac .eq-den {
+            padding-top: 2px;
+        }
+
+        .eq-plus {
+            color: #667eea;
+            font-size: 20px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .eq-plus.show {
+            opacity: 1;
+        }
+
+        .eq-equals {
+            color: #667eea;
+            font-size: 24px;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            margin-left: 8px;
+        }
+
+        .eq-equals.show {
+            opacity: 1;
+        }
+
+        .eq-result {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            padding: 6px 12px;
+            border-radius: 10px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.4s ease;
+            margin-left: 4px;
+        }
+
+        .eq-result.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .eq-result .eq-num,
+        .eq-result .eq-den {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            line-height: 1;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .eq-result .eq-num {
+            border-bottom: 2px solid white;
+            padding-bottom: 2px;
+        }
+
+        .eq-result .eq-den {
+            padding-top: 2px;
+        }
+
+        /* ========== CHOICES ========== */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        .choice {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            padding: 20px 16px;
+            font-size: 28px;
+            font-weight: 600;
+            font-family: 'Fredoka', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            min-height: 90px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .choice:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .choice:active {
+            transform: scale(0.96);
+        }
+
+        .choice.correct {
+            background: linear-gradient(135deg, #2ed573, #1abc9c) !important;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: linear-gradient(135deg, #E8A838, #F5C563) !important;
+            animation: gentleShake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
+        @keyframes gentleShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Fraction display in choices */
+        .fraction-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .fraction-numerator {
+            font-size: 28px;
+            border-bottom: 3px solid white;
+            padding-bottom: 4px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .fraction-denominator {
+            font-size: 28px;
+            padding-top: 4px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* ========== POPUPS ========== */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .popup-title {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 5px;
+        }
+
+        .popup-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-amber {
+            background: linear-gradient(135deg, #E8A838, #F5C563);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        /* Correct popup styling */
+        #correct-popup .popup-content {
+            border: 4px solid #2ed573;
+        }
+
+        #correct-popup .popup-title {
+            color: #333;
+            font-size: 64px;
+        }
+
+        .correct-answer-box {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2ed573;
+            background: #e8f8f0;
+            padding: 16px 32px;
+            border-radius: 16px;
+            margin: 16px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Wrong popup styling */
+        #wrong-popup .popup-content {
+            border: 4px solid #E8A838;
+        }
+
+        #wrong-popup .popup-title {
+            color: #D4882A;
+            font-size: 24px;
+            line-height: 1.3;
+        }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+            padding: 16px;
+            background: #f0f8ff;
+            border-radius: 12px;
+        }
+
+        #correct-answer-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2ed573;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Streak popup styling */
+        #streak-popup .popup-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        #streak-popup .popup-title,
+        #streak-popup .popup-subtitle {
+            color: white;
+        }
+
+        .streak-number {
+            font-family: 'Bangers', cursive;
+            font-size: 72px;
+            color: #ffd93d;
+            text-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+        }
+
+        .streak-hype {
+            font-size: 18px;
+            color: white;
+            font-weight: 600;
+            background: rgba(255,255,255,0.2);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        /* ========== START SCREEN ========== */
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-title {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #start-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        /* Demo container */
+        .start-demo {
+            background: rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 30px 40px;
+            margin-bottom: 32px;
+            max-width: 700px;
+            width: 95%;
+        }
+
+        .demo-title {
+            font-size: 16px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+        }
+
+        /* Full-screen eyes overlay */
+        .eyes-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 25vmin;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            z-index: 3000;
+            opacity: 1;
+            transition: opacity 1s ease;
+        }
+
+        .eyes-overlay.fade-out {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .demo-strips {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .demo-fraction-strip {
+            display: flex;
+            border: 3px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 70px;
+            flex: 1;
+            max-width: 48%;
+        }
+
+        .demo-part {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 2px dashed rgba(150,150,150,0.5);
+            flex: 1;
+            min-width: 0;
+            font-size: 14px;
+            font-weight: 500;
+            color: #666;
+            background: white;
+            transition: all 0.5s ease;
+        }
+
+        .demo-part:last-child {
+            border-right: none;
+        }
+
+        .demo-part.shaded {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .demo-part .demo-frac {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .demo-part .demo-frac .num,
+        .demo-part .demo-frac .den {
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 12px;
+            text-align: center;
+        }
+
+        .demo-part .demo-frac .num {
+            border-bottom: 2px solid currentColor;
+            padding-bottom: 2px;
+        }
+
+        .demo-part .demo-frac .den {
+            padding-top: 2px;
+        }
+
+        /* Addition row */
+        .demo-addition-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .demo-unit-frac {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 14px;
+            border-radius: 12px;
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.5s ease;
+        }
+
+        .demo-unit-frac.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .demo-unit-frac .num,
+        .demo-unit-frac .den {
+            font-size: 28px;
+            font-weight: 600;
+            color: white;
+            line-height: 1;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .demo-unit-frac .line {
+            width: 100%;
+            height: 3px;
+            background: white;
+            margin: 4px 0;
+        }
+
+        .demo-plus {
+            color: #ffd93d;
+            font-size: 28px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .demo-plus.show {
+            opacity: 1;
+        }
+
+        .demo-equals {
+            color: #ffd93d;
+            font-size: 36px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            margin: 0 12px;
+        }
+
+        .demo-equals.show {
+            opacity: 1;
+        }
+
+        /* Result fraction display */
+        .demo-result {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(135deg, #ffd93d, #ffb347);
+            padding: 12px 24px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(255, 217, 61, 0.4);
+        }
+
+        .demo-result .result-num,
+        .demo-result .result-den {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            line-height: 1;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .demo-result .result-line {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin: 6px 0;
+            border-radius: 2px;
+        }
+
+        .demo-result .result-num.pop {
+            animation: numPop 0.5s ease;
+        }
+
+        @keyframes numPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 32px;
+            padding: 16px 48px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== END SCREEN ========== */
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+
+        #end-title {
+            font-family: 'Bangers', cursive;
+            font-size: 42px;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        #end-subtitle {
+            font-size: 20px;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 24px;
+        }
+
+        #end-stats {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 32px;
+        }
+
+        #play-again-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            padding: 14px 40px;
+            background: #ffd93d;
+            color: #333;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+        }
+
+        #play-again-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* ========== EFFECTS ========== */
+        .confetti {
+            position: fixed;
+            top: -10px;
+            animation: fall 2s linear forwards;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(105vh) rotate(720deg);
+            }
+        }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 36px;
+            animation: floatUp 1.5s ease-out forwards;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .flying-emoji-correct.streak-mid { font-size: 42px; }
+        .flying-emoji-correct.streak-high { font-size: 48px; }
+        .flying-emoji-correct.streak-ultra { font-size: 56px; }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-150px) scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- ========== START SCREEN ========== -->
+        <div id="start-screen">
+            <div class="eyes-overlay" id="eyes-overlay">👀</div>
+            <div id="start-title">🎮 Shade Shifters</div>
+            <div id="start-subtitle">What fraction of a whole is shaded purple?</div>
+            
+            <div class="start-demo">
+                <div class="demo-title">Each rectangle = 1 whole</div>
+                <div class="demo-strips">
+                    <div class="demo-fraction-strip" id="demo-strip-1">
+                        <div class="demo-part" id="demo-part-1"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-2"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-3"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-4"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                    </div>
+                    <div class="demo-fraction-strip" id="demo-strip-2">
+                        <div class="demo-part" id="demo-part-5"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-6"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-7"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                        <div class="demo-part" id="demo-part-8"><span class="demo-frac"><span class="num">1</span><span class="den">4</span></span></div>
+                    </div>
+                </div>
+                
+                <div class="demo-addition-row" id="demo-addition-row">
+                    <span class="demo-unit-frac" id="demo-frac-0"><span class="num">1</span><span class="line"></span><span class="den">4</span></span>
+                    <span class="demo-plus" id="demo-plus-0">+</span>
+                    <span class="demo-unit-frac" id="demo-frac-1"><span class="num">1</span><span class="line"></span><span class="den">4</span></span>
+                    <span class="demo-plus" id="demo-plus-1">+</span>
+                    <span class="demo-unit-frac" id="demo-frac-2"><span class="num">1</span><span class="line"></span><span class="den">4</span></span>
+                    <span class="demo-plus" id="demo-plus-2">+</span>
+                    <span class="demo-unit-frac" id="demo-frac-3"><span class="num">1</span><span class="line"></span><span class="den">4</span></span>
+                    <span class="demo-plus" id="demo-plus-3">+</span>
+                    <span class="demo-unit-frac" id="demo-frac-4"><span class="num">1</span><span class="line"></span><span class="den">4</span></span>
+                    <span class="demo-equals" id="demo-equals">=</span>
+                    <div class="demo-result">
+                        <span class="result-num" id="demo-result-num">0</span>
+                        <div class="result-line"></div>
+                        <span class="result-den">4</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="start-btn">Let's Go! 🚀</button>
+        </div>
+
+        <!-- ========== HEADER ========== -->
+        <div id="header">
+            <div id="title">🎮 Shade Shifters</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== MAIN CARD ========== -->
+        <div id="main-card">
+            <div id="prompt">What fraction of a whole is shaded purple?</div>
+            
+            <!-- Fraction strip visual -->
+            <div id="visual-helper"></div>
+            
+            <!-- Equation helper (shows on wrong answer) -->
+            <div id="equation-helper"></div>
+            
+            <!-- Choices grid -->
+            <div id="choices"></div>
+        </div>
+
+        <!-- ========== CORRECT POPUP ========== -->
+        <div class="popup-overlay" id="correct-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">Nice!</div>
+                <div class="correct-answer-box" id="correct-answer-box">
+                    <span id="correct-answer-text"></span> ✓
+                </div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">Next →</button>
+            </div>
+        </div>
+
+        <!-- ========== WRONG POPUP ========== -->
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">The answer is:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">Try Again 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">Show Answer 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== STREAK POPUP ========== -->
+        <div class="popup-overlay" id="streak-popup">
+            <div class="popup-content">
+                <div class="popup-emoji">🔥</div>
+                <div class="popup-title">STREAK!</div>
+                <div class="streak-number" id="streak-count">3</div>
+                <div class="streak-hype" id="streak-hype">On fire!</div>
+                <button class="popup-btn btn-primary" id="streak-continue-btn">Keep Going! 💪</button>
+            </div>
+        </div>
+
+        <!-- ========== END SCREEN ========== -->
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">You're a Mathematician!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">Score: <span id="final-score">0</span> | Best Streak: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">Play Again 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ========== AUDIO ==========
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.2);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.12);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.24);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.36);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.6);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.6);
+            }
+        }
+
+        // ========== EFFECTS ==========
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count, streakLevel) {
+            const emojis = ['⭐', '✨', '💫', '🌟', '💥', '🔥', '💪', '🎯', '🚀', '👑', '💎'];
+            let sizeClass = '';
+            if (streakLevel >= 10) sizeClass = 'streak-ultra';
+            else if (streakLevel >= 6) sizeClass = 'streak-high';
+            else if (streakLevel >= 3) sizeClass = 'streak-mid';
+            
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct' + (sizeClass ? ' ' + sizeClass : '');
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        // ==========================================================================
+        // MESSAGE ARRAYS - DO NOT MODIFY
+        // ==========================================================================
+        
+        // Mr. Signer's growth mindset board - ONLY for WRONG answers
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain and become a thinker!"
+        ];
+
+        // Hype messages - ONLY for CORRECT answers (2026 Gen Alpha slang)
+        const correctHypeMessages = [
+            "W!",
+            "Huge W!",
+            "Slay!",
+            "Goated!",
+            "Fire!",
+            "Slaps!",
+            "No cap!",
+            "Valid!",
+            "Let's go!",
+            "Sigma!"
+        ];
+
+        // Streak hype messages - for streak celebrations
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "We are all MATHEMATICIANS!" },
+            { streak: 12, hype: "SIGMA BRAIN!" }
+        ];
+
+        // Wrong answer popup emojis (message comes from growthMessages)
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        // ==========================================================================
+        // GAME STATE
+        // ==========================================================================
+        let score = 0;
+        let streak = 0;
+        let bestStreak = 0;
+        let questionsAnswered = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+
+        // ==========================================================================
+        // DOM ELEMENTS
+        // ==========================================================================
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const endScreen = document.getElementById('end-screen');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const choicesContainer = document.getElementById('choices');
+        const visualHelper = document.getElementById('visual-helper');
+
+        // ==========================================================================
+        // PROBLEM GENERATION - Representing Non-Unit Fractions
+        // ==========================================================================
+        function generateProblem() {
+            // Denominators from curriculum: 2, 3, 4, 6, 8
+            const denominators = [2, 3, 4, 6, 8];
+            const denominator = denominators[Math.floor(Math.random() * denominators.length)];
+            
+            // Numerator: 1 to (denominator * 2) to allow improper fractions up to 2 wholes
+            // But exclude 1 (unit fractions) - we want non-unit fractions
+            const maxNumerator = denominator * 2;
+            const numerator = 2 + Math.floor(Math.random() * (maxNumerator - 1)); // 2 to maxNumerator
+            
+            return {
+                numerator: numerator,
+                denominator: denominator,
+                display: `${numerator}/${denominator}`,
+                answer: numerator // For test validation
+            };
+        }
+
+        // ==========================================================================
+        // CHOICE GENERATION
+        // ==========================================================================
+        function generateChoices(problem) {
+            const correct = { 
+                numerator: problem.numerator, 
+                denominator: problem.denominator,
+                display: `${problem.numerator}/${problem.denominator}`,
+                isCorrect: true 
+            };
+            
+            const wrongs = [];
+            const usedFractions = new Set([`${problem.numerator}/${problem.denominator}`]);
+            
+            // Strategy 1: Swap numerator/denominator (if different and makes sense)
+            if (problem.numerator !== problem.denominator && problem.denominator > 1) {
+                const swapped = `${problem.denominator}/${problem.numerator}`;
+                if (!usedFractions.has(swapped) && problem.numerator >= 2) {
+                    wrongs.push({
+                        numerator: problem.denominator,
+                        denominator: problem.numerator,
+                        display: swapped,
+                        isCorrect: false
+                    });
+                    usedFractions.add(swapped);
+                }
+            }
+            
+            // Strategy 2: Off by 1 numerator (count shaded parts wrong)
+            const offBy1Options = [problem.numerator - 1, problem.numerator + 1];
+            for (const num of offBy1Options) {
+                if (wrongs.length >= 3) break;
+                if (num >= 1 && num <= problem.denominator * 2) {
+                    const key = `${num}/${problem.denominator}`;
+                    if (!usedFractions.has(key)) {
+                        wrongs.push({
+                            numerator: num,
+                            denominator: problem.denominator,
+                            display: key,
+                            isCorrect: false
+                        });
+                        usedFractions.add(key);
+                    }
+                }
+            }
+            
+            // Strategy 3: Same numerator, different denominator (confuse partition size)
+            const otherDenominators = [2, 3, 4, 6, 8].filter(d => d !== problem.denominator);
+            for (const denom of otherDenominators) {
+                if (wrongs.length >= 3) break;
+                if (problem.numerator <= denom * 2) {
+                    const key = `${problem.numerator}/${denom}`;
+                    if (!usedFractions.has(key)) {
+                        wrongs.push({
+                            numerator: problem.numerator,
+                            denominator: denom,
+                            display: key,
+                            isCorrect: false
+                        });
+                        usedFractions.add(key);
+                    }
+                }
+            }
+            
+            // Fill remaining with random plausible fractions
+            const allDenominators = [2, 3, 4, 6, 8];
+            let attempts = 0;
+            while (wrongs.length < 3 && attempts < 50) {
+                attempts++;
+                const denom = allDenominators[Math.floor(Math.random() * allDenominators.length)];
+                const num = 1 + Math.floor(Math.random() * (denom * 2));
+                const key = `${num}/${denom}`;
+                if (!usedFractions.has(key) && num >= 1) {
+                    wrongs.push({
+                        numerator: num,
+                        denominator: denom,
+                        display: key,
+                        isCorrect: false
+                    });
+                    usedFractions.add(key);
+                }
+            }
+            
+            // Shuffle
+            const choices = [correct, ...wrongs.slice(0, 3)];
+            for (let i = choices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [choices[i], choices[j]] = [choices[j], choices[i]];
+            }
+            return choices;
+        }
+
+        // ==========================================================================
+        // BUILD CORRECT ANSWER DISPLAY
+        // ==========================================================================
+        function buildCorrectAnswerDisplay() {
+            const display = document.getElementById('correct-answer-display');
+            display.innerHTML = createFractionHTML(currentProblem.numerator, currentProblem.denominator, '#2ed573');
+        }
+
+        // Helper to create fraction HTML
+        function createFractionHTML(num, denom, color = 'white') {
+            return `<div class="fraction-display">
+                <div class="fraction-numerator" style="border-color: ${color}; color: ${color}">${num}</div>
+                <div class="fraction-denominator" style="color: ${color}">${denom}</div>
+            </div>`;
+        }
+
+        // ==========================================================================
+        // BUILD VISUAL - Fraction Strips
+        // ==========================================================================
+        function buildVisual(problem) {
+            visualHelper.innerHTML = '';
+            
+            const { numerator, denominator } = problem;
+            
+            // Create two fraction strips (to handle improper fractions up to 2 wholes)
+            const strip1 = document.createElement('div');
+            strip1.className = 'fraction-strip';
+            
+            const strip2 = document.createElement('div');
+            strip2.className = 'fraction-strip';
+            
+            // Unit fraction HTML (same for every piece)
+            const unitFracHTML = '<span class="strip-frac"><span class="strip-num">1</span><span class="strip-den">' + denominator + '</span></span>';
+            
+            // First whole
+            for (let i = 0; i < denominator; i++) {
+                const part = document.createElement('div');
+                part.className = 'fraction-part';
+                if (i < numerator) {
+                    part.classList.add('shaded');
+                }
+                part.innerHTML = unitFracHTML;
+                strip1.appendChild(part);
+            }
+            
+            // Second whole (for improper fractions)
+            for (let i = 0; i < denominator; i++) {
+                const part = document.createElement('div');
+                part.className = 'fraction-part';
+                const partIndex = denominator + i;
+                if (partIndex < numerator) {
+                    part.classList.add('shaded');
+                }
+                part.innerHTML = unitFracHTML;
+                strip2.appendChild(part);
+            }
+            
+            visualHelper.appendChild(strip1);
+            visualHelper.appendChild(strip2);
+        }
+
+        // ==========================================================================
+        // LOAD PROBLEM
+        // ==========================================================================
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const choices = generateChoices(currentProblem);
+            
+            // Hide equation helper from previous problem
+            hideEquationHelper();
+            
+            // Build visual
+            buildVisual(currentProblem);
+            
+            // Update choices
+            choicesContainer.innerHTML = '';
+            choices.forEach(choice => {
+                const btn = document.createElement('button');
+                btn.className = 'choice';
+                btn.innerHTML = createFractionHTML(choice.numerator, choice.denominator);
+                btn.addEventListener('click', () => handleChoice(btn, choice));
+                choicesContainer.appendChild(btn);
+            });
+            
+            canAnswer = true;
+        }
+
+        // ==========================================================================
+        // HANDLE CHOICE
+        // ==========================================================================
+        function handleChoice(btn, choice) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (choice.isCorrect) {
+                btn.classList.add('correct');
+                playSound('correct');
+                score++;
+                streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                
+                if (streak >= 3) {
+                    streakDisplay.classList.add('hot');
+                }
+
+                // Hide equation helper if showing
+                hideEquationHelper();
+
+                questionsAnswered++;
+
+                setTimeout(() => {
+                    showCorrectPopup();
+                }, 400);
+            } else {
+                btn.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                
+                // Show animated equation helper
+                showEquationHelper();
+                
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        // ==========================================================================
+        // EQUATION HELPER - Animated hint for wrong answers
+        // ==========================================================================
+        let equationAnimationTimer = null;
+
+        function showEquationHelper() {
+            const container = document.getElementById('equation-helper');
+            container.innerHTML = '';
+            container.classList.add('show');
+            
+            const { numerator, denominator } = currentProblem;
+            
+            // Build equation elements: 1/d + 1/d + 1/d + ... = ?/d
+            const elements = [];
+            
+            for (let i = 0; i < numerator; i++) {
+                // Add unit fraction
+                const frac = document.createElement('span');
+                frac.className = 'eq-unit-frac';
+                frac.innerHTML = '<span class="eq-num">1</span><span class="eq-den">' + denominator + '</span>';
+                frac.id = 'eq-frac-' + i;
+                elements.push(frac);
+                container.appendChild(frac);
+                
+                // Add plus sign (except after last)
+                if (i < numerator - 1) {
+                    const plus = document.createElement('span');
+                    plus.className = 'eq-plus';
+                    plus.textContent = '+';
+                    plus.id = 'eq-plus-' + i;
+                    elements.push(plus);
+                    container.appendChild(plus);
+                }
+            }
+            
+            // Add equals and result placeholder
+            const equals = document.createElement('span');
+            equals.className = 'eq-equals';
+            equals.textContent = '=';
+            equals.id = 'eq-equals';
+            container.appendChild(equals);
+            
+            const result = document.createElement('span');
+            result.className = 'eq-result';
+            result.innerHTML = '<span class="eq-num">?</span><span class="eq-den">' + denominator + '</span>';
+            result.id = 'eq-result';
+            container.appendChild(result);
+            
+            // Animate elements appearing one by one
+            animateEquation(numerator);
+        }
+
+        function animateEquation(numerator) {
+            let step = 0;
+            const totalSteps = numerator * 2; // fractions + plus signs
+            
+            function animateStep() {
+                if (step < numerator) {
+                    // Show fraction
+                    const frac = document.getElementById('eq-frac-' + step);
+                    if (frac) frac.classList.add('show');
+                    
+                    // Show plus sign before it (except first)
+                    if (step > 0) {
+                        const plus = document.getElementById('eq-plus-' + (step - 1));
+                        if (plus) plus.classList.add('show');
+                    }
+                    
+                    step++;
+                    equationAnimationTimer = setTimeout(animateStep, 350);
+                } else if (step === numerator) {
+                    // Show equals
+                    document.getElementById('eq-equals').classList.add('show');
+                    step++;
+                    equationAnimationTimer = setTimeout(animateStep, 350);
+                } else if (step === numerator + 1) {
+                    // Show result with question mark
+                    document.getElementById('eq-result').classList.add('show');
+                }
+            }
+            
+            // Start animation after brief delay
+            equationAnimationTimer = setTimeout(animateStep, 300);
+        }
+
+        function hideEquationHelper() {
+            if (equationAnimationTimer) {
+                clearTimeout(equationAnimationTimer);
+                equationAnimationTimer = null;
+            }
+            const container = document.getElementById('equation-helper');
+            container.classList.remove('show');
+            container.innerHTML = '';
+        }
+
+        // ==========================================================================
+        // POPUPS
+        // ==========================================================================
+        function showCorrectPopup() {
+            const hypeMessages = [
+                { emoji: '🧢', title: 'NO CAP!' },
+                { emoji: '🔥', title: 'FIRE!' },
+                { emoji: '💪', title: 'W!' },
+                { emoji: '👑', title: 'SLAY!' },
+                { emoji: '✨', title: 'VALID!' },
+                { emoji: '🎯', title: 'GOATED!' },
+                { emoji: '💥', title: 'SLAPS!' },
+                { emoji: '🚀', title: 'LET\'S GO!' }
+            ];
+            const msg = hypeMessages[Math.floor(Math.random() * hypeMessages.length)];
+            
+            document.getElementById('correct-emoji').textContent = msg.emoji;
+            document.getElementById('correct-title').textContent = msg.title;
+            
+            // Show fraction in answer box
+            const answerBox = document.getElementById('correct-answer-box');
+            answerBox.innerHTML = createFractionHTML(currentProblem.numerator, currentProblem.denominator, '#2ed573') + ' ✓';
+            
+            document.getElementById('correct-popup').classList.add('show');
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = 
+                wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            
+            const message = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-title').textContent = message;
+            document.getElementById('wrong-subtitle').textContent = '';
+            
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        function showStreakCelebration() {
+            playSound('streak');
+            document.getElementById('streak-count').textContent = streak;
+            
+            let hypeMsg = "Straight fire!";
+            for (const s of streakHypeMessages) {
+                if (streak >= s.streak) hypeMsg = s.hype;
+            }
+            document.getElementById('streak-hype').textContent = hypeMsg;
+            
+            let emojiCount, confettiCount;
+            if (streak >= 15) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 12) {
+                emojiCount = 12;
+                confettiCount = 20;
+            } else if (streak >= 6) {
+                emojiCount = 10;
+                confettiCount = 15;
+            } else {
+                emojiCount = 6;
+                confettiCount = 10;
+            }
+            
+            document.getElementById('streak-popup').classList.add('show');
+            spawnConfetti(confettiCount);
+            spawnCorrectEmojis(emojiCount, streak);
+        }
+
+        function showEndScreen() {
+            playSound('complete');
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('best-streak').textContent = bestStreak;
+            endScreen.classList.add('show');
+            spawnConfetti(50);
+        }
+
+        function checkGameEnd() {
+            loadProblem();
+        }
+
+        // ==========================================================================
+        // EVENT HANDLERS
+        // ==========================================================================
+        document.getElementById('correct-next-btn').addEventListener('click', () => {
+            document.getElementById('correct-popup').classList.remove('show');
+            const shouldCelebrate = streak > 0 && (
+                (streak <= 15 && streak % 3 === 0) ||
+                (streak > 15 && streak % 10 === 5)
+            );
+            if (shouldCelebrate) {
+                showStreakCelebration();
+            } else {
+                checkGameEnd();
+            }
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.choice.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = true;
+        });
+
+        document.getElementById('show-answer-btn').addEventListener('click', () => {
+            buildCorrectAnswerDisplay();
+            document.getElementById('correct-answer-area').style.display = 'block';
+            document.getElementById('try-again-btn').style.display = 'none';
+            document.getElementById('show-answer-btn').textContent = 'Next Question →';
+            document.getElementById('show-answer-btn').onclick = () => {
+                document.getElementById('wrong-popup').classList.remove('show');
+                document.getElementById('show-answer-btn').textContent = 'Show Answer 👀';
+                document.getElementById('correct-answer-area').style.display = 'none';
+                document.getElementById('try-again-btn').style.display = 'inline-block';
+                document.getElementById('show-answer-btn').onclick = null;
+                questionsAnswered++;
+                checkGameEnd();
+            };
+        });
+
+        document.getElementById('streak-continue-btn').addEventListener('click', () => {
+            document.getElementById('streak-popup').classList.remove('show');
+            checkGameEnd();
+        });
+
+        // ==========================================================================
+        // START / RESTART
+        // ==========================================================================
+        function startGame() {
+            score = 0;
+            streak = 0;
+            bestStreak = 0;
+            questionsAnswered = 0;
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+        playAgainBtn.addEventListener('click', () => { startGame(); });
+
+        // ==========================================================================
+        // 🧪 MATH VALIDATOR - For testing
+        // ==========================================================================
+        function runMathTests(numTests = 500, verbose = true) {
+            if (verbose) console.log('🧪 Running ' + numTests + ' tests...');
+            
+            const results = {
+                passed: 0, failed: 0, errors: [],
+                typeCount: {}, positions: [0,0,0,0],
+                minAnswer: Infinity, maxAnswer: -Infinity
+            };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const choices = generateChoices(problem);
+                const issues = [];
+                
+                // Basic checks
+                if (choices.length !== 4) issues.push(choices.length + ' choices');
+                const correctCount = choices.filter(c => c.isCorrect).length;
+                if (correctCount !== 1) issues.push(correctCount + ' correct');
+                
+                // Check for duplicate displays
+                const displays = choices.map(c => c.display);
+                if (new Set(displays).size !== displays.length) issues.push('dup strings');
+                
+                // Verify fractions are valid
+                for (const c of choices) {
+                    if (c.numerator < 1) issues.push('numerator < 1: ' + c.display);
+                    if (c.denominator < 2) issues.push('denominator < 2: ' + c.display);
+                }
+                
+                // Verify correct answer matches problem
+                const correct = choices.find(c => c.isCorrect);
+                if (correct) {
+                    if (correct.numerator !== problem.numerator || correct.denominator !== problem.denominator) {
+                        issues.push('answer mismatch');
+                    }
+                }
+                
+                // Track results
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 5) {
+                    results.errors.push('#' + (i+1) + ': ' + issues.join(', ') + ' | ' + problem.display);
+                }
+                
+                // Track distribution
+                const type = 'denom_' + problem.denominator;
+                results.typeCount[type] = (results.typeCount[type] || 0) + 1;
+                const correctIdx = choices.findIndex(c => c.isCorrect);
+                if (correctIdx >= 0 && correctIdx < 4) results.positions[correctIdx]++;
+                
+                // Track numerator range
+                results.minAnswer = Math.min(results.minAnswer, problem.numerator);
+                results.maxAnswer = Math.max(results.maxAnswer, problem.numerator);
+            }
+            
+            let msg = results.failed === 0 
+                ? '✅ ALL ' + numTests + ' TESTS PASSED!'
+                : '❌ ' + results.failed + '/' + numTests + ' FAILED:\n' + results.errors.join('\n');
+            
+            msg += '\n\nDistribution: ' + JSON.stringify(results.typeCount);
+            msg += '\nPositions: ' + results.positions.map((p,i) => 'P' + (i+1) + ':' + Math.round(p/numTests*100) + '%').join(' ');
+            msg += '\nNumerators: ' + results.minAnswer + ' to ' + results.maxAnswer;
+            
+            if (verbose) {
+                console.log(msg);
+                alert(msg);
+            }
+            return results.failed === 0;
+        }
+        
+        // Press Ctrl+T to run tests
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') {
+                e.preventDefault();
+                runMathTests(500);
+            }
+        });
+
+        // ==========================================================================
+        // START SCREEN DEMO ANIMATION
+        // ==========================================================================
+        let currentStep = 0;
+        let animationTimer = null;
+
+        function resetDemo() {
+            currentStep = 0;
+            
+            // Hide all shaded states
+            for (let i = 1; i <= 8; i++) {
+                const part = document.getElementById('demo-part-' + i);
+                if (part) part.classList.remove('shaded');
+            }
+            
+            // Hide all unit fractions and plus signs
+            for (let i = 0; i < 5; i++) {
+                document.getElementById('demo-frac-' + i).classList.remove('show');
+            }
+            for (let i = 0; i < 4; i++) {
+                document.getElementById('demo-plus-' + i).classList.remove('show');
+            }
+            document.getElementById('demo-equals').classList.remove('show');
+            
+            // Reset result
+            document.getElementById('demo-result-num').textContent = '0';
+        }
+
+        function animateStep() {
+            // Step 0: Show equals sign, start animation
+            if (currentStep === 0) {
+                document.getElementById('demo-equals').classList.add('show');
+                animationTimer = setTimeout(animateStep, 800);
+                currentStep++;
+                return;
+            }
+
+            // Steps 1-4: Shade first strip pieces
+            if (currentStep <= 4) {
+                const partIndex = currentStep;
+                document.getElementById('demo-part-' + partIndex).classList.add('shaded');
+                
+                // Show unit fraction
+                document.getElementById('demo-frac-' + (partIndex - 1)).classList.add('show');
+                
+                // Show plus sign (except before first)
+                if (partIndex > 1) {
+                    document.getElementById('demo-plus-' + (partIndex - 2)).classList.add('show');
+                }
+                
+                // Update result with pop animation
+                const numEl = document.getElementById('demo-result-num');
+                numEl.textContent = currentStep;
+                numEl.classList.remove('pop');
+                void numEl.offsetWidth;
+                numEl.classList.add('pop');
+                
+                currentStep++;
+                const delay = (currentStep === 5) ? 1000 : 900;
+                animationTimer = setTimeout(animateStep, delay);
+                return;
+            }
+
+            // Step 5: Shade 5th piece (first of second strip)
+            if (currentStep === 5) {
+                document.getElementById('demo-part-5').classList.add('shaded');
+                
+                // Show plus and fraction
+                document.getElementById('demo-plus-3').classList.add('show');
+                document.getElementById('demo-frac-4').classList.add('show');
+                
+                // Update result
+                const numEl = document.getElementById('demo-result-num');
+                numEl.textContent = '5';
+                numEl.classList.remove('pop');
+                void numEl.offsetWidth;
+                numEl.classList.add('pop');
+                
+                // Done! Pause then restart
+                animationTimer = setTimeout(() => {
+                    resetDemo();
+                    setTimeout(animateStep, 800);
+                }, 4000);
+            }
+        }
+
+        function startDemoAnimation() {
+            resetDemo();
+            
+            // Show eyes overlay first, then fade out and start animation
+            const eyesOverlay = document.getElementById('eyes-overlay');
+            eyesOverlay.classList.remove('fade-out');
+            
+            setTimeout(() => {
+                eyesOverlay.classList.add('fade-out');
+                setTimeout(animateStep, 800);
+            }, 1500);
+        }
+
+        // Auto-start on load
+        setTimeout(startDemoAnimation, 800);
+    </script>
+</body>
+</html>

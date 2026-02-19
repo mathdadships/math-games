@@ -1,0 +1,1259 @@
+<!--
+ML 5.09 - FRACTION LOCATOR - 80s ARCADE STYLE
+Locating Fractions on a Number Line
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🕹️ FRACTION LOCATOR</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        #game-container {
+            max-width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            margin-bottom: 10px;
+        }
+
+        #title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
+        }
+
+        #stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 8px 16px;
+            background: rgba(0,255,255,0.1);
+            border: 2px solid #0ff;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            color: #0ff;
+        }
+
+        .stat-value {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #ff0;
+            text-shadow: 0 0 10px #ff0;
+        }
+
+        .streak-display { border-color: #f0f; }
+        .streak-display.hot { animation: hotStreak 0.3s ease infinite alternate; }
+        @keyframes hotStreak { to { box-shadow: 0 0 20px rgba(255,0,255,0.8); transform: scale(1.05); } }
+
+        #main-card {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #0ff;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 0 30px rgba(0,255,255,0.2);
+            flex-grow: 1;
+        }
+
+        #prompt {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f;
+        }
+
+        #fraction-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, #2a0a3a 0%, #1a0a2a 100%);
+            border: 4px solid #f0f;
+            border-radius: 12px;
+            padding: 20px 50px;
+            box-shadow: 0 0 40px rgba(255,0,255,0.4);
+            animation: fractionPulse 2s ease infinite;
+        }
+
+        @keyframes fractionPulse {
+            0%, 100% { box-shadow: 0 0 40px rgba(255,0,255,0.4); }
+            50% { box-shadow: 0 0 60px rgba(255,0,255,0.6); }
+        }
+
+        .fraction-numerator, .fraction-denominator {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 72px;
+            font-weight: 900;
+            color: #ff0;
+            text-shadow: 0 0 20px #ff0, 0 0 40px #ff0;
+            line-height: 1;
+        }
+
+        .fraction-line {
+            width: 100%;
+            height: 6px;
+            background: #0ff;
+            box-shadow: 0 0 15px #0ff;
+            margin: 8px 0;
+            border-radius: 3px;
+        }
+
+        #number-line-container {
+            width: 100%;
+            padding: 40px 20px 20px;
+            position: relative;
+        }
+
+        /* Alien helper */
+        #alien-helper {
+            display: none;
+            position: relative;
+            width: 100%;
+            height: 50px;
+            margin-top: 10px;
+        }
+
+        #alien-helper.show {
+            display: block;
+        }
+
+        #alien {
+            position: absolute;
+            font-size: 36px;
+            top: 0;
+            left: 3%;
+            transform: translateX(-50%);
+            transition: left 0.6s ease-in-out;
+            filter: drop-shadow(0 0 10px #0ff);
+        }
+
+        #alien.jumping {
+            animation: alienJump 0.6s ease-in-out;
+        }
+
+        @keyframes alienJump {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-25px); }
+        }
+
+        #fraction-counter {
+            display: none;
+            text-align: center;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            margin-top: 15px;
+            min-height: 30px;
+        }
+
+        #fraction-counter.show {
+            display: block;
+        }
+
+        /* Answer pointer finger */
+        #answer-pointer {
+            display: none;
+            position: absolute;
+            font-size: 80px;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 0 15px #0f6);
+            z-index: 20;
+        }
+
+        #answer-pointer.show {
+            display: block;
+        }
+
+        /* Inline feedback area */
+        #feedback-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            animation: feedbackPop 0.3s ease;
+        }
+
+        #feedback-area.show {
+            display: flex;
+        }
+
+        @keyframes feedbackPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        #feedback-emoji {
+            font-size: 50px;
+        }
+
+        #feedback-message {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 24px;
+            color: #0f6;
+            text-shadow: 0 0 20px #0f6;
+        }
+
+        #feedback-area .popup-btn {
+            margin-top: 10px;
+        }
+
+        /* Streak inline message */
+        #feedback-area.streak #feedback-message {
+            color: #f0f;
+            text-shadow: 0 0 20px #f0f;
+            font-size: 28px;
+        }
+
+        #feedback-area .streak-count {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 36px;
+            color: #ff0;
+            text-shadow: 0 0 20px #ff0;
+        }
+
+        #number-line {
+            position: relative;
+            width: 100%;
+            height: 100px;
+        }
+
+        .number-line-base {
+            position: absolute;
+            top: 50%;
+            left: 3%;
+            right: 3%;
+            height: 8px;
+            background: linear-gradient(90deg, #0ff, #f0f, #0ff);
+            box-shadow: 0 0 15px rgba(0,255,255,0.5);
+            transform: translateY(-50%);
+            border-radius: 4px;
+        }
+
+        .tick-mark {
+            position: absolute;
+            top: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .tick-mark:hover .tick-dot {
+            background: #fff;
+            box-shadow: 0 0 25px #fff;
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+
+        .tick-mark:hover .tick-line {
+            background: #fff;
+            box-shadow: 0 0 20px #fff;
+        }
+
+        .tick-mark:hover .tick-label {
+            color: #fff;
+            text-shadow: 0 0 15px #fff;
+        }
+
+        .tick-line {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 50px;
+            background: #0ff;
+            box-shadow: 0 0 10px #0ff;
+            transform: translate(-50%, -50%);
+            transition: all 0.15s ease;
+            border-radius: 2px;
+        }
+
+        .tick-line.major {
+            height: 70px;
+            width: 6px;
+            background: #ff0;
+            box-shadow: 0 0 15px #ff0;
+        }
+
+        .tick-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 18px;
+            height: 18px;
+            background: #f0f;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #f0f;
+            transition: all 0.15s ease;
+            z-index: 10;
+        }
+
+        .tick-label {
+            position: absolute;
+            top: 50%;
+            margin-top: 55px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            color: #ff0;
+            text-shadow: 0 0 12px #ff0;
+            transition: all 0.15s ease;
+        }
+
+        .tick-mark.correct .tick-dot {
+            background: #0f6 !important;
+            box-shadow: 0 0 30px #0f6, 0 0 50px #0f6 !important;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .tick-mark.correct .tick-line {
+            background: #0f6 !important;
+            box-shadow: 0 0 25px #0f6 !important;
+        }
+
+        .tick-mark.wrong .tick-dot {
+            background: #E8A838 !important;
+            box-shadow: 0 0 30px #E8A838 !important;
+            animation: wrongShakeDot 0.4s ease;
+        }
+
+        .tick-mark.wrong .tick-line {
+            background: #E8A838 !important;
+            box-shadow: 0 0 25px #E8A838 !important;
+        }
+
+        @keyframes wrongShakeDot {
+            0%, 100% { transform: translate(-50%, -50%); }
+            25% { transform: translate(calc(-50% - 8px), -50%); }
+            75% { transform: translate(calc(-50% + 8px), -50%); }
+        }
+
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.show { display: flex; }
+
+        .popup-content {
+            background: linear-gradient(180deg, #1a1a2e 0%, #0a0a1a 100%);
+            border: 4px solid #0ff;
+            border-radius: 12px;
+            padding: 32px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: popIn 0.3s ease;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .popup-emoji { font-size: 64px; margin-bottom: 16px; }
+
+        .popup-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            color: #0ff;
+            text-shadow: 0 0 15px #0ff;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .popup-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 14px;
+            color: #aaa;
+            margin-bottom: 24px;
+        }
+
+        .popup-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            padding: 16px 32px;
+            border: 3px solid;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 5px;
+            background: transparent;
+        }
+
+        .popup-btn:hover { transform: scale(1.05); }
+
+        .btn-primary { border-color: #0ff; color: #0ff; }
+        .btn-primary:hover { background: rgba(0,255,255,0.2); }
+        .btn-amber { border-color: #E8A838; color: #E8A838; }
+        .btn-amber:hover { background: rgba(232,168,56,0.2); }
+        .btn-secondary { border-color: #666; color: #999; }
+
+        #correct-popup .popup-content { border-color: #0f6; }
+        #correct-popup .popup-title { color: #0f6; text-shadow: 0 0 15px #0f6; }
+
+        .correct-answer-box {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #0f6;
+            text-shadow: 0 0 20px #0f6;
+            background: rgba(0,255,100,0.1);
+            border: 2px solid #0f6;
+            padding: 16px 32px;
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        #wrong-popup .popup-content { border-color: #E8A838; }
+        #wrong-popup .popup-title { color: #E8A838; font-size: 14px; }
+
+        #correct-answer-area {
+            display: none;
+            margin: 16px 0;
+            padding: 16px;
+            background: rgba(0,255,100,0.1);
+            border: 2px solid #0f6;
+            border-radius: 8px;
+        }
+
+        #correct-answer-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        #correct-answer-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 24px;
+            color: #0f6;
+            text-shadow: 0 0 10px #0f6;
+        }
+
+        #streak-popup .popup-content { border-color: #f0f; }
+        #streak-popup .popup-title { color: #f0f; }
+
+        .streak-number {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 48px;
+            color: #ff0;
+            text-shadow: 0 0 30px #ff0;
+        }
+
+        .streak-hype {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: #0ff;
+            background: rgba(0,255,255,0.1);
+            border: 2px solid #0ff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0a0f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-main-card {
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 3px solid #0ff;
+            border-radius: 8px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 0 30px rgba(0,255,255,0.2);
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #start-prompt {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: #f0f;
+            text-shadow: 0 0 10px #f0f;
+        }
+
+        #start-fraction-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: linear-gradient(180deg, #2a0a3a 0%, #1a0a2a 100%);
+            border: 4px solid #f0f;
+            border-radius: 12px;
+            padding: 20px 50px;
+            box-shadow: 0 0 40px rgba(255,0,255,0.4);
+        }
+
+        #start-number-line-container {
+            width: 100%;
+            padding: 40px 20px 60px;
+            position: relative;
+        }
+
+        #start-number-line {
+            position: relative;
+            width: 100%;
+            height: 100px;
+        }
+
+        #pointer-finger {
+            position: absolute;
+            font-size: 108px;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 0 10px #fff);
+        }
+
+        #start-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 18px;
+            padding: 20px 50px;
+            background: transparent;
+            color: #ff0;
+            border: 4px solid #ff0;
+            border-radius: 8px;
+            cursor: pointer;
+            animation: startPulse 1.5s ease infinite;
+            margin-top: 10px;
+        }
+
+        @keyframes startPulse {
+            0%, 100% { box-shadow: 0 0 30px rgba(255,255,0,0.3); }
+            50% { box-shadow: 0 0 50px rgba(255,255,0,0.6); }
+        }
+
+        #start-btn:hover { background: rgba(255,255,0,0.2); transform: scale(1.05); }
+
+        #end-screen {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #0a0a0f;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        #end-screen.show { display: flex; }
+        #end-emoji { font-size: 80px; margin-bottom: 16px; }
+        #end-title { font-family: 'Press Start 2P', cursive; font-size: 24px; color: #0ff; margin-bottom: 8px; }
+        #end-subtitle { font-family: 'Orbitron', sans-serif; font-size: 18px; color: #f0f; margin-bottom: 24px; }
+        #end-stats { font-family: 'Press Start 2P', cursive; font-size: 12px; color: #ff0; margin-bottom: 32px; }
+
+        #play-again-btn {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            padding: 18px 40px;
+            background: transparent;
+            color: #ff0;
+            border: 4px solid #ff0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .confetti {
+            position: fixed;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 2s ease forwards;
+            pointer-events: none;
+        }
+
+        @keyframes confettiFall { to { top: 110vh; transform: rotate(720deg); } }
+
+        .flying-emoji-correct {
+            position: fixed;
+            font-size: 50px;
+            pointer-events: none;
+            z-index: 3000;
+            animation: flyUpCorrect 1.2s ease-out forwards;
+        }
+
+        @keyframes flyUpCorrect {
+            0% { transform: scale(0) translateY(0); opacity: 1; }
+            30% { transform: scale(1.3) translateY(-100px); opacity: 1; }
+            100% { transform: scale(1) translateY(-500px); opacity: 0; }
+        }
+
+        @media (max-width: 600px) {
+            #title { font-size: 10px; }
+            .stat-value { font-size: 12px; }
+            .fraction-numerator, .fraction-denominator { font-size: 48px; }
+            #fraction-display { padding: 15px 35px; }
+            #start-title { font-size: 18px; }
+            .popup-btn { font-size: 10px; padding: 12px 20px; }
+            .tick-label { font-size: 9px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <div id="start-main-card">
+                <div id="start-prompt">LOCATE THIS FRACTION</div>
+                <div id="start-fraction-display">
+                    <div class="fraction-numerator">9</div>
+                    <div class="fraction-line"></div>
+                    <div class="fraction-denominator">6</div>
+                </div>
+                <div id="start-number-line-container">
+                    <div id="start-number-line"></div>
+                    <div id="pointer-finger">👆</div>
+                </div>
+                <button id="start-btn">INSERT COIN</button>
+            </div>
+        </div>
+
+        <div id="header">
+            <div id="title">🕹️ FRACTION LOCATOR</div>
+            <div id="stats">
+                <div class="stat">
+                    <div class="stat-label">Score</div>
+                    <div class="stat-value" id="score">0</div>
+                </div>
+                <div class="stat streak-display" id="streak-display">
+                    <div class="stat-label">Streak</div>
+                    <div class="stat-value" id="streak">0 🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="main-card">
+            <div id="prompt">LOCATE THIS FRACTION</div>
+            <div id="fraction-display">
+                <div class="fraction-numerator" id="numerator">5</div>
+                <div class="fraction-line"></div>
+                <div class="fraction-denominator" id="denominator">4</div>
+            </div>
+            <div id="number-line-container">
+                <div id="number-line">
+                    <div class="number-line-base"></div>
+                </div>
+                <!-- Answer pointer finger -->
+                <div id="answer-pointer">👆</div>
+                <!-- Alien helper that shows on retry -->
+                <div id="alien-helper">
+                    <div id="alien">👾</div>
+                </div>
+                <div id="fraction-counter"></div>
+            </div>
+            
+            <!-- Inline feedback area - no overlay -->
+            <div id="feedback-area">
+                <div id="feedback-emoji">⭐</div>
+                <div id="feedback-message">FIRE!</div>
+                <button class="popup-btn btn-primary" id="next-btn">NEXT →</button>
+            </div>
+        </div>
+
+        <div class="popup-overlay" id="correct-popup" style="display: none !important;">
+            <div class="popup-content">
+                <div class="popup-emoji" id="correct-emoji">⭐</div>
+                <div class="popup-title" id="correct-title">PERFECT!</div>
+                <div class="correct-answer-box"><span id="correct-answer-text"></span> ✓</div>
+                <button class="popup-btn btn-primary" id="correct-next-btn">NEXT →</button>
+            </div>
+        </div>
+
+        <div class="popup-overlay" id="wrong-popup">
+            <div class="popup-content">
+                <div class="popup-emoji" id="wrong-emoji">🤔</div>
+                <div class="popup-title" id="wrong-title">Not Quite!</div>
+                <div class="popup-subtitle" id="wrong-subtitle"></div>
+                <div id="correct-answer-area">
+                    <div id="correct-answer-label">THE ANSWER IS:</div>
+                    <div id="correct-answer-display"></div>
+                </div>
+                <div>
+                    <button class="popup-btn btn-amber" id="try-again-btn">TRY AGAIN 🔄</button>
+                    <button class="popup-btn btn-secondary" id="show-answer-btn">SHOW ANSWER 👀</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="end-screen">
+            <div id="end-emoji">🎓</div>
+            <div id="end-title">YOU'RE A MATHEMATICIAN!</div>
+            <div id="end-subtitle">Amazing work!</div>
+            <div id="end-stats">SCORE: <span id="final-score">0</span> | BEST STREAK: <span id="best-streak">0</span></div>
+            <button id="play-again-btn">PLAY AGAIN 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(1100, audioCtx.currentTime + 0.05);
+                osc.frequency.setValueAtTime(1320, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'streak') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                osc.frequency.setValueAtTime(1047, audioCtx.currentTime + 0.24);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            }
+        }
+
+        function spawnConfetti(count) {
+            const colors = ['#0ff', '#f0f', '#ff0', '#0f6'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function spawnCorrectEmojis(count) {
+            const emojis = ['⭐', '✨', '💫', '🔥', '💪', '🎯', '🚀', '👑'];
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'flying-emoji-correct';
+                    emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                    emoji.style.left = (10 + Math.random() * 80) + '%';
+                    emoji.style.top = (50 + Math.random() * 30) + '%';
+                    document.body.appendChild(emoji);
+                    setTimeout(() => emoji.remove(), 1500);
+                }, i * 50);
+            }
+        }
+
+        const growthMessages = [
+            "Mistakes in math are OK!",
+            "The process is more important than the answer!",
+            "Math is hard, but I can do it!",
+            "There's ALWAYS more than one way to solve it!",
+            "I can learn anything in math!",
+            "I believe I can be good at math!",
+            "If I don't get it the first time, I can try a new way!",
+            "Math helps me build my brain!"
+        ];
+
+        const streakHypeMessages = [
+            { streak: 3, hype: "Straight fire!" },
+            { streak: 6, hype: "Goated!" },
+            { streak: 9, hype: "We are all MATHEMATICIANS!" },
+            { streak: 12, hype: "SIGMA BRAIN!" }
+        ];
+
+        const wrongEmojis = ['🤔', '💭', '🧠', '💪'];
+
+        let score = 0, streak = 0, bestStreak = 0, questionsAnswered = 0, currentProblem = null, canAnswer = true;
+        let questionPool = [];
+        let usedQuestions = [];
+
+        const startScreen = document.getElementById('start-screen');
+        const endScreen = document.getElementById('end-screen');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const numberLine = document.getElementById('number-line');
+
+        // Build all possible questions
+        function buildQuestionPool() {
+            const pool = [];
+            const denominators = [2, 3, 4, 6];
+            for (const d of denominators) {
+                for (let n = 1; n <= d * 2 - 1; n++) {
+                    if (n !== d) { // skip d/d (exactly 1)
+                        pool.push({ numerator: n, denominator: d });
+                    }
+                }
+            }
+            // Shuffle the pool
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            return pool;
+        }
+
+        function generateProblem() {
+            // If pool is empty, refill it
+            if (questionPool.length === 0) {
+                questionPool = buildQuestionPool();
+            }
+            
+            // Take next question from pool
+            const q = questionPool.pop();
+            const lineMax = 2;
+            
+            return { 
+                numerator: q.numerator, 
+                denominator: q.denominator, 
+                answer: q.numerator, 
+                lineMax, 
+                display: q.numerator + '/' + q.denominator 
+            };
+        }
+
+        function buildNumberLine(problem) {
+            const { numerator, denominator, lineMax } = problem;
+            numberLine.innerHTML = '<div class="number-line-base"></div>';
+            
+            const lineWidth = 94, leftMargin = 3;
+            const totalTicks = lineMax * denominator;
+            
+            for (let i = 0; i <= totalTicks; i++) {
+                const tick = document.createElement('div');
+                tick.className = 'tick-mark';
+                const isWhole = i % denominator === 0;
+                if (isWhole) tick.classList.add('major');
+                tick.style.left = (leftMargin + (i / totalTicks) * lineWidth) + '%';
+                tick.dataset.position = i;
+                
+                // Vertical tick line
+                const tickLine = document.createElement('div');
+                tickLine.className = 'tick-line' + (isWhole ? ' major' : '');
+                tick.appendChild(tickLine);
+                
+                // Clickable dot on the number line
+                const dot = document.createElement('div');
+                dot.className = 'tick-dot';
+                tick.appendChild(dot);
+                
+                // Only label whole numbers
+                if (isWhole) {
+                    const label = document.createElement('div');
+                    label.className = 'tick-label';
+                    label.textContent = i / denominator;
+                    tick.appendChild(label);
+                }
+                
+                tick.addEventListener('click', () => handleChoice(tick, i === numerator));
+                numberLine.appendChild(tick);
+            }
+        }
+
+        function buildCorrectAnswerDisplay() {
+            document.getElementById('correct-answer-display').innerHTML = 
+                '<span style="font-size: 32px;">' + currentProblem.numerator + '/' + currentProblem.denominator + '</span>';
+        }
+
+        function loadProblem() {
+            hideAlienHelper();
+            hideAnswerPointer();
+            currentProblem = generateProblem();
+            document.getElementById('numerator').textContent = currentProblem.numerator;
+            document.getElementById('denominator').textContent = currentProblem.denominator;
+            buildNumberLine(currentProblem);
+            canAnswer = true;
+        }
+
+        function handleChoice(tick, isCorrect) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            if (isCorrect) {
+                tick.classList.add('correct');
+                playSound('correct');
+                score++; streak++;
+                if (streak > bestStreak) bestStreak = streak;
+                scoreEl.textContent = score;
+                streakEl.textContent = streak + ' 🔥';
+                if (streak >= 3) streakDisplay.classList.add('hot');
+                questionsAnswered++;
+                setTimeout(() => showCorrectFeedback(), 400);
+            } else {
+                tick.classList.add('wrong');
+                playSound('wrong');
+                streak = 0;
+                streakEl.textContent = '0 🔥';
+                streakDisplay.classList.remove('hot');
+                setTimeout(() => showWrongPopup(), 400);
+            }
+        }
+
+        function showCorrectFeedback() {
+            const feedbackArea = document.getElementById('feedback-area');
+            const isStreakMilestone = streak > 0 && ((streak <= 15 && streak % 3 === 0) || (streak > 15 && streak % 10 === 5));
+            
+            if (isStreakMilestone) {
+                // Streak celebration
+                playSound('streak');
+                let hypeMsg = "Straight fire!";
+                for (const s of streakHypeMessages) if (streak >= s.streak) hypeMsg = s.hype;
+                document.getElementById('feedback-emoji').textContent = '🔥';
+                document.getElementById('feedback-message').innerHTML = streak + ' STREAK!<br><span style="font-size: 16px; color: #0ff;">' + hypeMsg + '</span>';
+                feedbackArea.classList.add('streak');
+                spawnConfetti(15);
+                spawnCorrectEmojis(8);
+            } else {
+                // Regular correct
+                const msgs = [
+                    { emoji: '🧢', title: 'NO CAP!' },
+                    { emoji: '🔥', title: 'FIRE!' },
+                    { emoji: '💪', title: 'W!' },
+                    { emoji: '👑', title: 'SLAY!' },
+                    { emoji: '✨', title: 'VALID!' },
+                    { emoji: '🎯', title: 'GOATED!' }
+                ];
+                const msg = msgs[Math.floor(Math.random() * msgs.length)];
+                document.getElementById('feedback-emoji').textContent = msg.emoji;
+                document.getElementById('feedback-message').textContent = msg.title;
+                feedbackArea.classList.remove('streak');
+            }
+            
+            feedbackArea.classList.add('show');
+        }
+
+        function showWrongPopup() {
+            document.getElementById('wrong-emoji').textContent = wrongEmojis[Math.floor(Math.random() * wrongEmojis.length)];
+            document.getElementById('wrong-title').textContent = growthMessages[Math.floor(Math.random() * growthMessages.length)];
+            document.getElementById('wrong-subtitle').textContent = '';
+            document.getElementById('correct-answer-area').style.display = 'none';
+            document.getElementById('try-again-btn').style.display = 'inline-block';
+            document.getElementById('show-answer-btn').textContent = 'SHOW ANSWER 👀';
+            document.getElementById('wrong-popup').classList.add('show');
+        }
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            document.getElementById('feedback-area').classList.remove('show');
+            document.getElementById('feedback-area').classList.remove('streak');
+            hideAlienHelper();
+            hideAnswerPointer();
+            loadProblem();
+        });
+
+        document.getElementById('try-again-btn').addEventListener('click', () => {
+            document.getElementById('wrong-popup').classList.remove('show');
+            document.querySelectorAll('.tick-mark.wrong').forEach(el => el.classList.remove('wrong'));
+            canAnswer = false; // Disable until animation completes
+            startAlienHelper();
+        });
+
+        function startAlienHelper() {
+            const alienHelper = document.getElementById('alien-helper');
+            const alien = document.getElementById('alien');
+            const counter = document.getElementById('fraction-counter');
+            const { denominator, lineMax } = currentProblem;
+            const totalTicks = lineMax * denominator;
+            const lineWidth = 94;
+            const leftMargin = 3;
+            
+            // Show the helper elements
+            alienHelper.classList.add('show');
+            counter.classList.add('show');
+            
+            // Reset alien position
+            alien.style.left = leftMargin + '%';
+            counter.textContent = '0';
+            
+            let currentTick = 0;
+            
+            function jumpToNext() {
+                currentTick++;
+                
+                if (currentTick > totalTicks + 1) {
+                    // Animation complete - alien jumped off screen
+                    setTimeout(() => {
+                        canAnswer = true;
+                    }, 300);
+                    return;
+                }
+                
+                // Calculate position
+                const position = leftMargin + (currentTick / totalTicks) * lineWidth;
+                
+                // Trigger jump animation
+                alien.classList.remove('jumping');
+                void alien.offsetWidth; // Force reflow
+                alien.classList.add('jumping');
+                
+                // Move alien
+                if (currentTick <= totalTicks) {
+                    alien.style.left = position + '%';
+                } else {
+                    // Jump off screen
+                    alien.style.left = '110%';
+                }
+                
+                // Update counter and play sound AFTER alien lands (delay matches transition time)
+                setTimeout(() => {
+                    playHopSound();
+                    if (currentTick <= totalTicks) {
+                        counter.innerHTML = '<span style="color: #ff0;">' + currentTick + '/' + denominator + '</span>';
+                    } else {
+                        counter.textContent = '🎯 Now find ' + currentProblem.display + '!';
+                        counter.style.color = '#0f6';
+                    }
+                }, 550); // When alien lands
+                
+                // Schedule next jump
+                setTimeout(jumpToNext, 800);
+            }
+            
+            // Start jumping after a brief delay
+            setTimeout(jumpToNext, 500);
+        }
+
+        function hideAlienHelper() {
+            document.getElementById('alien-helper').classList.remove('show');
+            document.getElementById('fraction-counter').classList.remove('show');
+            document.getElementById('fraction-counter').style.color = '#0ff';
+            document.getElementById('alien').style.left = '3%';
+        }
+
+        function playHopSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600 + Math.random() * 200, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(800 + Math.random() * 200, audioCtx.currentTime + 0.05);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        document.getElementById('show-answer-btn').addEventListener('click', function() {
+            // Close the wrong popup
+            document.getElementById('wrong-popup').classList.remove('show');
+            
+            // Show pointer finger on the correct answer
+            showAnswerPointer();
+            
+            // Show feedback area with NEXT button
+            const feedbackArea = document.getElementById('feedback-area');
+            document.getElementById('feedback-emoji').textContent = '👆';
+            document.getElementById('feedback-message').innerHTML = 'The answer is <span style="color: #ff0;">' + currentProblem.display + '</span>';
+            feedbackArea.classList.add('show');
+            
+            // Set up next button to advance
+            document.getElementById('next-btn').onclick = () => {
+                hideAnswerPointer();
+                feedbackArea.classList.remove('show');
+                document.getElementById('next-btn').onclick = null; // Reset
+                questionsAnswered++;
+                loadProblem();
+            };
+        });
+
+        function showAnswerPointer() {
+            const pointer = document.getElementById('answer-pointer');
+            const { numerator, denominator, lineMax } = currentProblem;
+            const totalTicks = lineMax * denominator;
+            const lineWidth = 94;
+            const leftMargin = 3;
+            
+            // Position pointer at correct answer
+            const position = leftMargin + (numerator / totalTicks) * lineWidth;
+            pointer.style.left = position + '%';
+            pointer.style.top = '75px';
+            pointer.classList.add('show');
+            
+            // Also highlight the correct tick
+            const ticks = document.querySelectorAll('.tick-mark');
+            ticks.forEach(tick => {
+                if (parseInt(tick.dataset.position) === numerator) {
+                    tick.classList.add('correct');
+                }
+            });
+        }
+
+        function hideAnswerPointer() {
+            document.getElementById('answer-pointer').classList.remove('show');
+        }
+
+        function startGame() {
+            score = 0; streak = 0; bestStreak = 0; questionsAnswered = 0;
+            questionPool = buildQuestionPool(); // Fresh shuffled pool
+            scoreEl.textContent = '0';
+            streakEl.textContent = '0 🔥';
+            streakDisplay.classList.remove('hot');
+            startScreen.classList.add('hidden');
+            endScreen.classList.remove('show');
+            loadProblem();
+        }
+
+        document.getElementById('start-btn').addEventListener('click', () => { initAudio(); startGame(); });
+        document.getElementById('play-again-btn').addEventListener('click', startGame);
+
+        // Build start screen demo number line (9/6 example)
+        function buildStartScreenDemo() {
+            const startNumberLine = document.getElementById('start-number-line');
+            const pointer = document.getElementById('pointer-finger');
+            const denominator = 6;
+            const numerator = 9;
+            const lineMax = 2;
+            const totalTicks = lineMax * denominator; // 12
+            const lineWidth = 94;
+            const leftMargin = 3;
+            
+            // Add number line base
+            startNumberLine.innerHTML = '<div class="number-line-base"></div>';
+            
+            // Add tick marks
+            for (let i = 0; i <= totalTicks; i++) {
+                const tick = document.createElement('div');
+                tick.className = 'tick-mark';
+                const isWhole = i % denominator === 0;
+                if (isWhole) tick.classList.add('major');
+                tick.style.left = (leftMargin + (i / totalTicks) * lineWidth) + '%';
+                
+                const tickLine = document.createElement('div');
+                tickLine.className = 'tick-line' + (isWhole ? ' major' : '');
+                tick.appendChild(tickLine);
+                
+                const dot = document.createElement('div');
+                dot.className = 'tick-dot';
+                tick.appendChild(dot);
+                
+                if (isWhole) {
+                    const label = document.createElement('div');
+                    label.className = 'tick-label';
+                    label.textContent = i / denominator;
+                    tick.appendChild(label);
+                }
+                
+                startNumberLine.appendChild(tick);
+            }
+            
+            // Position pointer finger directly below 9/6 dot
+            const pointerPosition = leftMargin + (numerator / totalTicks) * lineWidth;
+            pointer.style.left = pointerPosition + '%';
+            pointer.style.top = '75px'; // Below the number line
+        }
+        
+        // Initialize start screen demo
+        buildStartScreenDemo();
+
+        function runMathTests(numTests = 500) {
+            console.log('🧪 Running ' + numTests + ' tests...');
+            const results = { passed: 0, failed: 0, errors: [], denominators: {} };
+            
+            for (let i = 0; i < numTests; i++) {
+                const problem = generateProblem();
+                const issues = [];
+                
+                if (![2,3,4,6].includes(problem.denominator)) issues.push('bad denom');
+                if (problem.numerator === problem.denominator) issues.push('num=denom');
+                if (problem.numerator <= 0) issues.push('num <= 0');
+                if (problem.numerator > problem.lineMax * problem.denominator) issues.push('num > max');
+                
+                issues.length === 0 ? results.passed++ : results.failed++;
+                if (issues.length > 0 && results.errors.length < 10) {
+                    results.errors.push('#' + (i+1) + ': ' + issues.join(', '));
+                }
+                
+                results.denominators[problem.denominator] = (results.denominators[problem.denominator] || 0) + 1;
+            }
+            
+            let msg = results.failed === 0 
+                ? '✅ ALL ' + numTests + ' TESTS PASSED!'
+                : '❌ ' + results.failed + '/' + numTests + ' FAILED';
+            if (results.errors.length > 0) msg += '\n' + results.errors.join('\n');
+            msg += '\n\nDenominators: ' + JSON.stringify(results.denominators);
+            console.log(msg);
+            alert(msg);
+            return results.failed === 0;
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 't') { e.preventDefault(); runMathTests(500); }
+        });
+    </script>
+</body>
+</html>

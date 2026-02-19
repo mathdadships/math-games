@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Fact Builder ✖️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Bangers&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { 
+            height: 100%; 
+            overflow: hidden; 
+            font-family: 'Fredoka', sans-serif; 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            user-select: none;
+        }
+        
+        #app {
+            width: 100%;
+            height: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        #header {
+            background: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #title {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #fff;
+        }
+
+        .stat-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-family: 'Bangers', cursive;
+            font-size: 22px;
+            color: #ffd93d;
+        }
+
+        .streak-display {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 5px 12px;
+            border-radius: 8px;
+        }
+
+        .streak-display.hot {
+            background: linear-gradient(135deg, #f39c12, #e74c3c);
+            animation: pulse 0.5s ease infinite alternate;
+        }
+
+        @keyframes pulse {
+            to { transform: scale(1.05); }
+        }
+
+        /* Game area */
+        #game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        /* Main card */
+        #main-card {
+            background: #fff;
+            border-radius: 25px;
+            padding: 25px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #main-card.correct-flash {
+            animation: cardFlash 0.4s ease;
+        }
+
+        @keyframes cardFlash {
+            0%, 100% { box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+            50% { box-shadow: 0 0 30px rgba(46, 213, 115, 0.6); }
+        }
+
+        /* Side by side: Given and Target */
+        .problems-container {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        .problem-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 25px;
+            border-radius: 20px;
+            min-width: 200px;
+            min-height: 280px;
+        }
+
+        .problem-box.given {
+            background: #f0f0f0;
+        }
+
+        .problem-box.target {
+            background: #fff9e6;
+            border: 3px solid #ffd93d;
+        }
+
+        .problem-label {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        /* Dot grid */
+        .dot-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .dot-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot-row .plus-indicator {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e74c3c;
+            width: 28px;
+            text-align: center;
+        }
+
+        .dot-row .spacer {
+            width: 28px;
+        }
+
+        .dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #6c5ce7;
+        }
+
+        /* Extra space before the new rows - just margin, no line */
+        .dot-row.new-row.first-new {
+            margin-top: 15px;
+        }
+
+        .dot-row.new-row .dot {
+            animation: dotAppear 0.3s ease;
+        }
+
+        @keyframes dotAppear {
+            from { transform: scale(0); }
+            to { transform: scale(1); }
+        }
+
+        /* Equation at bottom of box */
+        .equation-wrapper {
+            margin-top: auto;
+            padding-top: 15px;
+        }
+
+        /* Equation below dots */
+        .equation {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .equation .op {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .equation .answer-box {
+            background: #ffd93d;
+            padding: 4px 16px;
+            border-radius: 8px;
+            min-width: 50px;
+            text-align: center;
+            animation: pulseBorder 1s ease infinite;
+        }
+
+        @keyframes pulseBorder {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 217, 61, 0.5); }
+            50% { box-shadow: 0 0 0 8px rgba(255, 217, 61, 0); }
+        }
+
+        .equation .answer-box.revealed {
+            background: #00ff88;
+            animation: none;
+        }
+
+        /* Arrow between boxes */
+        .arrow-between {
+            font-size: 40px;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Choices */
+        #choices {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            flex: 1;
+            align-content: start;
+        }
+
+        .choice {
+            background: #fff;
+            border-radius: 18px;
+            padding: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            border: 3px solid transparent;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .choice:hover {
+            transform: scale(1.03);
+            border-color: #667eea;
+        }
+
+        .choice:active {
+            transform: scale(0.98);
+        }
+
+        .choice.correct {
+            background: #00ff88;
+            border-color: #00cc6a;
+            animation: correctPop 0.4s ease;
+        }
+
+        .choice.wrong {
+            background: #ff6b6b;
+            border-color: #ee5253;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes correctPop {
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .choice-text {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* Complete popup */
+        #complete-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 35px 45px;
+            border-radius: 25px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            max-width: 350px;
+        }
+
+        #complete-popup.show {
+            display: block;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            70% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        #complete-popup .fox-emoji {
+            font-size: 80px;
+            margin-bottom: 10px;
+        }
+
+        #complete-popup .speech-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        #complete-popup .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid #764ba2;
+        }
+
+        #complete-popup .bonus-text { 
+            color: #f39c12;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 15px;
+        }
+
+        /* Start screen */
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 30px;
+            text-align: center;
+        }
+
+        #start-screen.hidden { display: none; }
+
+        #start-screen h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 48px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        #start-screen .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 20px;
+            margin-bottom: 40px;
+            max-width: 400px;
+        }
+
+        .example-visual {
+            margin-bottom: 40px;
+            display: flex;
+            gap: 25px;
+            align-items: stretch;
+        }
+
+        .example-box {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 20px 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 160px;
+            min-height: 200px;
+        }
+
+        .example-box .mini-dots {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .example-box .mini-row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .example-box .mini-row .mini-plus {
+            color: #ffd93d;
+            font-weight: 700;
+            font-size: 20px;
+            width: 22px;
+            text-align: center;
+        }
+
+        .example-box .mini-row .mini-spacer {
+            width: 22px;
+        }
+
+        .example-box .mini-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        .example-box .equation-wrapper {
+            margin-top: auto;
+            padding-top: 15px;
+        }
+
+        .example-box .example-eq {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .example-box .example-eq .highlight {
+            background: #ffd93d;
+            color: #333;
+            padding: 3px 14px;
+            border-radius: 8px;
+        }
+
+        .example-arrow {
+            font-size: 40px;
+            color: rgba(255,255,255,0.8);
+            display: flex;
+            align-items: center;
+        }
+
+        #start-btn {
+            font-family: 'Bangers', cursive;
+            font-size: 34px;
+            padding: 18px 60px;
+            background: #fff;
+            color: #6c5ce7;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        #start-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .hint-sentence {
+            color: #fff;
+            font-size: 18px;
+            margin-bottom: 30px;
+            background: rgba(0,0,0,0.2);
+            padding: 12px 24px;
+            border-radius: 12px;
+            max-width: 400px;
+        }
+
+        .hint-sentence strong {
+            color: #ffd93d;
+        }
+
+        /* Explanation box - inside main card, under question */
+        #explanation-box {
+            background: linear-gradient(135deg, #00cc6a, #00aa55);
+            color: #fff;
+            padding: 0 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 0;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #explanation-box.visible {
+            padding: 12px 20px;
+            margin-top: 20px;
+            max-height: 60px;
+            opacity: 1;
+        }
+
+        /* Teaching overlay for wrong answers */
+        #teaching-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 250;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        #teaching-overlay.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .teaching-card {
+            background: #fff;
+            border-radius: 24px;
+            padding: 30px 35px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .teaching-title {
+            font-family: 'Bangers', cursive;
+            font-size: 28px;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .teaching-content {
+            font-size: 20px;
+            color: #333;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .teaching-content .answer {
+            font-size: 28px;
+            font-weight: 700;
+            color: #00aa55;
+            margin-top: 15px;
+        }
+
+        #teaching-btn {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+        }
+
+        #teaching-btn:hover {
+            transform: scale(1.03);
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            .problems-container { gap: 15px; }
+            .problem-box { min-width: 150px; padding: 15px; }
+            .dot { width: 14px; height: 14px; }
+            .equation { font-size: 24px; }
+            .arrow-between { font-size: 28px; }
+            .choice { padding: 18px; }
+            .choice-text { font-size: 30px; }
+            #start-screen h1 { font-size: 32px; }
+            .example-visual { flex-direction: column; align-items: center; gap: 10px; }
+            .example-arrow { transform: rotate(90deg); margin: 0; }
+        }
+
+        /* Effects */
+        .confetti {
+            position: fixed;
+            pointer-events: none;
+            z-index: 300;
+            animation: confettiFall 2s ease-out forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(-10px) rotate(0); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .flying-emoji {
+            position: fixed;
+            font-size: 30px;
+            pointer-events: none;
+            z-index: 250;
+            animation: flyUp 0.7s ease-out forwards;
+        }
+
+        @keyframes flyUp {
+            0% { transform: scale(0); opacity: 1; }
+            50% { transform: scale(1.2) translateY(-30px); }
+            100% { transform: scale(1) translateY(-80px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h1>✖️ FACT BUILDER</h1>
+            <div class="subtitle">Use a fact you know to find a new fact!</div>
+            
+            <div class="example-visual">
+                <div class="example-box">
+                    <div class="mini-dots">
+                        <div class="mini-row">
+                            <span class="mini-spacer"></span>
+                            <span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span>
+                        </div>
+                        <div class="mini-row">
+                            <span class="mini-spacer"></span>
+                            <span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span>
+                        </div>
+                    </div>
+                    <div class="equation-wrapper">
+                        <div class="example-eq">2 × 4 = 8</div>
+                    </div>
+                </div>
+                
+                <div class="example-arrow">→</div>
+                
+                <div class="example-box">
+                    <div class="mini-dots">
+                        <div class="mini-row">
+                            <span class="mini-spacer"></span>
+                            <span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span>
+                        </div>
+                        <div class="mini-row">
+                            <span class="mini-spacer"></span>
+                            <span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span>
+                        </div>
+                        <div class="mini-row" style="margin-top: 12px;">
+                            <span class="mini-plus">+</span>
+                            <span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span><span class="mini-dot"></span>
+                        </div>
+                    </div>
+                    <div class="equation-wrapper">
+                        <div class="example-eq">3 × 4 = <span class="highlight">?</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hint-sentence">It's just <strong>one more group</strong> — add it to the answer you know!</div>
+            
+            <button id="start-btn">BUILD FACTS!</button>
+        </div>
+
+        <!-- Header -->
+        <div id="header">
+            <div id="title">✖️ Fact Builder</div>
+            <div class="stat-row">
+                <div class="stat-value" id="score">0</div>
+                <div class="streak-display" id="streak-display">
+                    <div class="stat-value" id="streak">0🔥</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div id="game-area">
+            <div id="main-card">
+                <div class="problems-container">
+                    <!-- Given problem -->
+                    <div class="problem-box given">
+                        <div class="problem-label">I know this</div>
+                        <div class="dot-grid" id="given-dots"></div>
+                        <div class="equation-wrapper">
+                            <div class="equation">
+                                <span id="given-a">2</span>
+                                <span class="op">×</span>
+                                <span id="given-b">4</span>
+                                <span class="op">=</span>
+                                <span id="given-answer">8</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="arrow-between">→</div>
+
+                    <!-- Target problem -->
+                    <div class="problem-box target">
+                        <div class="problem-label">So I know this</div>
+                        <div class="dot-grid" id="target-dots"></div>
+                        <div class="equation-wrapper">
+                            <div class="equation">
+                                <span id="target-a">3</span>
+                                <span class="op">×</span>
+                                <span id="target-b">4</span>
+                                <span class="op">=</span>
+                                <span class="answer-box" id="target-answer">?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Explanation shows here, right under the question -->
+                <div id="explanation-box">
+                    <span id="explanation-text"></span>
+                </div>
+            </div>
+
+            <!-- Choices -->
+            <div id="choices"></div>
+        </div>
+
+        <!-- Complete popup -->
+        <div id="complete-popup">
+            <div class="fox-emoji">🦊</div>
+            <div class="speech-bubble" id="fox-message">Amazing work!</div>
+            <div class="bonus-text">+50 bonus points!</div>
+        </div>
+
+        <!-- Teaching overlay for wrong answers -->
+        <div id="teaching-overlay">
+            <div class="teaching-card">
+                <div class="teaching-title">Let's see...</div>
+                <div class="teaching-content" id="teaching-content"></div>
+                <button id="teaching-btn">Got it!</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+        function initAudio() { if (!audioCtx) audioCtx = new AudioContext(); }
+        
+        function playSound(type) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'correct') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.08);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.16);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'complete') {
+                osc.type = 'square';
+                [523, 659, 784, 1047].forEach((freq, i) => {
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.1);
+                });
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.5);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+            }
+        }
+
+        // Problem types - +1 group and double patterns (expanded)
+        const problemTypes = [
+            // +1 group patterns
+            { from: 2, to: 3 },
+            { from: 3, to: 4 },
+            { from: 4, to: 5 },
+            { from: 5, to: 6 },
+            { from: 6, to: 7 },
+            { from: 7, to: 8 },
+            { from: 8, to: 9 },
+            // double patterns
+            { from: 2, to: 4 },
+            { from: 3, to: 6 },
+            { from: 4, to: 8 },
+        ];
+
+        // Multipliers - full range for Grade 3
+        const multipliers = [2, 3, 4, 5, 6, 7, 8, 9];
+
+        // State
+        let score = 0;
+        let streak = 0;
+        let roundsInSet = 0;
+        let currentProblem = null;
+        let canAnswer = true;
+
+        // DOM
+        const startScreen = document.getElementById('start-screen');
+        const startBtn = document.getElementById('start-btn');
+        const scoreEl = document.getElementById('score');
+        const streakEl = document.getElementById('streak');
+        const streakDisplay = document.getElementById('streak-display');
+        const mainCard = document.getElementById('main-card');
+        const givenA = document.getElementById('given-a');
+        const givenB = document.getElementById('given-b');
+        const givenAnswer = document.getElementById('given-answer');
+        const targetA = document.getElementById('target-a');
+        const targetB = document.getElementById('target-b');
+        const targetAnswer = document.getElementById('target-answer');
+        const givenDotsEl = document.getElementById('given-dots');
+        const targetDotsEl = document.getElementById('target-dots');
+        const choicesEl = document.getElementById('choices');
+        const completePopup = document.getElementById('complete-popup');
+        const foxMessage = document.getElementById('fox-message');
+        const teachingOverlay = document.getElementById('teaching-overlay');
+        const teachingContent = document.getElementById('teaching-content');
+        const teachingBtn = document.getElementById('teaching-btn');
+        const explanationBox = document.getElementById('explanation-box');
+        const explanationText = document.getElementById('explanation-text');
+
+        const foxMessages = [
+            "Amazing work! 🎉",
+            "You're a fact builder pro!",
+            "Fantastic job! 🌟",
+            "You nailed it!",
+            "Math superstar! ⭐",
+            "Keep building those facts!",
+            "You're on fire! 🔥",
+            "Brilliant thinking!",
+            "Way to go, champ!",
+            "You make it look easy!"
+        ];
+
+        function shuffleArray(arr) {
+            const shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        function generateProblem() {
+            const type = problemTypes[Math.floor(Math.random() * problemTypes.length)];
+            const n = multipliers[Math.floor(Math.random() * multipliers.length)];
+            
+            return {
+                givenRows: type.from,
+                targetRows: type.to,
+                dotsPerRow: n,
+                givenProduct: type.from * n,
+                targetProduct: type.to * n,
+                extraRows: type.to - type.from
+            };
+        }
+
+        function renderDots(container, numRows, dotsPerRow, extraRows = 0) {
+            container.innerHTML = '';
+            
+            // Scale dots based on total count
+            const totalDots = numRows * dotsPerRow;
+            let dotSize = 20;
+            let gap = 6;
+            if (totalDots > 48) {
+                dotSize = 12;
+                gap = 4;
+            } else if (totalDots > 30) {
+                dotSize = 16;
+                gap = 5;
+            }
+            container.style.gap = gap + 'px';
+            
+            const baseRows = numRows - extraRows;
+            
+            // Base rows (no indicator)
+            for (let r = 0; r < baseRows; r++) {
+                const row = document.createElement('div');
+                row.className = 'dot-row';
+                row.style.gap = gap + 'px';
+                
+                // Spacer to align with + rows
+                if (extraRows > 0) {
+                    const spacer = document.createElement('span');
+                    spacer.className = 'spacer';
+                    row.appendChild(spacer);
+                }
+                
+                for (let d = 0; d < dotsPerRow; d++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dot';
+                    dot.style.width = dotSize + 'px';
+                    dot.style.height = dotSize + 'px';
+                    row.appendChild(dot);
+                }
+                container.appendChild(row);
+            }
+            
+            // Extra rows (with + indicator)
+            for (let r = 0; r < extraRows; r++) {
+                const row = document.createElement('div');
+                row.className = r === 0 ? 'dot-row new-row first-new' : 'dot-row new-row';
+                row.style.gap = gap + 'px';
+                
+                const plus = document.createElement('span');
+                plus.className = 'plus-indicator';
+                plus.textContent = '+';
+                row.appendChild(plus);
+                
+                for (let d = 0; d < dotsPerRow; d++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'dot';
+                    dot.style.width = dotSize + 'px';
+                    dot.style.height = dotSize + 'px';
+                    row.appendChild(dot);
+                }
+                container.appendChild(row);
+            }
+        }
+
+        function loadProblem() {
+            currentProblem = generateProblem();
+            const p = currentProblem;
+
+            // Update equations
+            givenA.textContent = p.givenRows;
+            givenB.textContent = p.dotsPerRow;
+            givenAnswer.textContent = p.givenProduct;
+            
+            targetA.textContent = p.targetRows;
+            targetB.textContent = p.dotsPerRow;
+            targetAnswer.textContent = '?';
+            targetAnswer.classList.remove('revealed');
+
+            // Render dots
+            renderDots(givenDotsEl, p.givenRows, p.dotsPerRow, 0);
+            renderDots(targetDotsEl, p.targetRows, p.dotsPerRow, p.extraRows);
+
+            canAnswer = true;
+            renderChoices();
+        }
+
+        function renderChoices() {
+            const correct = currentProblem.targetProduct;
+            
+            // Generate distractors
+            let distractors = new Set();
+            
+            // Common mistakes
+            distractors.add(correct + currentProblem.dotsPerRow); // One extra group
+            distractors.add(correct - currentProblem.dotsPerRow); // One less group
+            distractors.add(currentProblem.givenProduct + currentProblem.dotsPerRow); // Added to wrong number
+            distractors.add(currentProblem.givenProduct * 2); // Doubled when shouldn't
+            distractors.add(correct + 1);
+            distractors.add(correct - 1);
+            distractors.add(correct + 2);
+            
+            // Filter valid
+            let distractorArray = [...distractors].filter(d => d > 0 && d !== correct);
+            distractorArray = shuffleArray(distractorArray).slice(0, 3);
+
+            let choices = shuffleArray([correct, ...distractorArray]);
+
+            choicesEl.innerHTML = '';
+            choices.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'choice';
+                div.innerHTML = `<span class="choice-text">${num}</span>`;
+                div.addEventListener('click', () => handleChoice(num, div));
+                choicesEl.appendChild(div);
+            });
+        }
+
+        function handleChoice(num, element) {
+            if (!canAnswer) return;
+
+            const correct = currentProblem.targetProduct;
+
+            if (num === correct) {
+                canAnswer = false;
+                playSound('correct');
+                element.classList.add('correct');
+                
+                // Reveal answer
+                targetAnswer.textContent = correct;
+                targetAnswer.classList.add('revealed');
+                
+                // Flash card
+                mainCard.classList.add('correct-flash');
+                setTimeout(() => mainCard.classList.remove('correct-flash'), 400);
+
+                streak++;
+                score += 10 + streak;
+                updateStats();
+
+                if (streak > 0 && streak % 3 === 0) {
+                    spawnEmoji('🔥');
+                }
+
+                // Show explanation
+                showExplanation(true);
+
+                roundsInSet++;
+
+                if (roundsInSet >= 5) {
+                    setTimeout(() => {
+                        playSound('complete');
+                        score += 50;
+                        updateStats();
+                        foxMessage.textContent = foxMessages[Math.floor(Math.random() * foxMessages.length)];
+                        completePopup.classList.add('show');
+                        spawnConfetti(25);
+
+                        setTimeout(() => {
+                            completePopup.classList.remove('show');
+                            roundsInSet = 0;
+                            loadProblem();
+                        }, 2200);
+                    }, 5000);
+                } else {
+                    setTimeout(loadProblem, 5000);
+                }
+            } else {
+                canAnswer = false;
+                playSound('wrong');
+                element.classList.add('wrong');
+                streak = 0;
+                updateStats();
+
+                setTimeout(() => {
+                    showExplanation(false);
+                }, 500);
+            }
+        }
+
+        function showExplanation(isCorrect) {
+            const p = currentProblem;
+            const dotsPerRow = p.dotsPerRow;
+            const extraRows = p.extraRows;
+            const extraProduct = extraRows * dotsPerRow;
+            
+            // Original format: "It is X more group(s) of Y, and A + B = C"
+            let groupWord = extraRows === 1 ? "group" : "groups";
+            const message = `It is ${extraRows} more ${groupWord} of ${dotsPerRow}, and ${p.givenProduct} + ${extraProduct} = ${p.targetProduct}`;
+            
+            if (isCorrect) {
+                explanationText.textContent = message;
+                explanationBox.classList.add('visible');
+                setTimeout(() => {
+                    explanationBox.classList.remove('visible');
+                }, 5000);
+            } else {
+                teachingContent.innerHTML = `
+                    <div class="explain-line">${message}</div>
+                    <div class="answer">${p.targetRows} × ${dotsPerRow} = ${p.targetProduct}</div>
+                `;
+                teachingOverlay.classList.add('visible');
+            }
+        }
+
+        function closeTeaching() {
+            teachingOverlay.classList.remove('visible');
+            setTimeout(() => loadProblem(), 300);
+        }
+
+        function updateStats() {
+            scoreEl.textContent = score;
+            streakEl.textContent = streak + '🔥';
+            streakDisplay.classList.toggle('hot', streak >= 5);
+        }
+
+        function spawnEmoji(emoji) {
+            const el = document.createElement('div');
+            el.className = 'flying-emoji';
+            el.textContent = emoji;
+            el.style.left = (30 + Math.random() * 40) + '%';
+            el.style.top = '50%';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 700);
+        }
+
+        function spawnConfetti(count) {
+            for (let i = 0; i < count; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.className = 'confetti';
+                    c.style.left = Math.random() * 100 + 'vw';
+                    c.style.width = c.style.height = (6 + Math.random() * 8) + 'px';
+                    c.style.background = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff9ff3','#a55eea'][Math.floor(Math.random()*6)];
+                    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    document.body.appendChild(c);
+                    setTimeout(() => c.remove(), 2000);
+                }, i * 30);
+            }
+        }
+
+        function startGame() {
+            score = 0;
+            streak = 0;
+            roundsInSet = 0;
+            updateStats();
+            startScreen.classList.add('hidden');
+            loadProblem();
+        }
+
+        startBtn.addEventListener('click', () => {
+            initAudio();
+            startGame();
+        });
+
+        teachingBtn.addEventListener('click', closeTeaching);
+    </script>
+</body>
+</html>
