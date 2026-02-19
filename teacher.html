@@ -394,15 +394,17 @@
         }));
 
         // Deduplicate: keep one row per session.
-        // With session_id: group by student_id + game_file + session_id
-        // Without session_id (pre-migration): group by student_id + game_file + date
+        // Real session_ids (from tracker.js) are short base36 strings like "m5abc1x2f".
+        // Backfilled session_ids are UUIDs (from the migration: session_id = id::text).
+        // Group backfilled/missing rows by student + game + date to collapse auto-save dupes.
+        const isRealSessionId = (sid) => sid && sid.length < 20 && !sid.includes('-');
         const dedup = {};
         enriched.forEach(r => {
             let sessionKey;
-            if (r.session_id) {
+            if (isRealSessionId(r.session_id)) {
                 sessionKey = r.session_id;
             } else {
-                // Pre-migration rows: group by date to collapse auto-save duplicates
+                // Backfilled UUID or missing: group by date
                 const day = r.played_at ? r.played_at.split('T')[0] : 'unknown';
                 sessionKey = 'legacy_' + day;
             }
