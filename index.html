@@ -104,11 +104,29 @@
         .tag-mixed  { background: #f3e5f5; color: #7b1fa2; }
         .tag-frac   { background: #e3f2fd; color: #1565c0; }
         .tag-story  { background: #e8f5e9; color: #2e7d32; }
+        .welcome-bar {
+            max-width: 1100px; margin: 0 auto 24px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(255,255,255,0.15); border-radius: 12px;
+            padding: 10px 20px; backdrop-filter: blur(8px);
+        }
+        .welcome-bar span { color: #fff; font-size: 0.95rem; }
+        .welcome-bar button {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4);
+            color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer;
+            font-size: 0.8rem; font-family: inherit;
+        }
+        .welcome-bar button:hover { background: rgba(255,255,255,0.3); }
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <h1>Math Games Hub</h1>
     <p class="subtitle">3rd Grade &mdash; Pick a game and play!</p>
+    <div class="welcome-bar" id="welcome-bar" style="display:none;">
+        <span id="welcome-msg"></span>
+        <button onclick="GameTracker.logout(); location.reload();">Switch Student</button>
+    </div>
 
     <!-- UNIT 4 -->
     <section class="unit-section">
@@ -275,5 +293,13 @@
             </a>
         </div>
     </section>
+    <script>
+    GameTracker.requireLogin().then(student => {
+        const bar = document.getElementById('welcome-bar');
+        bar.style.display = 'flex';
+        document.getElementById('welcome-msg').textContent =
+            '👋 Hi, ' + student.first_name + '! (' + student.class_code + ')';
+    });
+    </script>
 </body>
 </html>

@@ -668,6 +668,7 @@
             .streak-number { font-size: 56px; }
         }
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <div id="app">
@@ -1222,6 +1223,8 @@
 
         // Show end screen
         function showEndScreen() {
+            // Save result to Supabase
+            GameTracker.saveResult({ gameFile: 'expression_match_410.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
             playSound('complete');
             document.getElementById('final-score').textContent = score;
             document.getElementById('best-streak').textContent = bestStreak;
@@ -1314,6 +1317,19 @@
         playAgainBtn.addEventListener('click', () => {
             startGame();
         });
+    </script>
+
+    <script>
+    // GameTracker: require login before game starts
+    (function() {
+        const origDCL = [];
+        // Capture the game file name from the URL
+        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
+
+        GameTracker.requireLogin().then(student => {
+            console.log('GameTracker: Logged in as', student.first_name);
+        });
+    })();
     </script>
 </body>
 </html>

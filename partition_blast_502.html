@@ -822,6 +822,7 @@
             z-index: 350;
         }
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <div id="game-container">
@@ -1535,6 +1536,19 @@
         });
 
         updateBestScoreDisplay();
+    </script>
+
+    <script>
+    // GameTracker: require login before game starts
+    (function() {
+        const origDCL = [];
+        // Capture the game file name from the URL
+        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
+
+        GameTracker.requireLogin().then(student => {
+            console.log('GameTracker: Logged in as', student.first_name);
+        });
+    })();
     </script>
 </body>
 </html>

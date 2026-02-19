@@ -774,6 +774,7 @@
         }
 
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <!-- ========== START SCREEN ========== -->
@@ -1443,6 +1444,8 @@
         }
 
         function showEndScreen() {
+            // Save result to Supabase
+            GameTracker.saveResult({ gameFile: 'whole_numbers_514.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
             header.style.display = 'none';
             mainCard.style.display = 'none';
             document.getElementById('final-score').textContent = score;
@@ -1647,6 +1650,19 @@
             mainCard.style.display = 'block';
             loadProblem();
         });
+    </script>
+
+    <script>
+    // GameTracker: require login before game starts
+    (function() {
+        const origDCL = [];
+        // Capture the game file name from the URL
+        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
+
+        GameTracker.requireLogin().then(student => {
+            console.log('GameTracker: Logged in as', student.first_name);
+        });
+    })();
     </script>
 </body>
 </html>

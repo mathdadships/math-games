@@ -20,5 +20,9 @@ private/
 .DS_Store
 Thumbs.db
 
+# Build/setup scripts (not needed in production)
+inject_tracker.py
+supabase_setup.sql
+
 # Node (in case you add dependencies later)
 node_modules/

@@ -1222,6 +1222,7 @@
             #prompt { font-size: 9px; }
         }
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <div id="game-container">
@@ -2195,6 +2196,8 @@
         }
 
         function showEndScreen() {
+            // Save result to Supabase
+            GameTracker.saveResult({ gameFile: 'fraction_finder_512.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
             mainCard.classList.remove('show');
             header.classList.remove('show');
             endScreen.style.display = 'flex';
@@ -2412,6 +2415,19 @@
                 runMathTests(500, true);
             }
         });
+    </script>
+
+    <script>
+    // GameTracker: require login before game starts
+    (function() {
+        const origDCL = [];
+        // Capture the game file name from the URL
+        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
+
+        GameTracker.requireLogin().then(student => {
+            console.log('GameTracker: Logged in as', student.first_name);
+        });
+    })();
     </script>
 </body>
 </html>

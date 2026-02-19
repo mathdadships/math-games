@@ -221,6 +221,7 @@
         .go-missed-list { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
         .missed-eq { font-size:9px; color:var(--amber); background:rgba(0,0,0,.5); padding:6px 10px; border:2px solid var(--amber); }
     </style>
+    <script src="tracker.js"></script>
 </head>
 <body>
     <div id="crt-overlay"></div>
@@ -695,6 +696,8 @@
     // GAME OVER
     // ======================================================================
     function gameOver() {
+            // Save result to Supabase
+            GameTracker.saveResult({ gameFile: 'fraction_invaders.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
         gameState = 'gameover'; gamePaused = true; playSound('die');
         if (gameLoop) cancelAnimationFrame(gameLoop);
         const goTitle = document.getElementById('go-title');
@@ -794,6 +797,19 @@
 
     document.getElementById('start-btn').addEventListener('click', startGame);
     document.getElementById('restart-btn').addEventListener('click', startGame);
+    </script>
+
+    <script>
+    // GameTracker: require login before game starts
+    (function() {
+        const origDCL = [];
+        // Capture the game file name from the URL
+        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
+
+        GameTracker.requireLogin().then(student => {
+            console.log('GameTracker: Logged in as', student.first_name);
+        });
+    })();
     </script>
 </body>
 </html>
