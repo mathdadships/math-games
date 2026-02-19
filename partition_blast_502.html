@@ -1401,6 +1401,7 @@
                 showMessage('correct', HYPE_MESSAGES[Math.floor(Math.random() * HYPE_MESSAGES.length)], `+${points}`);
 
                 currentIndex++;
+                GameTracker.checkAutoSave();
                 updateProgress();
                 lastAnswerTime = now;
 
@@ -1539,14 +1540,12 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'partition_blast_502.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
     })();
     </script>

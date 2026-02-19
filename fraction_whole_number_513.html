@@ -496,6 +496,7 @@
                 streakEl.textContent = streak + '🔥';
                 if (streak >= 3) streakDisplay.classList.add('hot');
                 questionsAnswered++;
+            GameTracker.checkAutoSave();
 
                 const milestone = streakHypeMessages.find(m => m.streak === streak);
                 if (milestone) {
@@ -551,6 +552,7 @@
             }
             document.getElementById('showme-feedback').classList.add('show');
             questionsAnswered++;
+            GameTracker.checkAutoSave();
         }
 
         function hideShowmeFeedback() { const el = document.getElementById('showme-feedback'); if (el) el.classList.remove('show'); }
@@ -570,8 +572,6 @@
         }
 
         function showEndScreen() {
-            // Save result to Supabase
-            GameTracker.saveResult({ gameFile: 'fraction_whole_number_513.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
             header.style.display = 'none'; mainCard.style.display = 'none';
             document.getElementById('final-score').textContent = score;
             document.getElementById('best-streak').textContent = bestStreak;
@@ -689,47 +689,13 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'fraction_whole_number_513.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
-    })();
-    </script>
-
-    <script>
-    // GameTracker: Add finish button for endless game
-    (function() {
-        const style = document.createElement('style');
-        style.textContent = `
-            #tracker-finish-btn {
-                position: fixed; top: 12px; right: 12px; z-index: 9998;
-                background: rgba(255,255,255,0.9); border: 2px solid #764ba2;
-                color: #764ba2; padding: 8px 16px; border-radius: 20px;
-                font-size: 0.85rem; font-weight: 700; cursor: pointer;
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                transition: all 0.2s; backdrop-filter: blur(4px);
-            }
-            #tracker-finish-btn:hover { background: #764ba2; color: white; }
-        `;
-        document.head.appendChild(style);
-
-        const btn = document.createElement('button');
-        btn.id = 'tracker-finish-btn';
-        btn.textContent = '✓ Finish';
-        btn.addEventListener('click', () => {
-            if (typeof showEndScreen === 'function') {
-                btn.remove();
-                showEndScreen();
-            }
-        });
-
-        // Wait for game to load then add button
-        setTimeout(() => document.body.appendChild(btn), 1000);
     })();
     </script>
 </body>

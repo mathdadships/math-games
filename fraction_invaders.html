@@ -592,6 +592,7 @@
             score += 15 + streak * 2; streak++;
             if (streak > bestStreak) bestStreak = streak;
             questionsAnswered++;
+            GameTracker.checkAutoSave();
             if (streak > 0 && streak % 5 === 0) {
                 const idx = Math.min(Math.floor(streak / 5) - 1, streakMilestones.length - 1);
                 showStreakMilestone(streakMilestones[idx], streak);
@@ -800,14 +801,12 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'fraction_invaders.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
     })();
     </script>

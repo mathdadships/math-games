@@ -133,6 +133,74 @@ const GameTracker = {
         }
     },
 
+    // Auto-save: tracks questionsAnswered and saves every N questions
+    // Call GameTracker.startAutoSave({ gameFile, interval }) after login
+    _autoSaveState: null,
+
+    startAutoSave({ gameFile, gameTitle, interval = 3 }) {
+        this._autoSaveState = {
+            gameFile,
+            gameTitle: gameTitle || document.title,
+            interval,
+            lastSavedAt: 0
+        };
+
+        // Also save when student leaves the page (navigate away or close tab)
+        const saveOnExit = () => {
+            const s = this._autoSaveState;
+            if (!s || !this.isLoggedIn()) return;
+            const currentQ = typeof questionsAnswered !== 'undefined' ? questionsAnswered :
+                             typeof questionNumber !== 'undefined' ? questionNumber : 0;
+            if (currentQ > s.lastSavedAt) {
+                const data = {
+                    gameFile: s.gameFile,
+                    gameTitle: s.gameTitle,
+                    score: typeof score !== 'undefined' ? score : 0,
+                    questionsAnswered: currentQ,
+                    bestStreak: typeof bestStreak !== 'undefined' ? bestStreak : (typeof streak !== 'undefined' ? streak : 0)
+                };
+                // Use sendBeacon for reliable save on page exit
+                const payload = JSON.stringify({
+                    student_id: this.getStudent().id,
+                    game_file: data.gameFile,
+                    game_title: data.gameTitle,
+                    score: data.score || 0,
+                    questions_answered: data.questionsAnswered || 0,
+                    best_streak: data.bestStreak || 0
+                });
+                navigator.sendBeacon(
+                    `${SUPABASE_URL}/rest/v1/game_results?apikey=${SUPABASE_KEY}`,
+                    new Blob([payload], { type: 'application/json' })
+                );
+                console.log('GameTracker: Saved on exit', data);
+            }
+        };
+        window.addEventListener('beforeunload', saveOnExit);
+        window.addEventListener('pagehide', saveOnExit);
+
+        console.log(`GameTracker: Auto-save enabled every ${interval} questions`);
+    },
+
+    // Call this from the game whenever a question is answered
+    checkAutoSave() {
+        const s = this._autoSaveState;
+        if (!s || !this.isLoggedIn()) return;
+
+        const currentQ = typeof questionsAnswered !== 'undefined' ? questionsAnswered :
+                         typeof questionNumber !== 'undefined' ? questionNumber : 0;
+
+        if (currentQ > 0 && currentQ - s.lastSavedAt >= s.interval) {
+            s.lastSavedAt = currentQ;
+            this.saveResult({
+                gameFile: s.gameFile,
+                gameTitle: s.gameTitle,
+                score: typeof score !== 'undefined' ? score : 0,
+                questionsAnswered: currentQ,
+                bestStreak: typeof bestStreak !== 'undefined' ? bestStreak : (typeof streak !== 'undefined' ? streak : 0)
+            });
+        }
+    },
+
     // Inject the login overlay into any page if not logged in
     // Call this at the top of any game file
     requireLogin() {

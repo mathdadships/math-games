@@ -1861,6 +1861,7 @@
                     document.getElementById('wrong-popup').classList.remove('show');
                     resetWrongPopup();
                     questionsAnswered++;
+            GameTracker.checkAutoSave();
                     checkGameEnd();
                 };
             }, 500);
@@ -2111,6 +2112,7 @@
                 }
 
                 questionsAnswered++;
+            GameTracker.checkAutoSave();
 
                 setTimeout(() => {
                     showCorrectFeedback();
@@ -2234,6 +2236,7 @@
         document.getElementById('showme-next-btn').addEventListener('click', () => {
             hideShowmeFeedback();
             questionsAnswered++;
+            GameTracker.checkAutoSave();
             checkGameEnd();
         });
 
@@ -2418,14 +2421,12 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'fraction_finder_512.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
     })();
     </script>

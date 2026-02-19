@@ -1381,6 +1381,7 @@
                 hideEquationHelper();
 
                 questionsAnswered++;
+            GameTracker.checkAutoSave();
 
                 setTimeout(() => {
                     showCorrectPopup();
@@ -1565,8 +1566,6 @@
         }
 
         function showEndScreen() {
-            // Save result to Supabase
-            GameTracker.saveResult({ gameFile: 'shade_shifters_505.html', gameTitle: document.title, score: score, questionsAnswered: questionsAnswered, bestStreak: bestStreak });
             playSound('complete');
             document.getElementById('final-score').textContent = score;
             document.getElementById('best-streak').textContent = bestStreak;
@@ -1612,6 +1611,7 @@
                 document.getElementById('try-again-btn').style.display = 'inline-block';
                 document.getElementById('show-answer-btn').onclick = null;
                 questionsAnswered++;
+            GameTracker.checkAutoSave();
                 checkGameEnd();
             };
         });
@@ -1824,47 +1824,13 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'shade_shifters_505.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
-    })();
-    </script>
-
-    <script>
-    // GameTracker: Add finish button for endless game
-    (function() {
-        const style = document.createElement('style');
-        style.textContent = `
-            #tracker-finish-btn {
-                position: fixed; top: 12px; right: 12px; z-index: 9998;
-                background: rgba(255,255,255,0.9); border: 2px solid #764ba2;
-                color: #764ba2; padding: 8px 16px; border-radius: 20px;
-                font-size: 0.85rem; font-weight: 700; cursor: pointer;
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                transition: all 0.2s; backdrop-filter: blur(4px);
-            }
-            #tracker-finish-btn:hover { background: #764ba2; color: white; }
-        `;
-        document.head.appendChild(style);
-
-        const btn = document.createElement('button');
-        btn.id = 'tracker-finish-btn';
-        btn.textContent = '✓ Finish';
-        btn.addEventListener('click', () => {
-            if (typeof showEndScreen === 'function') {
-                btn.remove();
-                showEndScreen();
-            }
-        });
-
-        // Wait for game to load then add button
-        setTimeout(() => document.body.appendChild(btn), 1000);
     })();
     </script>
 </body>

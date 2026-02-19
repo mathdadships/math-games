@@ -1343,6 +1343,7 @@
                     if (streak >= 3) streakDisplay.classList.add('hot');
 
                     questionsAnswered++;
+            GameTracker.checkAutoSave();
 
                     const milestone = streakHypeMessages.find(m => m.streak === streak);
                     if (milestone) {
@@ -1428,6 +1429,7 @@
             }, 300);
 
             questionsAnswered++;
+            GameTracker.checkAutoSave();
         }
 
         function hideShowmeFeedback() {
@@ -1653,14 +1655,12 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'whole_numbers_514.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
     })();
     </script>

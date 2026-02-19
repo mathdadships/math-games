@@ -1533,6 +1533,7 @@
                 streak++;
                 if (streak > bestStreak) bestStreak = streak;
                 questionsAnswered++;
+            GameTracker.checkAutoSave();
                 
                 // Show streak milestone message every 5 streak
                 if (streak > 0 && streak % 5 === 0) {
@@ -1788,14 +1789,12 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'multiplication_arcade_zombie.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
     })();
     </script>

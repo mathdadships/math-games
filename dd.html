@@ -696,6 +696,7 @@
                 // Next level
                 setTimeout(() => {
                     currentLevel++;
+            GameTracker.checkAutoSave();
                     loadLevel();
                 }, 1200);
             } else {
@@ -807,91 +808,13 @@
     </script>
 
     <script>
-    // GameTracker: require login before game starts
+    // GameTracker: require login + auto-save
     (function() {
-        const origDCL = [];
-        // Capture the game file name from the URL
-        const gameFile = location.pathname.split('/').pop() || 'unknown.html';
-
+        const gameFile = 'dd.html';
         GameTracker.requireLogin().then(student => {
             console.log('GameTracker: Logged in as', student.first_name);
+            GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
         });
-    })();
-    </script>
-
-    <script>
-    // GameTracker: Add end screen + finish button for endless game (no native end screen)
-    (function() {
-        const style = document.createElement('style');
-        style.textContent = `
-            #tracker-finish-btn {
-                position: fixed; top: 12px; right: 12px; z-index: 9998;
-                background: rgba(255,255,255,0.9); border: 2px solid #764ba2;
-                color: #764ba2; padding: 8px 16px; border-radius: 20px;
-                font-size: 0.85rem; font-weight: 700; cursor: pointer;
-                font-family: 'Segoe UI', system-ui, sans-serif;
-                transition: all 0.2s; backdrop-filter: blur(4px);
-            }
-            #tracker-finish-btn:hover { background: #764ba2; color: white; }
-            #tracker-end-overlay {
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: rgba(0,0,0,0.85); display: flex;
-                align-items: center; justify-content: center;
-                z-index: 99998; font-family: 'Segoe UI', system-ui, sans-serif;
-            }
-            #tracker-end-box {
-                background: white; border-radius: 24px; padding: 40px;
-                max-width: 340px; width: 90%; text-align: center;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            }
-            #tracker-end-box h2 { color: #333; margin: 0 0 8px; font-size: 1.5rem; }
-            #tracker-end-box .stat { font-size: 2.5rem; font-weight: 800; color: #667eea; margin: 8px 0; }
-            #tracker-end-box .stat-label { font-size: 0.85rem; color: #999; text-transform: uppercase; letter-spacing: 1px; }
-            #tracker-end-box .stats-row { display: flex; justify-content: center; gap: 32px; margin: 16px 0; }
-            #tracker-end-play-again {
-                display: inline-block; margin-top: 20px; padding: 12px 32px;
-                background: linear-gradient(135deg, #667eea, #764ba2);
-                color: white; border: none; border-radius: 12px;
-                font-size: 1rem; font-weight: 700; cursor: pointer;
-                font-family: inherit;
-            }
-        `;
-        document.head.appendChild(style);
-
-        const btn = document.createElement('button');
-        btn.id = 'tracker-finish-btn';
-        btn.textContent = '✓ Finish';
-        btn.addEventListener('click', () => {
-            btn.remove();
-            // Save to Supabase
-            GameTracker.saveResult({ gameFile: 'dd.html', gameTitle: document.title, score: score });
-
-            // Show end screen overlay
-            const overlay = document.createElement('div');
-            overlay.id = 'tracker-end-overlay';
-            overlay.innerHTML = `
-                <div id="tracker-end-box">
-                    <h2>🎉 Great Job!</h2>
-                    <div class="stats-row">
-                        <div>
-                            <div class="stat">${typeof score !== 'undefined' ? score : 0}</div>
-                            <div class="stat-label">Score</div>
-                        </div>
-                        <div>
-                            <div class="stat">${typeof streak !== 'undefined' ? streak : 0}</div>
-                            <div class="stat-label">Streak</div>
-                        </div>
-                    </div>
-                    <button id="tracker-end-play-again">Play Again</button>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            document.getElementById('tracker-end-play-again').addEventListener('click', () => {
-                location.reload();
-            });
-        });
-
-        setTimeout(() => document.body.appendChild(btn), 1000);
     })();
     </script>
 </body>
