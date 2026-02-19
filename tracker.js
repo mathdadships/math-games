@@ -30,11 +30,20 @@ const GameTracker = {
 
     // Register or find student, returns student object
     async login(firstName, classCode) {
-        const trimmedName = firstName.trim();
-        const trimmedCode = classCode.trim().toUpperCase();
+        // Sanitize: strip HTML/scripts, allow only letters, numbers, spaces, hyphens
+        const trimmedName = firstName.trim().replace(/<[^>]*>/g, '').replace(/[^a-zA-Z0-9\s\-']/g, '').substring(0, 30);
+        const trimmedCode = classCode.trim().toUpperCase().replace(/<[^>]*>/g, '').replace(/[^A-Z0-9\-]/g, '').substring(0, 10);
 
         if (!trimmedName || !trimmedCode) {
             throw new Error('Please enter both your name and class code.');
+        }
+
+        if (trimmedName.length < 2) {
+            throw new Error('Name must be at least 2 characters.');
+        }
+
+        if (trimmedCode.length < 2) {
+            throw new Error('Class code must be at least 2 characters.');
         }
 
         // Check if student already exists
@@ -137,7 +146,7 @@ const GameTracker = {
                     <div id="tracker-login-emoji">🎮</div>
                     <h2 id="tracker-login-title">Welcome, Mathematician!</h2>
                     <p id="tracker-login-subtitle">Enter your info to start playing</p>
-                    <input type="text" id="tracker-class-code" placeholder="Class Code (e.g. MR-S)" maxlength="20" autocomplete="off" />
+                    <input type="text" id="tracker-class-code" placeholder="Class Code (e.g. MATH-3A)" maxlength="20" autocomplete="off" />
                     <input type="text" id="tracker-first-name" placeholder="Your First Name" maxlength="30" autocomplete="off" />
                     <button id="tracker-login-btn">Let's Go!</button>
                     <p id="tracker-login-error"></p>

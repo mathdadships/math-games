@@ -338,9 +338,9 @@
         const gameVal = gameFilter.value;
 
         classFilter.innerHTML = '<option value="all">All Classes</option>' +
-            classes.map(c => `<option value="${c}">${c}</option>`).join('');
+            classes.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
         gameFilter.innerHTML = '<option value="all">All Games</option>' +
-            games.map(g => `<option value="${g}">${g}</option>`).join('');
+            games.map(g => `<option value="${escHtml(g)}">${escHtml(g)}</option>`).join('');
 
         classFilter.value = classVal;
         gameFilter.value = gameVal;
