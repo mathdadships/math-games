@@ -5,8 +5,6 @@
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const ALLOWED_ORIGINS = [
   "https://mathdadships.github.io",
-  "http://localhost",
-  "http://127.0.0.1",
 ];
 
 // In-memory rate limiting (resets on cold start — acceptable for this use case)
@@ -57,18 +55,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // --- Rate limiting ---
-    if (studentId && typeof studentId === "string") {
-      const lastCall = rateLimitMap.get(studentId);
-      const now = Date.now();
-      if (lastCall && now - lastCall < RATE_LIMIT_MS) {
-        return new Response(
-          JSON.stringify({ error: "Please wait before requesting feedback again" }),
-          { status: 429, headers: corsHeaders(req) }
-        );
-      }
-      rateLimitMap.set(studentId, now);
+    if (!studentId || typeof studentId !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Missing studentId" }),
+        { status: 400, headers: corsHeaders(req) }
+      );
     }
+
+    // --- Rate limiting ---
+    const lastCall = rateLimitMap.get(studentId);
+    const now = Date.now();
+    if (lastCall && now - lastCall < RATE_LIMIT_MS) {
+      return new Response(
+        JSON.stringify({ error: "Please wait before requesting feedback again" }),
+        { status: 429, headers: corsHeaders(req) }
+      );
+    }
+    rateLimitMap.set(studentId, now);
 
     // --- Check API key is configured ---
     if (!ANTHROPIC_API_KEY) {
