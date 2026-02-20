@@ -1976,6 +1976,40 @@ let tutorQueue = [];
 let tutorIndex = 0;
 let tutorAttempts = 0; // attempts on current problem
 let tutorCurrentProblem = null;
+let tutorSessionId = null; // unique session_id for tutor game_results row
+
+function saveTutorProgress(useBeacon) {
+    if (!tutorMode || !tutorSessionId) return;
+    if (useBeacon === true) {
+        // Use sendBeacon for reliable save on page exit
+        const student = GameTracker.getStudent();
+        if (!student) return;
+        const payload = JSON.stringify({
+            student_id: student.id,
+            game_file: 'fractions_review.html',
+            game_title: 'Fractions Review \u2014 Tutor',
+            score: tutorIndex,
+            questions_answered: tutorIndex,
+            best_streak: tutorIndex,
+            time_seconds: 0,
+            session_id: tutorSessionId
+        });
+        navigator.sendBeacon(
+            `${SUPABASE_URL}/rest/v1/game_results?on_conflict=student_id,game_file,session_id&apikey=${SUPABASE_KEY}`,
+            new Blob([payload], { type: 'application/json' })
+        );
+        return;
+    }
+    GameTracker.saveResult({
+        gameFile: 'fractions_review.html',
+        gameTitle: 'Fractions Review \u2014 Tutor',
+        score: tutorIndex,
+        questionsAnswered: tutorIndex,
+        bestStreak: tutorIndex,
+        timeSeconds: 0,
+        sessionId: tutorSessionId
+    });
+}
 
 // ── localStorage persistence ──
 
@@ -2205,6 +2239,13 @@ function startTutorFromSaved() {
 function startTutorSession() {
     tutorMode = true;
     tutorIndex = 0;
+    tutorSessionId = 'tutor_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    // Create the tutor session row immediately so it shows on dashboard even if student quits
+    saveTutorProgress();
+    // Also save tutor progress on page exit (use sendBeacon for reliability)
+    const saveTutorOnExit = () => saveTutorProgress(true);
+    window.addEventListener('beforeunload', saveTutorOnExit);
+    window.addEventListener('pagehide', saveTutorOnExit);
     document.getElementById('progressFill').style.width = '0%';
     transitionTo('question');
     loadTutorProblem();
@@ -2437,6 +2478,7 @@ async function handleTutorAnswer(problem, response, clickedBtn, grid) {
 
         setTimeout(() => {
             tutorIndex++;
+            saveTutorProgress(); // update dashboard with progress so far
             const card = document.getElementById('questionCard');
             card.classList.add('slide-out');
             setTimeout(() => {
@@ -2487,17 +2529,9 @@ async function handleTutorAnswer(problem, response, clickedBtn, grid) {
 }
 
 function endTutorSession() {
-    // Save tutor session with a unique session_id (separate from practice auto-save)
-    const tutorSessionId = 'tutor_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    GameTracker.saveResult({
-        gameFile: 'fractions_review.html',
-        gameTitle: 'Fractions Review — Tutor',
-        score: tutorQueue.length, // all eventually answered correctly
-        questionsAnswered: tutorQueue.length,
-        bestStreak: tutorQueue.length,
-        timeSeconds: 0,
-        sessionId: tutorSessionId
-    });
+    // Final save — upserts the same tutor session row with complete data
+    tutorIndex = tutorQueue.length; // ensure count is correct
+    saveTutorProgress();
 
     tutorMode = false;
     clearMissedStorage();
