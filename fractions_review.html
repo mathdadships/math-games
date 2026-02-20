@@ -675,8 +675,9 @@ function generateProblem(category) {
 
 // ── IDENTIFY: shaded bar OR word problem ──
 function generateIdentifyProblem() {
-    const sub = pickSubType(['shaded_bar', 'word_problem']);
+    const sub = pickSubType(['shaded_bar', 'word_problem', 'greater_than_one']);
     if (sub === 'word_problem') return genWordProblem();
+    if (sub === 'greater_than_one') return genFractionGreaterThanOne();
     return genShadedBar();
 }
 
@@ -706,11 +707,11 @@ function genWordProblem() {
     const templates = [
         { text: (nm, data) => `${nm} and ${data.denom - 1} friend${data.denom-1>1?'s':''} share a pizza equally. What fraction does EACH person get?`,
           gen: () => { const d = randInt(2, 8); return { numer: 1, denom: d }; } },
-        { text: (nm, data) => `${nm} divided a garden into ${data.denom} equal parts and planted seeds in ${data.numer} parts. What fraction of the garden has seeds?`,
+        { text: (nm, data) => `${nm} divided a garden into ${data.denom} equal parts and planted seeds in ${data.numer} ${data.numer === 1 ? 'part' : 'parts'}. What fraction of the garden has seeds?`,
           gen: () => { const d = randInt(3, 8); return { numer: randInt(1, d-1), denom: d }; } },
-        { text: (nm, data) => `${nm} has ${data.denom} marbles. ${data.numer} of them are blue. What fraction of the marbles are blue?`,
+        { text: (nm, data) => `${nm} has ${data.denom} marbles. ${data.numer} of them ${data.numer === 1 ? 'is' : 'are'} blue. What fraction of the marbles are blue?`,
           gen: () => { const d = randInt(3, 8); return { numer: randInt(1, d-1), denom: d }; } },
-        { text: (nm, data) => `A rectangle is cut into ${data.denom} equal pieces. ${data.numer} pieces are colored. What fraction is colored?`,
+        { text: (nm, data) => `A rectangle is cut into ${data.denom} equal pieces. ${data.numer} ${data.numer === 1 ? 'piece is' : 'pieces are'} colored. What fraction is colored?`,
           gen: () => { const d = randInt(2, 8); return { numer: randInt(1, d-1), denom: d }; } }
     ];
     const names = ['Emma','Liam','Sophia','Noah','Olivia','Theo','Lily','James','Mia','Wendy'];
@@ -737,14 +738,47 @@ function genWordProblem() {
     };
 }
 
-// ── NUMBER LINE: 4 sub-types ──
+function genFractionGreaterThanOne() {
+    // Shows multiple bar models (wholes), some fully shaded + last partially shaded
+    // Matches assessment Q4: "Which fraction greater than one is represented by the shaded parts?"
+    const denoms = [2, 3, 4];
+    const denom = pickFrom(denoms);
+    const numWholes = pickFrom([2, 3]); // 2 or 3 whole bars
+    const partialShaded = randInt(1, denom - 1); // shaded parts in the last bar
+    const totalShaded = (numWholes - 1) * denom + partialShaded; // all previous bars fully shaded + partial
+    const correct = `${totalShaded}/${denom}`;
+
+    const choices = [correct];
+    // Distractor: only count the partial bar
+    addUnique(choices, `${partialShaded}/${denom}`);
+    // Distractor: count unshaded parts
+    const unshaded = numWholes * denom - totalShaded;
+    if (unshaded > 0) addUnique(choices, `${unshaded}/${denom}`);
+    // Distractor: numerator = numWholes (confuse whole count with fraction)
+    addUnique(choices, `${numWholes}/${denom}`);
+    // Distractor: fraction less than one
+    addUnique(choices, `${partialShaded}/${denom * numWholes}`);
+    // Distractor: swapped
+    addUnique(choices, `${denom}/${totalShaded}`);
+
+    return {
+        category: 'identify', type: 'mc',
+        question: 'Which fraction greater than one is shown by the shaded parts?',
+        visual: { type: 'multi_bar', denom, numWholes, totalShaded },
+        choices: finalizeChoices(choices, correct),
+        answer: correct, numer: totalShaded, denom
+    };
+}
+
+// ── NUMBER LINE: 5 sub-types ──
 function generateNumberLineProblem() {
-    const sub = pickSubType(['point_to_fraction', 'labeled_places', 'fraction_to_point', 'pick_number_line']);
+    const sub = pickSubType(['point_to_fraction', 'labeled_places', 'fraction_to_point', 'pick_number_line', 'distance_between']);
     switch (sub) {
         case 'point_to_fraction': return genPointToFraction();
         case 'labeled_places': return genLabeledPlaces();
         case 'fraction_to_point': return genFractionToPoint();
         case 'pick_number_line': return genPickNumberLine();
+        case 'distance_between': return genDistanceBetween();
     }
 }
 
@@ -833,14 +867,72 @@ function genPickNumberLine() {
     };
 }
 
-// ── COMPARING: 4 sub-types ──
+function genDistanceBetween() {
+    // Matches assessment Q8: "Which two points have a fractional distance of 5/8 between them?"
+    // Shows 5 labeled points on a number line, asks which pair has a specific distance
+    const denom = pickFrom([6, 8]);
+    const pointLabels = ['J','K','L','M','N','P','Q','R'];
+    // Place 5 points at distinct positions on 0..denom
+    const allPos = range(0, denom);
+    shuffleArray(allPos);
+    const positions = allPos.slice(0, 5).sort((a, b) => a - b);
+    const labels5 = pointLabels.slice(0, 5);
+
+    // Find all pairwise distances
+    const pairs = [];
+    for (let i = 0; i < 5; i++) {
+        for (let j = i + 1; j < 5; j++) {
+            const dist = positions[j] - positions[i];
+            if (dist > 0 && dist < denom) {
+                pairs.push({ a: i, b: j, dist });
+            }
+        }
+    }
+    if (pairs.length < 4) return genDistanceBetween(); // retry if not enough pairs
+
+    // Pick a target pair — prefer distances ≥ 2 to make it non-trivial
+    const goodPairs = pairs.filter(p => p.dist >= 2);
+    const targetPair = goodPairs.length > 0 ? pickFrom(goodPairs) : pickFrom(pairs);
+    const targetDist = targetPair.dist;
+
+    // Build answer and distractors from actual pairs (wrong distances)
+    const correctStr = `${labels5[targetPair.a]} and ${labels5[targetPair.b]}`;
+    const wrongPairs = pairs.filter(p => p.dist !== targetDist);
+    shuffleArray(wrongPairs);
+    const distractors = wrongPairs.slice(0, 3).map(p => `${labels5[p.a]} and ${labels5[p.b]}`);
+
+    // If not enough wrong pairs from actual points, generate more
+    let safety = 0;
+    while (distractors.length < 3 && safety < 20) {
+        const i = randInt(0, 4), j = randInt(0, 4);
+        if (i !== j) {
+            const a = Math.min(i, j), b = Math.max(i, j);
+            const str = `${labels5[a]} and ${labels5[b]}`;
+            if (str !== correctStr && !distractors.includes(str)) distractors.push(str);
+        }
+        safety++;
+    }
+
+    const choices = shuffleArray([correctStr, ...distractors.slice(0, 3)]);
+
+    return {
+        category: 'numberline', type: 'mc_text',
+        question: `Which two points have a distance of ${makeFractionHTML(targetDist, denom, false)} between them?`,
+        visual: { type: 'multi_point', denom, points: positions.map((p, i) => ({ pos: p, label: labels5[i] })) },
+        choices,
+        answer: correctStr
+    };
+}
+
+// ── COMPARING: 5 sub-types ──
 function generateComparingProblem() {
-    const sub = pickSubType(['compare_symbols', 'fill_blank', 'not_correct', 'two_greater']);
+    const sub = pickSubType(['compare_symbols', 'fill_blank', 'not_correct', 'two_greater', 'which_is_true']);
     switch (sub) {
         case 'compare_symbols': return genCompareSymbols();
         case 'fill_blank': return genFillBlank();
         case 'not_correct': return genNotCorrect();
         case 'two_greater': return genTwoGreater();
+        case 'which_is_true': return genWhichIsTrue();
     }
 }
 
@@ -933,6 +1025,57 @@ function genNotCorrect() {
     };
 }
 
+function genWhichIsTrue() {
+    // Matches assessment Q11/Q13: "Which number sentence below is true?"
+    // Pattern from PDFs: same numerator across all fractions, mix of symbols
+    const denoms = [3,4,5,6,8];
+    const num = randInt(1, 3);
+    const pool = denoms.filter(d => d > num);
+    const d1 = pickFrom(pool);
+    
+    // Pick a second denominator for the main pair
+    const d2Pool = pool.filter(d => d !== d1);
+    const d2 = d2Pool.length > 0 ? pickFrom(d2Pool) : (d1 === 3 ? 4 : 3);
+    
+    // Determine the correct relationship
+    const realSym = num/d1 < num/d2 ? '<' : num/d1 > num/d2 ? '>' : '=';
+    
+    const comps = [];
+    
+    // The CORRECT comparison
+    comps.push({n1:num, d1:d1, sym:realSym, n2:num, d2:d2, isCorrectComparison:true});
+    
+    // Wrong: same fractions, wrong symbol
+    const wrongSyms = ['<','=','>'].filter(s => s !== realSym);
+    comps.push({n1:num, d1:d1, sym:wrongSyms[0], n2:num, d2:d2, isCorrectComparison:false});
+    
+    // Wrong: same left fraction, different right fraction, wrong symbol
+    const d3Pool = pool.filter(d => d !== d1 && d !== d2);
+    const d3 = d3Pool.length > 0 ? pickFrom(d3Pool) : d2;
+    const realSym3 = num/d1 < num/d3 ? '<' : num/d1 > num/d3 ? '>' : '=';
+    const wrongSym3 = realSym3 === '<' ? '>' : '<';
+    comps.push({n1:num, d1:d1, sym:wrongSym3, n2:num, d2:d3, isCorrectComparison:false});
+    
+    // Wrong: equal sign with non-equal fractions
+    const d4Pool = pool.filter(d => d !== d1);
+    const d4 = d4Pool.length > 0 ? pickFrom(d4Pool) : d2;
+    if (d4 !== d1) {
+        comps.push({n1:num, d1:d1, sym:'=', n2:num, d2:d4, isCorrectComparison:false});
+    } else {
+        comps.push({n1:num, d1:d1, sym:wrongSyms[1] || wrongSyms[0], n2:num, d2:d2, isCorrectComparison:false});
+    }
+    
+    shuffleArray(comps);
+    const labels = ['A','B','C','D'];
+    const correctIdx = comps.findIndex(c => c.isCorrectComparison);
+    return {
+        category: 'comparing', type: 'mc_comparison',
+        question: 'Which number sentence below is true?',
+        visual: null, comparisons: comps, labels,
+        answer: labels[correctIdx]
+    };
+}
+
 function genTwoGreater() {
     const target = pickFrom([{n:2,d:4},{n:1,d:2},{n:2,d:6},{n:1,d:3},{n:3,d:8}]);
     const tv = target.n / target.d;
@@ -962,12 +1105,15 @@ function genTwoGreater() {
 
 // ── EQUIVALENT: 3 sub-types ──
 function generateEquivalentProblem() {
-    const sub = pickSubType(['find_equivalent', 'fraction_strips', 'whole_number', 'equiv_pairs']);
+    const sub = pickSubType(['find_equivalent', 'fraction_strips', 'whole_number', 'equiv_pairs', 'measurement', 'equiv_numberline', 'nn_equals_one']);
     switch (sub) {
         case 'find_equivalent': return genFindEquivalent();
         case 'fraction_strips': return genFractionStrips();
         case 'whole_number': return genWholeNumber();
         case 'equiv_pairs': return genEquivPairs();
+        case 'measurement': return genMeasurementWordProblem();
+        case 'equiv_numberline': return genEquivFromNumberLine();
+        case 'nn_equals_one': return genNNEqualsOne();
     }
 }
 
@@ -1040,6 +1186,33 @@ function genWholeNumber() {
     };
 }
 
+function genNNEqualsOne() {
+    // Matches assessment Q17: "Which fraction is equivalent to 4/4?"
+    // Shows n/n, correct answer is another m/m (both equal 1)
+    const shownDenoms = [2, 3, 4, 6, 8];
+    const shownD = pickFrom(shownDenoms);
+    const answerPool = shownDenoms.filter(d => d !== shownD);
+    const ansD = pickFrom(answerPool);
+    const correct = `${ansD}/${ansD}`;
+    const choices = [correct];
+    // Distractor: n/1 (confuse with the number itself)
+    addUnique(choices, `${shownD}/1`);
+    // Distractor: 1/n
+    addUnique(choices, `1/${shownD}`);
+    // Distractor: n/2 or 2n/n
+    addUnique(choices, `${shownD * 2}/${shownD}`);
+    addUnique(choices, `${shownD}/${shownD * 2}`);
+    // Distractor: another non-one fraction
+    addUnique(choices, `${ansD + 1}/${ansD}`);
+    return {
+        category: 'equivalent', type: 'mc',
+        question: `Which fraction is equivalent to ${makeFractionHTML(shownD, shownD, true)}?`,
+        visual: null,
+        choices: finalizeChoices(choices, correct),
+        answer: correct, nnShownDenom: shownD
+    };
+}
+
 function genEquivPairs() {
     // Q17 style: "Which choice shows equivalent fractions?" with 4 pairs like "1/2 = 2/4"
     const equivSets = [
@@ -1074,6 +1247,99 @@ function genEquivPairs() {
     };
 }
 
+function genMeasurementWordProblem() {
+    // Matches assessment Q15: "Jaime has a container that holds 1/4 cup.
+    // How many TIMES should Jaime fill it to get 1/2 cup?"
+    const scenarios = [
+        { unitD: 4, targetN: 1, targetD: 2, answer: 2, targetStr: '½' },      // 1/4 → 1/2 = 2 times
+        { unitD: 4, targetN: 3, targetD: 4, answer: 3, targetStr: '¾' },      // 1/4 → 3/4 = 3 times
+        { unitD: 3, targetN: 2, targetD: 3, answer: 2, targetStr: '⅔' },      // 1/3 → 2/3 = 2 times
+        { unitD: 8, targetN: 1, targetD: 2, answer: 4, targetStr: '½' },      // 1/8 → 1/2 = 4 times
+        { unitD: 6, targetN: 1, targetD: 2, answer: 3, targetStr: '½' },      // 1/6 → 1/2 = 3 times
+        { unitD: 8, targetN: 3, targetD: 8, answer: 3, targetStr: '⅜' },      // 1/8 → 3/8 = 3 times
+        { unitD: 6, targetN: 2, targetD: 6, answer: 2, targetStr: '²⁄₆' },    // 1/6 → 2/6 = 2 times
+    ];
+    const names = ['Jaime','Sofia','Malik','Ava','Carlos','Priya','Ben','Lily'];
+    const items = [
+        { container: 'cup', substance: 'dog food', target: 'the dog gets exactly', into: "the dog's bowl" },
+        { container: 'cup', substance: 'juice', target: 'they have exactly', into: 'a pitcher' },
+        { container: 'cup', substance: 'flour', target: 'they have exactly', into: 'a mixing bowl' },
+        { container: 'cup', substance: 'water', target: 'there is exactly', into: 'a pot' },
+    ];
+    const sc = pickFrom(scenarios);
+    const nm = pickFrom(names);
+    const item = pickFrom(items);
+
+    const question = `${nm} has a small container that holds exactly ${makeFractionHTML(1, sc.unitD, false)} ${item.container} of ${item.substance}. How many <strong>times</strong> should ${nm} fill the container and pour it into ${item.into} to make sure ${item.target} ${makeFractionHTML(sc.targetN, sc.targetD, false)} ${item.container}?`;
+
+    const correct = String(sc.answer);
+    // Distractors: the unit fraction itself, the target fraction, double the answer, half
+    const allChoices = new Set([correct]);
+    allChoices.add(String(sc.unitD));
+    allChoices.add(String(sc.targetN));
+    if (sc.answer * 2 <= 8) allChoices.add(String(sc.answer * 2));
+    if (sc.answer > 1) allChoices.add(String(sc.answer - 1));
+    allChoices.add(String(sc.answer + 1));
+    allChoices.add('1');
+    const choiceArr = [...allChoices].filter(c => parseInt(c) > 0);
+    shuffleArray(choiceArr);
+    const final4 = [correct, ...choiceArr.filter(c => c !== correct).slice(0,3)];
+    while (final4.length < 4) final4.push(String(randInt(1,6)));
+    shuffleArray(final4);
+
+    return {
+        category: 'equivalent', type: 'mc_text',
+        question: question,
+        visual: null,
+        choices: final4,
+        answer: correct,
+        measurementData: sc
+    };
+}
+
+function genEquivFromNumberLine() {
+    // Matches assessment Q18: Shows Point R on a number line, asks
+    // "Which two fractions are equivalent to the value represented by Point R?"
+    const equivSets = [
+        { pos: 1, denom: 4, pairs: [ {a:'1/4',b:'2/8'}, ] },
+        { pos: 2, denom: 4, pairs: [ {a:'2/4',b:'4/8'}, {a:'1/2',b:'4/8'}, ] },
+        { pos: 3, denom: 4, pairs: [ {a:'3/4',b:'6/8'}, ] },
+        { pos: 1, denom: 3, pairs: [ {a:'1/3',b:'2/6'}, ] },
+        { pos: 2, denom: 3, pairs: [ {a:'2/3',b:'4/6'}, ] },
+        { pos: 3, denom: 6, pairs: [ {a:'3/6',b:'1/2'}, ] },
+        { pos: 2, denom: 8, pairs: [ {a:'2/8',b:'1/4'}, ] },
+        { pos: 4, denom: 8, pairs: [ {a:'4/8',b:'1/2'}, {a:'4/8',b:'2/4'}, ] },
+        { pos: 6, denom: 8, pairs: [ {a:'6/8',b:'3/4'}, ] },
+    ];
+    const set = pickFrom(equivSets);
+    const pair = pickFrom(set.pairs);
+    const correctStr = `${pair.a} and ${pair.b}`;
+
+    // Generate wrong pairs (not equivalent to the point's value)
+    const pointVal = set.pos / set.denom;
+    const wrongPairs = new Set();
+    let safety = 0;
+    while (wrongPairs.size < 3 && safety < 50) {
+        const ds = [2,3,4,6,8];
+        const d1 = pickFrom(ds), d2 = pickFrom(ds);
+        const n1 = randInt(1,d1-1), n2 = randInt(1,d2-1);
+        // At least one fraction should NOT match the point value
+        if (!(n1/d1 === pointVal && n2/d2 === pointVal)) {
+            const str = `${n1}/${d1} and ${n2}/${d2}`;
+            if (str !== correctStr) wrongPairs.add(str);
+        }
+        safety++;
+    }
+    const choices = shuffleArray([correctStr, ...[...wrongPairs].slice(0,3)]);
+
+    return {
+        category: 'equivalent', type: 'mc_pair',
+        question: `Which two fractions are equivalent to the value shown by Point R?`,
+        visual: { type: 'numberline', numer: set.pos, denom: set.denom },
+        choices, answer: correctStr
+    };
+}
+
 // ═══════════════════════════════════════════
 // ███ RENDERING ███
 // ═══════════════════════════════════════════
@@ -1102,6 +1368,7 @@ function renderQuestion(problem) {
     if (problem.visual) {
         switch (problem.visual.type) {
             case 'bar': renderBarVisual(visual, problem.visual); break;
+            case 'multi_bar': renderMultiBarVisual(visual, problem.visual); break;
             case 'numberline': renderNumberLine(visual, problem.visual); break;
             case 'labeled_numberline': renderLabeledNL(visual, problem.visual); break;
             case 'multi_point': renderMultiPointNL(visual, problem.visual); break;
@@ -1136,6 +1403,30 @@ function renderBarVisual(container, v) {
         bar.appendChild(seg);
     }
     container.appendChild(bar);
+}
+
+function renderMultiBarVisual(container, v) {
+    // Shows multiple whole bars side by side (for fractions > 1)
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:12px;justify-content:center;align-items:center;flex-wrap:wrap;';
+    let shadedRemaining = v.totalShaded;
+    for (let w = 0; w < v.numWholes; w++) {
+        const bar = document.createElement('div');
+        bar.className = 'fraction-bar-model';
+        bar.style.cssText = 'flex:1;min-width:80px;max-width:180px;';
+        for (let i = 0; i < v.denom; i++) {
+            const seg = document.createElement('div');
+            if (shadedRemaining > 0) {
+                seg.className = 'bar-segment shaded';
+                shadedRemaining--;
+            } else {
+                seg.className = 'bar-segment unshaded';
+            }
+            bar.appendChild(seg);
+        }
+        wrap.appendChild(bar);
+    }
+    container.appendChild(wrap);
 }
 
 function renderNumberLine(container, v) {
@@ -1737,6 +2028,9 @@ function getHint(problem, attemptNum, wrongResponse) {
 function getHint1(problem) {
     switch (problem.category) {
         case 'identify':
+            if (problem.visual && problem.visual.type === 'multi_bar') {
+                return `Count ALL the shaded parts across every shape. Each shape is divided into ${problem.denom} equal parts.`;
+            }
             if (problem.visual && problem.visual.type === 'bar') {
                 return `Count all the parts in the shape — that's the bottom number (denominator). It has ${problem.denom} equal parts.`;
             }
@@ -1747,6 +2041,9 @@ function getHint1(problem) {
             }
             if (problem.visual && problem.visual.type === 'labeled_numberline') {
                 return `Look at how many equal spaces are between 0 and 1 on the number line. Then count which space the place is at.`;
+            }
+            if (problem.visual && problem.visual.type === 'multi_point' && problem.question.includes('distance')) {
+                return `Distance means how many spaces apart two points are. Count the spaces between each pair of points to find which pair matches.`;
             }
             if (problem.visual && problem.visual.type === 'multi_point') {
                 return `Count the total spaces between 0 and 1 — that's the denominator. Then count which space the point is at.`;
@@ -1763,6 +2060,12 @@ function getHint1(problem) {
             }
             return `Think about the size of the pieces. A bigger denominator means smaller pieces.`;
         case 'equivalent':
+            if (problem.measurementData) {
+                return `Think about it: each fill adds ${makeFractionHTML(1, problem.measurementData.unitD, false)} cup. How many fills to reach ${makeFractionHTML(problem.measurementData.targetN, problem.measurementData.targetD, false)} cup?`;
+            }
+            if (problem.nnShownDenom) {
+                return `When the numerator and denominator are the same, the fraction equals 1 whole. Which other fraction also equals 1 whole?`;
+            }
             if (problem.wholeNum) {
                 return `To write ${problem.wholeNum} as a fraction, think: how many pieces of that size make ${problem.wholeNum} wholes?`;
             }
@@ -1773,11 +2076,17 @@ function getHint1(problem) {
 function getHint2(problem, wrongResponse) {
     switch (problem.category) {
         case 'identify':
+            if (problem.visual && problem.visual.type === 'multi_bar') {
+                return `There are ${problem.visual.numWholes} shapes, each with ${problem.denom} parts. Count every shaded part — you should get ${problem.numer}. The denominator stays ${problem.denom} because the parts are all the same size.`;
+            }
             if (problem.visual && problem.visual.type === 'bar') {
                 return `The shape has ${problem.denom} equal parts. Count the shaded ones — there are ${problem.numer} shaded. So the fraction is ${problem.numer} over ${problem.denom}.`;
             }
             return `The bottom number is the total. The top number is the part you're asked about. Look again at the numbers in the problem.`;
         case 'numberline':
+            if (problem.question && problem.question.includes('distance')) {
+                return `Find each pair of points on the number line. Count the spaces between them. The correct pair has exactly ${problem.answer.replace(/ and /, ' to ')} with the right number of spaces between them.`;
+            }
             if (problem.numer !== undefined && problem.denom !== undefined) {
                 return `There are ${problem.denom} equal spaces. Point P is at the ${ordinal(problem.numer)} space from 0. The fraction is ${problem.numer} over ${problem.denom}.`;
             }
@@ -1791,6 +2100,13 @@ function getHint2(problem, wrongResponse) {
             }
             return `Try thinking about a real example. If you ate ${problem.n1 || 2} slices of a pizza cut into ${problem.d1 || 4} pieces vs ${problem.d2 || 8} pieces, which is more food?`;
         case 'equivalent':
+            if (problem.measurementData) {
+                const sc = problem.measurementData;
+                return `Each fill = ${makeFractionHTML(1, sc.unitD, false)}. Fill ${sc.answer} times: ${sc.answer} × ${makeFractionHTML(1, sc.unitD, false)} = ${makeFractionHTML(sc.answer, sc.unitD, false)} = ${makeFractionHTML(sc.targetN, sc.targetD, false)}. The answer is ${sc.answer}.`;
+            }
+            if (problem.nnShownDenom) {
+                return `${problem.nnShownDenom}/${problem.nnShownDenom} = 1. Any fraction where the top and bottom are the same number also equals 1. Look for another fraction like that.`;
+            }
             if (problem.shownNumer && problem.shownDenom) {
                 const g = gcd(problem.shownNumer, problem.shownDenom);
                 if (g > 1) {
@@ -1940,6 +2256,7 @@ function renderTutorQuestion(problem) {
     if (problem.visual) {
         switch (problem.visual.type) {
             case 'bar': renderBarVisual(visual, problem.visual); break;
+            case 'multi_bar': renderMultiBarVisual(visual, problem.visual); break;
             case 'numberline': renderNumberLine(visual, problem.visual); break;
             case 'labeled_numberline': renderLabeledNL(visual, problem.visual); break;
             case 'multi_point': renderMultiPointNL(visual, problem.visual); break;
