@@ -600,7 +600,7 @@
         const [students, results, questions] = await Promise.all([
             supaFetch('students', 'order=created_at.asc'),
             supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc&limit=5000'),
-            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text&limit=50000')
+            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text,answered_at&limit=50000')
         ]);
 
         allStudents = students;
@@ -652,23 +652,20 @@
             if (q.is_correct) g.right++; else g.wrong++;
         });
 
-        // Build retry stats per student+game (total responses vs unique questions)
-        const retryStats = {};
+        // Index questions by student+game+mode for fast lookup
+        const qIndex = {};
         allQuestions.forEach(q => {
             const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
-            const gk = q.student_id + '|' + q.game_file + (isTutorQ ? ':tutor' : '');
-            if (!retryStats[gk]) retryStats[gk] = { total: 0, unique: new Set(), wrongExtra: 0 };
-            retryStats[gk].total++;
-            retryStats[gk].unique.add(q.question_text);
+            const key = q.student_id + '|' + q.game_file + (isTutorQ ? ':tutor' : '');
+            if (!qIndex[key]) qIndex[key] = [];
+            qIndex[key].push(q);
         });
 
-        // Enrich results with per-session right/wrong/accuracy
-        // Use score as right_count when it looks like a correct-answer count (≤ questions_answered)
+        // Enrich results with per-session right/wrong/accuracy + retries
         allResults.forEach(r => {
             const qa = r.questions_answered || 0;
             const sc = r.score || 0;
             if (qa > 0 && sc <= qa) {
-                // score represents correct answers for this session
                 r.right_count = sc;
                 r.wrong_count = qa - sc;
                 r.accuracy = Math.round((sc / qa) * 100);
@@ -677,11 +674,40 @@
                 r.wrong_count = null;
                 r.accuracy = null;
             }
-            // Attach retry info (extra wrong clicks beyond unique questions)
+
+            // Count retries from question_responses scoped to this session's time window
             const tutor = isTutorSession(r);
-            const rk = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
-            const rs = retryStats[rk];
-            r.retry_count = rs ? Math.max(0, rs.total - rs.unique.size) : 0;
+            const sessionQs = qIndex[r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '')] || [];
+            // Use played_at window to scope to this session
+            let scoped = sessionQs;
+            if (r.played_at) {
+                const t0 = new Date(new Date(r.played_at).getTime() - 3 * 60 * 60 * 1000);
+                const t1 = new Date(new Date(r.played_at).getTime() + 5 * 60 * 1000);
+                scoped = sessionQs.filter(q => {
+                    if (!q.answered_at) return true; // include if no timestamp
+                    const t = new Date(q.answered_at);
+                    return t >= t0 && t <= t1;
+                });
+            }
+            const uniqueQs = new Set(scoped.map(q => q.question_text)).size;
+            r.retry_count = Math.max(0, scoped.length - uniqueQs);
+
+            // Fallback: if questions_answered is 0 but we have question_responses, derive stats
+            if (qa === 0 && scoped.length > 0) {
+                // Group by question_text: a question is "right" if any attempt was correct
+                const byQ = {};
+                scoped.forEach(q => {
+                    if (!byQ[q.question_text]) byQ[q.question_text] = false;
+                    if (q.is_correct) byQ[q.question_text] = true;
+                });
+                const qTexts = Object.keys(byQ);
+                const rightUnique = qTexts.filter(k => byQ[k]).length;
+                const wrongUnique = qTexts.length - rightUnique;
+                r.right_count = rightUnique;
+                r.wrong_count = wrongUnique;
+                r.questions_answered = qTexts.length;
+                r.accuracy = qTexts.length > 0 ? Math.round((rightUnique / qTexts.length) * 100) : null;
+            }
         });
 
         populateFilters();
@@ -1418,6 +1444,10 @@
             body.innerHTML = '<div style="color:#c62828;padding:24px">Failed to load question data.</div>';
             return;
         }
+
+        // Update meta with actual question count (may differ from game_results.questions_answered)
+        const actualCount = panelQuestions.length;
+        document.getElementById('panel-meta').textContent = date + '  ·  ' + actualCount + ' question' + (actualCount !== 1 ? 's' : '');
 
         if (panelQuestions.length === 0) {
             body.innerHTML = '<div class="panel-empty"><div class="panel-empty-icon">\ud83d\udced</div>No detailed question data for this session.<br><span style="font-size:0.82rem;color:#A3A3A3">Question tracking may not have been active when this game was played.</span></div>';
