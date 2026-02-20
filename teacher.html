@@ -679,10 +679,12 @@
             const tutor = isTutorSession(r);
             const sessionQs = qIndex[r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '')] || [];
             // Use played_at window to scope to this session
+            // Tutor sessions can last longer, allow 30 min after start; practice games 5 min
             let scoped = sessionQs;
             if (r.played_at) {
+                const afterMin = tutor ? 30 : 5;
                 const t0 = new Date(new Date(r.played_at).getTime() - 3 * 60 * 60 * 1000);
-                const t1 = new Date(new Date(r.played_at).getTime() + 5 * 60 * 1000);
+                const t1 = new Date(new Date(r.played_at).getTime() + afterMin * 60 * 1000);
                 scoped = sessionQs.filter(q => {
                     if (!q.answered_at) return true; // include if no timestamp
                     const t = new Date(q.answered_at);
@@ -1265,7 +1267,9 @@
         // Sort newest first
         sameGame.sort((a, b) => (b.answered_at || '').localeCompare(a.answered_at || ''));
         const playedAt = new Date(result.played_at);
-        const cutoff = new Date(playedAt.getTime() + 5 * 60 * 1000);
+        const tutor = isTutorSession(result);
+        const afterMin = tutor ? 30 : 5; // tutor sessions can last longer
+        const cutoff = new Date(playedAt.getTime() + afterMin * 60 * 1000);
         const earliest = new Date(playedAt.getTime() - 3 * 60 * 60 * 1000);
         const inWindow = sameGame.filter(q => {
             if (!q.answered_at) return false;

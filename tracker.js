@@ -114,8 +114,13 @@ const GameTracker = {
             ? 'resolution=merge-duplicates,return=representation'
             : 'return=representation';
 
+        // Add on_conflict so PostgREST knows which unique constraint to use for upsert
+        const url = sessionId
+            ? `${SUPABASE_URL}/rest/v1/game_results?on_conflict=student_id,game_file,session_id`
+            : `${SUPABASE_URL}/rest/v1/game_results`;
+
         try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/game_results`, {
+            const res = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'apikey': SUPABASE_KEY,
@@ -167,7 +172,7 @@ const GameTracker = {
                     questionsAnswered: currentQ,
                     bestStreak: typeof bestStreak !== 'undefined' ? bestStreak : (typeof streak !== 'undefined' ? streak : 0)
                 };
-                // Use sendBeacon for reliable save on page exit
+                // Use fetch with keepalive for reliable save on page exit (supports headers unlike sendBeacon)
                 const payload = JSON.stringify({
                     student_id: this.getStudent().id,
                     game_file: data.gameFile,
@@ -177,10 +182,19 @@ const GameTracker = {
                     best_streak: data.bestStreak || 0,
                     session_id: s.sessionId || null
                 });
-                navigator.sendBeacon(
-                    `${SUPABASE_URL}/rest/v1/game_results?apikey=${SUPABASE_KEY}`,
-                    new Blob([payload], { type: 'application/json' })
-                );
+                try {
+                    fetch(`${SUPABASE_URL}/rest/v1/game_results?on_conflict=student_id,game_file,session_id`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'resolution=merge-duplicates'
+                        },
+                        body: payload,
+                        keepalive: true
+                    });
+                } catch(e) {}
                 console.log('GameTracker: Saved on exit', data);
             }
             // Also flush any buffered question responses

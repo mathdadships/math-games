@@ -1980,35 +1980,31 @@ let tutorSessionId = null; // unique session_id for tutor game_results row
 
 function saveTutorProgress(useBeacon) {
     if (!tutorMode || !tutorSessionId) return;
+    const student = GameTracker.getStudent();
+    if (!student) return;
+    const payload = JSON.stringify({
+        student_id: student.id,
+        game_file: 'fractions_review.html',
+        game_title: 'Fractions Review \u2014 Tutor',
+        score: tutorIndex,
+        questions_answered: tutorIndex,
+        best_streak: tutorIndex,
+        time_seconds: 0,
+        session_id: tutorSessionId
+    });
+    const url = `${SUPABASE_URL}/rest/v1/game_results?on_conflict=student_id,game_file,session_id`;
+    const headers = {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+    };
     if (useBeacon === true) {
-        // Use sendBeacon for reliable save on page exit
-        const student = GameTracker.getStudent();
-        if (!student) return;
-        const payload = JSON.stringify({
-            student_id: student.id,
-            game_file: 'fractions_review.html',
-            game_title: 'Fractions Review \u2014 Tutor',
-            score: tutorIndex,
-            questions_answered: tutorIndex,
-            best_streak: tutorIndex,
-            time_seconds: 0,
-            session_id: tutorSessionId
-        });
-        navigator.sendBeacon(
-            `${SUPABASE_URL}/rest/v1/game_results?on_conflict=student_id,game_file,session_id&apikey=${SUPABASE_KEY}`,
-            new Blob([payload], { type: 'application/json' })
-        );
+        // Page exit: use fetch with keepalive (supports headers unlike sendBeacon)
+        try { fetch(url, { method: 'POST', headers, body: payload, keepalive: true }); } catch(e) {}
         return;
     }
-    GameTracker.saveResult({
-        gameFile: 'fractions_review.html',
-        gameTitle: 'Fractions Review \u2014 Tutor',
-        score: tutorIndex,
-        questionsAnswered: tutorIndex,
-        bestStreak: tutorIndex,
-        timeSeconds: 0,
-        sessionId: tutorSessionId
-    });
+    fetch(url, { method: 'POST', headers, body: payload });
 }
 
 // ── localStorage persistence ──
@@ -2579,7 +2575,7 @@ function checkSavedMissed() {
 // SUPABASE_URL and SUPABASE_KEY are provided by tracker.js (loaded in <head>)
 (function() {
     GameTracker.requireLogin().then(function(student) {
-        GameTracker.startAutoSave('fractions_review.html', 'Fractions Review');
+        GameTracker.startAutoSave({ gameFile: 'fractions_review.html', gameTitle: 'Fractions Review' });
         checkSavedMissed();
     }).catch(function() {
         checkSavedMissed();
