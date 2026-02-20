@@ -1267,7 +1267,6 @@
         // Sort newest first
         sameGame.sort((a, b) => (b.answered_at || '').localeCompare(a.answered_at || ''));
         const playedAt = new Date(result.played_at);
-        const tutor = isTutorSession(result);
         const afterMin = tutor ? 30 : 5; // tutor sessions can last longer
         const cutoff = new Date(playedAt.getTime() + afterMin * 60 * 1000);
         const earliest = new Date(playedAt.getTime() - 3 * 60 * 60 * 1000);
