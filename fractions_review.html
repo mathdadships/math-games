@@ -1496,45 +1496,74 @@ function renderEndScreen() {
     getAIFeedback();
 }
 
+// XSS prevention for AI response text
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 async function getAIFeedback() {
-    const feedbackEl = document.getElementById('aiFeedbackContent');
-    const catLabels = { identify: 'Identifying fractions from shaded models', numberline: 'Reading fractions on number lines', comparing: 'Comparing fractions using < > =', equivalent: 'Finding equivalent fractions' };
-    let perfSummary = 'Student performance on fractions practice:\n';
-    CATEGORIES.forEach(cat => {
-        const c = sessionData.categoryCorrect[cat], t = sessionData.categoryTotal[cat];
-        const pct = t > 0 ? Math.round((c/t)*100) : 0;
-        perfSummary += `- ${catLabels[cat]}: ${c}/${t} correct (${pct}%) ${c >= MASTERY_THRESHOLD ? '[MASTERED]' : '[NEEDS WORK]'}\n`;
+    var feedbackEl = document.getElementById('aiFeedbackContent');
+    var catLabels = { identify: 'Identifying fractions from shaded models', numberline: 'Reading fractions on number lines', comparing: 'Comparing fractions using < > =', equivalent: 'Finding equivalent fractions' };
+
+    // Build performance summary
+    var perfSummary = 'Student performance on fractions practice:\n';
+    CATEGORIES.forEach(function(cat) {
+        var c = sessionData.categoryCorrect[cat], t = sessionData.categoryTotal[cat];
+        var pct = t > 0 ? Math.round((c/t)*100) : 0;
+        perfSummary += '- ' + catLabels[cat] + ': ' + c + '/' + t + ' correct (' + pct + '%) ' + (c >= MASTERY_THRESHOLD ? '[MASTERED]' : '[NEEDS WORK]') + '\n';
     });
-    const wrongs = sessionData.answers.filter(a => !a.correct);
+    var wrongs = sessionData.answers.filter(function(a) { return !a.correct; });
     if (wrongs.length > 0) {
         perfSummary += '\nSpecific errors:\n';
-        wrongs.slice(0, 8).forEach(w => {
-            perfSummary += `- ${catLabels[w.category]}: answered "${w.response}" (correct: "${w.problem.answer}")\n`;
+        wrongs.slice(0, 8).forEach(function(w) {
+            perfSummary += '- ' + catLabels[w.category] + ': answered "' + w.response + '" (correct: "' + w.problem.answer + '")\n';
         });
     }
+
+    var student = GameTracker.getStudent();
+    var studentId = student ? student.id : null;
+
     try {
-        const response = await fetch("https://api.anthropic.com/v1/messages", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                model: "claude-sonnet-4-20250514", max_tokens: 1000,
-                system: `You are a warm, encouraging math tutor for a 3rd grade student (age 8-9). The student just completed a fractions practice session. Give them brief, specific feedback in 2-3 sentences.\n\nRules:\n- Be encouraging and specific — mention what they did well\n- If they struggled somewhere, give ONE concrete tip they can remember\n- Use simple language a 3rd grader understands\n- Never be discouraging. Frame weaknesses as "next steps" not failures\n- Keep it under 50 words\n- Do NOT use bullet points or lists. Just natural sentences.`,
-                messages: [{ role: "user", content: perfSummary }]
-            })
-        });
-        const data = await response.json();
-        const text = data.content.map(item => item.type === 'text' ? item.text : '').join('');
-        feedbackEl.innerHTML = `<div class="ai-feedback-text">${text}</div>`;
-    } catch (err) {
-        const correct = sessionData.answers.filter(a => a.correct).length;
-        const total = sessionData.totalAnswered;
-        const weakCats = CATEGORIES.filter(c => sessionData.categoryCorrect[c] < MASTERY_THRESHOLD);
-        let fallback = `You completed ${total} questions and got ${correct} right. `;
-        if (weakCats.length === 0) fallback += 'Great work — you showed strong skills across all fraction types!';
-        else {
-            const catLabelsShort = { identify: 'identifying fractions', numberline: 'number lines', comparing: 'comparing fractions', equivalent: 'equivalent fractions' };
-            fallback += `Keep practicing ${weakCats.map(c => catLabelsShort[c]).join(' and ')} — you're getting there!`;
+        var response = await fetch(
+            SUPABASE_URL + '/functions/v1/ai-feedback',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                },
+                body: JSON.stringify({
+                    performanceSummary: perfSummary,
+                    studentId: studentId
+                })
+            }
+        );
+
+        if (!response.ok) throw new Error('Edge function returned ' + response.status);
+
+        var data = await response.json();
+        if (data.feedback) {
+            feedbackEl.innerHTML = '<div class="ai-feedback-text">' + escapeHtml(data.feedback) + '</div>';
+        } else {
+            throw new Error('No feedback in response');
         }
-        feedbackEl.innerHTML = `<div class="ai-feedback-text">${fallback}</div>`;
+    } catch (err) {
+        console.warn('AI feedback unavailable:', err.message);
+        // Static fallback
+        var correct = sessionData.answers.filter(function(a) { return a.correct; }).length;
+        var total = sessionData.totalAnswered;
+        var weakCats = CATEGORIES.filter(function(c) { return sessionData.categoryCorrect[c] < MASTERY_THRESHOLD; });
+        var fallback = 'You completed ' + total + ' questions and got ' + correct + ' right. ';
+        if (weakCats.length === 0) {
+            fallback += 'Great work — you showed strong skills across all fraction types!';
+        } else {
+            var catLabelsShort = { identify: 'identifying fractions', numberline: 'number lines', comparing: 'comparing fractions', equivalent: 'equivalent fractions' };
+            fallback += 'Keep practicing ' + weakCats.map(function(c) { return catLabelsShort[c]; }).join(' and ') + ' — you\'re getting there!';
+        }
+        feedbackEl.innerHTML = '<div class="ai-feedback-text">' + fallback + '</div>';
     }
 }
 

@@ -27,5 +27,11 @@ fix_autosave.py
 supabase_setup.sql
 status.md
 
+# Supabase local dev
+supabase/.temp/
+
+# Security test scripts
+test_edge_function.sh
+
 # Node (in case you add dependencies later)
 node_modules/
