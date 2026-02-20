@@ -391,6 +391,24 @@
         .q-attempt-2 { background: #FFF3E0; color: #E65100; }
         .q-attempt-3 { background: #FCEAE8; color: #C0392B; }
 
+        .q-tutor-badge {
+            display: inline-block;
+            padding: 2px 7px; border-radius: 6px;
+            font-size: 0.68rem; font-weight: 700;
+            background: #EEF1FE; color: #4A6CF7;
+            margin-left: 6px; vertical-align: middle;
+            letter-spacing: 0.3px;
+        }
+
+        .mode-badge {
+            display: inline-block;
+            padding: 3px 10px; border-radius: 8px;
+            font-size: 0.72rem; font-weight: 700;
+            margin-left: 8px; vertical-align: middle;
+        }
+        .mode-badge-practice { background: #E8F5E9; color: #2E7D32; }
+        .mode-badge-tutor { background: #EEF1FE; color: #4A6CF7; }
+
         .panel-empty {
             text-align: center; padding: 60px 32px;
             color: #A3A3A3; font-size: 0.95rem;
@@ -573,7 +591,7 @@
         const [students, results, questions] = await Promise.all([
             supaFetch('students', 'order=created_at.asc'),
             supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc&limit=5000'),
-            supaFetch('question_responses', 'select=student_id,game_file,is_correct&limit=50000')
+            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text&limit=50000')
         ]);
 
         allStudents = students;
@@ -607,6 +625,7 @@
         allQuestions = questions;
 
         // Build question stats by student
+        // Split fractions_review tutor vs practice into separate keys
         questionsByStudent = {};
         allQuestions.forEach(q => {
             if (!questionsByStudent[q.student_id]) {
@@ -615,8 +634,11 @@
             const s = questionsByStudent[q.student_id];
             s.total++;
             if (q.is_correct) s.right++; else s.wrong++;
-            if (!s.byGame[q.game_file]) s.byGame[q.game_file] = { total: 0, right: 0, wrong: 0 };
-            const g = s.byGame[q.game_file];
+            // Tutor questions get a virtual game key so they display separately
+            const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
+            const gameKey = isTutorQ ? q.game_file + ':tutor' : q.game_file;
+            if (!s.byGame[gameKey]) s.byGame[gameKey] = { total: 0, right: 0, wrong: 0 };
+            const g = s.byGame[gameKey];
             g.total++;
             if (q.is_correct) g.right++; else g.wrong++;
         });
@@ -624,8 +646,10 @@
         // Enrich results with accuracy from question data
         allResults.forEach(r => {
             const qs = questionsByStudent[r.student_id];
-            if (qs && qs.byGame[r.game_file]) {
-                const g = qs.byGame[r.game_file];
+            // Match tutor sessions to the :tutor virtual key
+            const gameKey = isTutorSession(r) ? r.game_file + ':tutor' : r.game_file;
+            if (qs && qs.byGame[gameKey]) {
+                const g = qs.byGame[gameKey];
                 r.right_count = g.right;
                 r.wrong_count = g.wrong;
                 r.accuracy = g.total > 0 ? Math.round((g.right / g.total) * 100) : null;
@@ -787,7 +811,10 @@
 
                 // Per-game accuracy chips
                 const gameChips = qs ? Object.entries(qs.byGame).map(([gf, gs]) => {
-                    const title = gf.replace('.html', '').replace(/_/g, ' ');
+                    const isTutor = gf.endsWith(':tutor');
+                    const base = isTutor ? gf.replace(':tutor', '') : gf;
+                    let title = base.replace('.html', '').replace(/_/g, ' ');
+                    if (isTutor) title += ' (Tutor)';
                     const gAcc = gs.total > 0 ? Math.round((gs.right / gs.total) * 100) : 0;
                     const gAccClass = gAcc >= 80 ? 'acc-high' : gAcc >= 50 ? 'acc-mid' : 'acc-low';
                     return `<div class="game-acc-card">
@@ -962,13 +989,15 @@
         const gameVal = document.getElementById('game-filter').value;
         const filteredIds = new Set(getFilteredStudentIds());
 
-        // Group questions by game
+        // Group questions by game (split tutor vs practice)
         const byGame = {};
         allQuestions.forEach(q => {
             if (!filteredIds.has(q.student_id)) return;
             if (gameVal !== 'all' && q.game_file !== gameVal) return;
-            if (!byGame[q.game_file]) byGame[q.game_file] = { total: 0, right: 0, wrong: 0, wrongAnswers: {} };
-            const g = byGame[q.game_file];
+            const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
+            const gameKey = isTutorQ ? q.game_file + ':tutor' : q.game_file;
+            if (!byGame[gameKey]) byGame[gameKey] = { total: 0, right: 0, wrong: 0, wrongAnswers: {}, rawFile: q.game_file };
+            const g = byGame[gameKey];
             g.total++;
             if (q.is_correct) g.right++; else g.wrong++;
         });
@@ -983,36 +1012,48 @@
             return;
         }
 
-        // Also get play counts from game_results
+        // Also get play counts from game_results (split tutor vs practice)
         const filtered = getFilteredResults();
         const playCounts = {};
         filtered.forEach(r => {
-            playCounts[r.game_file] = (playCounts[r.game_file] || 0) + 1;
+            const pk = isTutorSession(r) ? r.game_file + ':tutor' : r.game_file;
+            playCounts[pk] = (playCounts[pk] || 0) + 1;
         });
 
         tbody.innerHTML = entries
             .sort((a, b) => b[1].total - a[1].total)
             .map(([gf, gs]) => {
-                const title = gf.replace('.html', '').replace(/_/g, ' ');
+                const isTutor = gf.endsWith(':tutor');
+                const base = isTutor ? gf.replace(':tutor', '') : gf;
+                let title = base.replace('.html', '').replace(/_/g, ' ');
+                if (isTutor) title += ' (Tutor)';
                 const acc = gs.total > 0 ? Math.round((gs.right / gs.total) * 100) : 0;
                 const accClass = acc >= 80 ? 'acc-high' : acc >= 50 ? 'acc-mid' : 'acc-low';
                 const plays = playCounts[gf] || 0;
+                const rawFile = gs.rawFile || base;
 
                 return `<tr>
                     <td><strong>${escHtml(title)}</strong></td>
                     <td>${plays}</td>
                     <td>${gs.total.toLocaleString()} <span style="color:#999;font-size:0.78rem;">(${gs.right}✓ ${gs.wrong}✗)</span></td>
                     <td><span class="acc-badge ${accClass}">${acc}%</span></td>
-                    <td><button style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;font-size:0.78rem;font-family:inherit;" onclick="showMostMissed('${escHtml(gf)}')">View Mistakes</button></td>
+                    <td><button style="padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;font-size:0.78rem;font-family:inherit;" onclick="showMostMissed('${escHtml(rawFile)}${isTutor ? ':tutor' : ''}')">View Mistakes</button></td>
                 </tr>`;
             }).join('');
     }
 
-    async function showMostMissed(gameFile) {
-        // Fetch wrong answers for this game
+    async function showMostMissed(gameKey) {
+        // Fetch wrong answers for this game (handle :tutor virtual key)
+        const isTutor = gameKey.endsWith(':tutor');
+        const gameFile = isTutor ? gameKey.replace(':tutor', '') : gameKey;
         try {
-            const wrong = await supaFetch('question_responses',
+            let wrong = await supaFetch('question_responses',
                 `game_file=eq.${encodeURIComponent(gameFile)}&is_correct=eq.false&order=answered_at.desc&limit=200`);
+            // Filter by mode
+            wrong = wrong.filter(q => {
+                const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
+                return isTutor ? isTutorQ : !isTutorQ;
+            });
 
             if (wrong.length === 0) {
                 alert('No wrong answers recorded for this game yet!');
@@ -1030,7 +1071,8 @@
             });
 
             const sorted = Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 15);
-            const title = gameFile.replace('.html', '').replace(/_/g, ' ');
+            let title = gameFile.replace('.html', '').replace(/_/g, ' ');
+            if (isTutor) title += ' (Tutor)';
 
             // Show in a simple overlay
             const overlay = document.createElement('div');
@@ -1106,6 +1148,10 @@
     let panelQuestions = [];
     let panelCategories = [];
 
+    function isTutorSession(result) {
+        return (result.game_title || '').toLowerCase().includes('tutor');
+    }
+
     async function getSessionQuestions(result) {
         // Ensure question cache is populated for this student
         if (!studentQuestionCache[result.student_id]) {
@@ -1115,7 +1161,15 @@
         }
         const cached = studentQuestionCache[result.student_id] || [];
         // Filter to same game
-        const sameGame = cached.filter(q => q.game_file === result.game_file);
+        let sameGame = cached.filter(q => q.game_file === result.game_file);
+
+        // Separate tutor vs practice questions by [Tutor] prefix
+        const tutor = isTutorSession(result);
+        sameGame = sameGame.filter(q => {
+            const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
+            return tutor ? isTutorQ : !isTutorQ;
+        });
+
         if (!result.played_at || sameGame.length === 0) {
             return sameGame.slice(0, result.questions_answered || 20);
         }
@@ -1280,8 +1334,13 @@
         if (clickedRow) clickedRow.classList.add('selected');
 
         // Header
-        const title = result.game_title || result.game_file.replace('.html', '').replace(/_/g, ' ');
-        document.getElementById('panel-title').textContent = (result.first_name || '?') + ' \u2014 ' + title;
+        const tutor = isTutorSession(result);
+        const gameBase = result.game_file.replace('.html', '').replace(/_/g, ' ');
+        const displayTitle = tutor ? gameBase : (result.game_title || gameBase);
+        const modeBadge = tutor
+            ? '<span class="mode-badge mode-badge-tutor">Tutor</span>'
+            : (result.game_file === 'fractions_review.html' ? '<span class="mode-badge mode-badge-practice">Practice</span>' : '');
+        document.getElementById('panel-title').innerHTML = escHtml((result.first_name || '?') + ' \u2014 ' + displayTitle) + modeBadge;
         const date = result.played_at ? new Date(result.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
         document.getElementById('panel-meta').textContent = date + '  \u00b7  ' + (result.questions_answered || 0) + ' questions';
 
