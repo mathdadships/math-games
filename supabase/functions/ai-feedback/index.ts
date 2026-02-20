@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const body = await req.json();
-    const { performanceSummary, studentId } = body;
+    const { performanceSummary, studentId, mode } = body;
 
     // --- Input validation ---
     if (!performanceSummary || typeof performanceSummary !== "string") {
@@ -62,16 +62,21 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // --- Validate mode ---
+    const isHint = mode === "hint";
+    const rateLimitKey = `${studentId}:${isHint ? "hint" : "feedback"}`;
+    const cooldown = isHint ? 5_000 : RATE_LIMIT_MS; // 5s for hints, 30s for feedback
+
     // --- Rate limiting ---
-    const lastCall = rateLimitMap.get(studentId);
+    const lastCall = rateLimitMap.get(rateLimitKey);
     const now = Date.now();
-    if (lastCall && now - lastCall < RATE_LIMIT_MS) {
+    if (lastCall && now - lastCall < cooldown) {
       return new Response(
         JSON.stringify({ error: "Please wait before requesting feedback again" }),
         { status: 429, headers: corsHeaders(req) }
       );
     }
-    rateLimitMap.set(studentId, now);
+    rateLimitMap.set(rateLimitKey, now);
 
     // --- Check API key is configured ---
     if (!ANTHROPIC_API_KEY) {
@@ -81,6 +86,30 @@ Deno.serve(async (req: Request) => {
         { status: 503, headers: corsHeaders(req) }
       );
     }
+
+    // --- Build system prompt based on mode ---
+    const systemPrompt = isHint
+      ? [
+          "You are a patient math tutor for a 3rd grader (age 8-9).",
+          "Give ONE short sentence (under 25 words) that helps them see why their answer is wrong.",
+          "Nudge them toward the right thinking without giving the answer directly.",
+          "Use simple words a child understands.",
+          "Do NOT say the correct answer.",
+        ].join("\n")
+      : [
+          "You are a warm, encouraging math tutor for a 3rd grade student (age 8-9).",
+          "The student just completed a fractions practice session.",
+          "Give them brief, specific feedback in 2-3 sentences.",
+          "Rules:",
+          "- Be encouraging and specific — mention what they did well",
+          "- If they struggled somewhere, give ONE concrete tip they can remember",
+          "- Use simple language a 3rd grader understands",
+          "- Never be discouraging. Frame weaknesses as next steps not failures",
+          "- Keep it under 50 words",
+          "- Do NOT use bullet points or lists. Just natural sentences.",
+          "- Do NOT make promises about future sessions or reference 'next time'",
+          "- Focus only on what happened in THIS session",
+        ].join("\n");
 
     // --- Call Anthropic API ---
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
@@ -92,19 +121,8 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 150,
-        system: [
-          "You are a warm, encouraging math tutor for a 3rd grade student (age 8-9).",
-          "The student just completed a fractions practice session.",
-          "Give them brief, specific feedback in 2-3 sentences.",
-          "Rules:",
-          "- Be encouraging and specific — mention what they did well",
-          "- If they struggled somewhere, give ONE concrete tip they can remember",
-          "- Use simple language a 3rd grader understands",
-          "- Never be discouraging. Frame weaknesses as next steps not failures",
-          "- Keep it under 50 words",
-          "- Do NOT use bullet points or lists. Just natural sentences.",
-        ].join("\n"),
+        max_tokens: isHint ? 75 : 150,
+        system: systemPrompt,
         messages: [{ role: "user", content: performanceSummary }],
       }),
     });

@@ -409,6 +409,69 @@
         /* ── UTILITIES ── */
         .hidden { display: none !important; }
 
+        /* ── TUTOR MODE ── */
+        .tutor-badge {
+            display: inline-block; background: var(--accent-light);
+            color: var(--accent); font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 4px 10px; border-radius: 20px; margin-bottom: 12px;
+        }
+        .hint-box {
+            margin-top: 20px; padding: 16px 20px;
+            background: #FFFBF0; border: 2px solid var(--amber);
+            border-radius: 12px; font-size: 15px; line-height: 1.6;
+            color: var(--text); animation: hintAppear 0.3s ease;
+        }
+        .hint-box .hint-label {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--amber); margin-bottom: 6px;
+        }
+        .hint-box .hint-text { color: var(--text); }
+        .hint-box.ai-hint {
+            background: var(--accent-light); border-color: var(--accent);
+        }
+        .hint-box.ai-hint .hint-label { color: var(--accent); }
+        .hint-loading {
+            display: flex; align-items: center; gap: 8px;
+            color: var(--text-secondary); font-size: 14px;
+        }
+        .hint-loading .dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--accent); animation: pulse 1.4s ease-in-out infinite;
+        }
+        .hint-loading .dot:nth-child(2) { animation-delay: 0.2s; }
+        .hint-loading .dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes hintAppear {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .tutor-progress {
+            font-size: 13px; color: var(--text-secondary);
+            text-align: center; margin-bottom: 16px;
+        }
+        .tutor-btn {
+            background: var(--amber); color: white;
+            border: none; border-radius: 12px;
+            padding: 14px 32px; font-size: 16px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer; transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .tutor-btn:hover { background: #D49530; transform: translateY(-1px); }
+        .tutor-btn:active { transform: scale(0.97); }
+        .start-tutor-section {
+            margin-top: 24px; padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .start-tutor-info {
+            font-size: 14px; color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+        .btn-row {
+            display: flex; gap: 12px; justify-content: center;
+            flex-wrap: wrap; margin-top: 12px;
+        }
+
         @media (max-width: 500px) {
             .mc-options:not(.force-2col) { grid-template-columns: 1fr; }
             .results-grid { grid-template-columns: 1fr; }
@@ -430,14 +493,21 @@
             Take your time — there's no timer.
         </div>
         <button class="start-btn" onclick="startSession()">Begin</button>
+        <div class="start-tutor-section hidden" id="startTutorSection">
+            <div class="start-tutor-info" id="startTutorInfo"></div>
+            <button class="tutor-btn" onclick="startTutorFromSaved()">Review Missed Questions</button>
+        </div>
     </div>
 
     <!-- Question Card -->
     <div class="question-card hidden" id="questionCard">
+        <div class="tutor-badge hidden" id="tutorBadge">Tutor Mode</div>
+        <div class="tutor-progress hidden" id="tutorProgress"></div>
         <div class="question-label" id="questionLabel"></div>
         <div class="question-text" id="questionText"></div>
         <div class="visual-container" id="visualContainer"></div>
         <div id="answerArea"></div>
+        <div id="hintArea"></div>
     </div>
 
     <!-- End Screen -->
@@ -454,7 +524,10 @@
                 </div>
             </div>
         </div>
-        <button class="restart-btn" onclick="restartSession()">Practice Again</button>
+        <div class="btn-row">
+            <button class="restart-btn" onclick="restartSession()">Practice Again</button>
+            <button class="tutor-btn hidden" id="endTutorBtn" onclick="startTutorFromSession()">Review Missed Questions</button>
+        </div>
     </div>
 </div>
 
@@ -1435,6 +1508,11 @@ function startSession() {
 }
 
 function restartSession() {
+    tutorMode = false;
+    document.getElementById('tutorBadge').classList.add('hidden');
+    document.getElementById('tutorProgress').classList.add('hidden');
+    document.getElementById('hintArea').innerHTML = '';
+    checkSavedMissed();
     transitionTo('start');
 }
 
@@ -1444,6 +1522,9 @@ function transitionTo(screen) {
     const end = document.getElementById('endScreen');
     start.classList.add('hidden');
     card.classList.add('hidden');
+    card.style.opacity = '';
+    card.style.transform = '';
+    card.style.transition = '';
     end.classList.add('hidden');
     switch (screen) {
         case 'start':
@@ -1493,6 +1574,17 @@ function renderEndScreen() {
         card.innerHTML = `<div class="result-card-label">${catLabels[cat]}</div><div class="result-card-value ${mastered ? 'result-mastered' : 'result-working'}">${sessionData.categoryCorrect[cat]}/${sessionData.categoryTotal[cat]}${mastered ? ' ✓' : ''}</div>`;
         grid.appendChild(card);
     });
+
+    // Save missed questions and show tutor button
+    const missed = sessionData.answers.filter(a => !a.correct);
+    if (missed.length > 0) {
+        saveMissedToStorage(missed);
+        document.getElementById('endTutorBtn').classList.remove('hidden');
+    } else {
+        clearMissedStorage();
+        document.getElementById('endTutorBtn').classList.add('hidden');
+    }
+
     getAIFeedback();
 }
 
@@ -1523,7 +1615,7 @@ async function getAIFeedback() {
     }
 
     var student = GameTracker.getStudent();
-    var studentId = student ? student.id : null;
+    var studentId = student ? student.id : 'anonymous';
 
     try {
         var response = await fetch(
@@ -1537,12 +1629,13 @@ async function getAIFeedback() {
                 },
                 body: JSON.stringify({
                     performanceSummary: perfSummary,
-                    studentId: studentId
+                    studentId: studentId,
+                    mode: 'feedback'
                 })
             }
         );
 
-        if (!response.ok) throw new Error('Edge function returned ' + response.status);
+        if (!response.ok) throw new Error('API returned ' + response.status);
 
         var data = await response.json();
         if (data.feedback) {
@@ -1563,7 +1656,7 @@ async function getAIFeedback() {
             var catLabelsShort = { identify: 'identifying fractions', numberline: 'number lines', comparing: 'comparing fractions', equivalent: 'equivalent fractions' };
             fallback += 'Keep practicing ' + weakCats.map(function(c) { return catLabelsShort[c]; }).join(' and ') + ' — you\'re getting there!';
         }
-        feedbackEl.innerHTML = '<div class="ai-feedback-text">' + fallback + '</div>';
+        feedbackEl.innerHTML = '<div class="ai-feedback-text">' + escapeHtml(fallback) + '</div>';
     }
 }
 
@@ -1579,18 +1672,563 @@ function prepareTeacherData() {
     CATEGORIES.forEach(cat => {
         teacherPayload.categories[cat] = { correct: sessionData.categoryCorrect[cat], total: sessionData.categoryTotal[cat], mastered: sessionData.categoryCorrect[cat] >= MASTERY_THRESHOLD };
     });
-    console.log('=== TEACHER DASHBOARD PAYLOAD ===');
-    console.log(JSON.stringify(teacherPayload, null, 2));
+    // teacherPayload ready for Supabase integration
+}
+
+// ═══════════════════════════════════════════
+// ███ TUTOR MODE ███
+// ═══════════════════════════════════════════
+
+const STORAGE_KEY = 'fractions_review_missed';
+let tutorMode = false;
+let tutorQueue = [];
+let tutorIndex = 0;
+let tutorAttempts = 0; // attempts on current problem
+let tutorCurrentProblem = null;
+
+// ── localStorage persistence ──
+
+function saveMissedToStorage(missedProblems) {
+    try {
+        // Serialize problems (strip functions, keep data)
+        const serializable = missedProblems.map(a => ({
+            category: a.category,
+            problem: serializeProblem(a.problem),
+            wrongResponse: a.response
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+    } catch (e) { console.warn('Could not save missed questions:', e); }
+}
+
+function loadMissedFromStorage() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || data.length === 0) return null;
+        return data;
+    } catch (e) { return null; }
+}
+
+function clearMissedStorage() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+}
+
+function serializeProblem(p) {
+    // Create a clean copy without DOM references or functions
+    const clean = {};
+    for (const key of Object.keys(p)) {
+        const val = p[key];
+        if (typeof val !== 'function' && key !== 'checkAnswer') {
+            clean[key] = val;
+        }
+    }
+    return clean;
+}
+
+// ── Hint generation ──
+
+function getHint(problem, attemptNum, wrongResponse) {
+    if (attemptNum === 1) return getHint1(problem);
+    if (attemptNum === 2) return getHint2(problem, wrongResponse);
+    return null; // attemptNum >= 3 triggers Claude API
+}
+
+function getHint1(problem) {
+    switch (problem.category) {
+        case 'identify':
+            if (problem.visual && problem.visual.type === 'bar') {
+                return `Count all the parts in the shape — that's the bottom number (denominator). It has ${problem.denom} equal parts.`;
+            }
+            return `Read the problem carefully. The total number of parts or items is the denominator (bottom number).`;
+        case 'numberline':
+            if (problem.visual && problem.visual.type === 'numberline') {
+                return `Count the spaces between 0 and 1 on the number line. Each space is one equal part. There are ${problem.denom} spaces.`;
+            }
+            if (problem.visual && problem.visual.type === 'labeled_numberline') {
+                return `Look at how many equal spaces are between 0 and 1 on the number line. Then count which space the place is at.`;
+            }
+            if (problem.visual && problem.visual.type === 'multi_point') {
+                return `Count the total spaces between 0 and 1 — that's the denominator. Then count which space the point is at.`;
+            }
+            return `Count all the tick marks between 0 and 1. The number of spaces tells you the denominator.`;
+        case 'comparing':
+            if (problem.type === 'symbol') {
+                if (problem.d1 === problem.d2) {
+                    return `These fractions have the same denominator (${problem.d1}). When denominators are the same, the bigger numerator means a bigger fraction.`;
+                }
+                if (problem.n1 === problem.n2) {
+                    return `These fractions have the same numerator (${problem.n1}). When numerators are the same, the bigger denominator means smaller pieces.`;
+                }
+            }
+            return `Think about the size of the pieces. A bigger denominator means smaller pieces.`;
+        case 'equivalent':
+            if (problem.wholeNum) {
+                return `To write ${problem.wholeNum} as a fraction, think: how many pieces of that size make ${problem.wholeNum} wholes?`;
+            }
+            return `Equivalent fractions show the same amount. Try simplifying — divide both the numerator and denominator by the same number.`;
+    }
+}
+
+function getHint2(problem, wrongResponse) {
+    switch (problem.category) {
+        case 'identify':
+            if (problem.visual && problem.visual.type === 'bar') {
+                return `The shape has ${problem.denom} equal parts. Count the shaded ones — there are ${problem.numer} shaded. So the fraction is ${problem.numer} over ${problem.denom}.`;
+            }
+            return `The bottom number is the total. The top number is the part you're asked about. Look again at the numbers in the problem.`;
+        case 'numberline':
+            if (problem.numer !== undefined && problem.denom !== undefined) {
+                return `There are ${problem.denom} equal spaces. Point P is at the ${ordinal(problem.numer)} space from 0. The fraction is ${problem.numer} over ${problem.denom}.`;
+            }
+            return `Count carefully from 0. Each mark is one equal part. Which mark is the point sitting on?`;
+        case 'comparing':
+            if (problem.type === 'symbol' && problem.d1 === problem.d2) {
+                return `Same size pieces (${problem.d1}ths). ${problem.n1} pieces vs ${problem.n2} pieces — which is more?`;
+            }
+            if (problem.type === 'symbol' && problem.n1 === problem.n2) {
+                return `Same number of pieces (${problem.n1}). But ${problem.d1}ths are ${problem.d1 < problem.d2 ? 'bigger' : 'smaller'} pieces than ${problem.d2}ths. Bigger pieces = bigger fraction.`;
+            }
+            return `Try thinking about a real example. If you ate ${problem.n1 || 2} slices of a pizza cut into ${problem.d1 || 4} pieces vs ${problem.d2 || 8} pieces, which is more food?`;
+        case 'equivalent':
+            if (problem.shownNumer && problem.shownDenom) {
+                const g = gcd(problem.shownNumer, problem.shownDenom);
+                if (g > 1) {
+                    return `Try dividing both ${problem.shownNumer} and ${problem.shownDenom} by ${g}. What do you get?`;
+                }
+            }
+            if (problem.wholeNum) {
+                const ans = problem.answer.split('/');
+                return `${problem.wholeNum} wholes. Each whole has ${ans[1]} pieces. So ${problem.wholeNum} × ${ans[1]} = ${ans[0]} pieces total.`;
+            }
+            return `Multiply or divide both the top and bottom by the same number. The amount stays the same — just different sized pieces.`;
+    }
+}
+
+function ordinal(n) {
+    if (n === 1) return '1st';
+    if (n === 2) return '2nd';
+    if (n === 3) return '3rd';
+    return n + 'th';
+}
+
+async function getAIHint(problem, wrongResponse) {
+    const catLabels = { identify: 'identifying a fraction from a visual model', numberline: 'reading a fraction on a number line', comparing: 'comparing two fractions', equivalent: 'finding equivalent fractions' };
+
+    const hintPrompt = `A 3rd grader is working on ${catLabels[problem.category]}.
+
+Question: ${(problem.question || '').replace(/<[^>]*>/g, '')}
+Correct answer: ${problem.answer}
+They picked: ${wrongResponse}
+They've already tried ${tutorAttempts} times and seen 2 hints.
+
+Give them ONE short sentence (under 25 words) that helps them see WHY their answer is wrong and nudges them toward the right thinking. Use simple words. Don't give the answer directly.`;
+
+    var student = GameTracker.getStudent();
+    var studentId = student ? student.id : 'anonymous';
+
+    try {
+        const response = await fetch(
+            SUPABASE_URL + '/functions/v1/ai-feedback',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                },
+                body: JSON.stringify({
+                    performanceSummary: hintPrompt,
+                    studentId: studentId,
+                    mode: 'hint'
+                })
+            }
+        );
+        if (!response.ok) throw new Error('API error ' + response.status);
+        const data = await response.json();
+        return data.feedback || null;
+    } catch (e) {
+        console.warn('AI hint unavailable:', e);
+        return null;
+    }
+}
+
+// ── Tutor mode flow ──
+
+function startTutorFromSession() {
+    // Use missed problems from current session
+    const missed = sessionData.answers.filter(a => !a.correct);
+    if (missed.length === 0) return;
+    
+    // Save to localStorage for future sessions
+    saveMissedToStorage(missed);
+    
+    // Build tutor queue from missed problems (re-generate similar problems)
+    tutorQueue = missed.map(m => ({
+        originalProblem: m.problem,
+        category: m.category,
+        wrongResponse: m.response
+    }));
+    shuffleArray(tutorQueue);
+    startTutorSession();
+}
+
+function startTutorFromSaved() {
+    const saved = loadMissedFromStorage();
+    if (!saved || saved.length === 0) return;
+    
+    tutorQueue = saved.map(s => ({
+        originalProblem: s.problem,
+        category: s.category,
+        wrongResponse: s.wrongResponse
+    }));
+    shuffleArray(tutorQueue);
+    startTutorSession();
+}
+
+function startTutorSession() {
+    tutorMode = true;
+    tutorIndex = 0;
+    document.getElementById('progressFill').style.width = '0%';
+    transitionTo('question');
+    loadTutorProblem();
+}
+
+function loadTutorProblem() {
+    if (tutorIndex >= tutorQueue.length) {
+        endTutorSession();
+        return;
+    }
+
+    const item = tutorQueue[tutorIndex];
+    // Generate a fresh problem of the same category/type
+    tutorCurrentProblem = generateProblem(item.category);
+    tutorAttempts = 0;
+
+    const card = document.getElementById('questionCard');
+    document.getElementById('tutorBadge').classList.remove('hidden');
+    document.getElementById('tutorProgress').classList.remove('hidden');
+    document.getElementById('tutorProgress').textContent = `Question ${tutorIndex + 1} of ${tutorQueue.length}`;
+    document.getElementById('hintArea').innerHTML = '';
+
+    card.style.opacity = '1';
+    card.style.transform = 'translateX(0)';
+    card.style.transition = 'none';
+    renderTutorQuestion(tutorCurrentProblem);
+
+    // Update progress
+    document.getElementById('progressFill').style.width = ((tutorIndex / tutorQueue.length) * 100) + '%';
+}
+
+function renderTutorQuestion(problem) {
+    // Same rendering as normal, but answer handling is different
+    const card = document.getElementById('questionCard');
+    const label = document.getElementById('questionLabel');
+    const text = document.getElementById('questionText');
+    const visual = document.getElementById('visualContainer');
+    const answerArea = document.getElementById('answerArea');
+
+    const catLabels = { identify: 'Identifying Fractions', numberline: 'Number Lines', comparing: 'Comparing Fractions', equivalent: 'Equivalent Fractions' };
+
+    label.textContent = catLabels[problem.category];
+    visual.innerHTML = '';
+    answerArea.innerHTML = '';
+    document.getElementById('hintArea').innerHTML = '';
+
+    text.innerHTML = problem.question;
+
+    if (problem.visual) {
+        switch (problem.visual.type) {
+            case 'bar': renderBarVisual(visual, problem.visual); break;
+            case 'numberline': renderNumberLine(visual, problem.visual); break;
+            case 'labeled_numberline': renderLabeledNL(visual, problem.visual); break;
+            case 'multi_point': renderMultiPointNL(visual, problem.visual); break;
+            case 'comparison': renderComparisonVisual(visual, problem.visual); break;
+            case 'reference_strip': renderReferenceStrip(visual, problem.visual); break;
+        }
+    }
+
+    // Render answer area with TUTOR click handlers
+    switch (problem.type) {
+        case 'mc': renderTutorMC(answerArea, problem, 'fraction'); break;
+        case 'mc_text': renderTutorMC(answerArea, problem, 'text'); break;
+        case 'mc_visual_nl': renderMCVisualNLTutor(answerArea, problem); break;
+        case 'mc_pair': renderTutorMC(answerArea, problem, 'pair'); break;
+        case 'mc_comparison': renderMCComparisonTutor(answerArea, problem); break;
+        case 'mc_strips': renderMCStripsTutor(answerArea, problem); break;
+        case 'mc_equivpairs': renderTutorMC(answerArea, problem, 'equivpairs'); break;
+        case 'symbol': renderSymbolTutor(answerArea, problem); break;
+    }
+
+    card.classList.remove('hidden');
+}
+
+// Generic tutor MC renderer
+function renderTutorMC(container, problem, style) {
+    const grid = document.createElement('div');
+    
+    if (style === 'pair' || style === 'equivpairs') {
+        grid.className = 'mc-options single-col';
+    } else {
+        grid.className = 'mc-options' + (style === 'fraction' ? ' force-2col' : '');
+    }
+
+    problem.choices.forEach(choice => {
+        const btn = document.createElement('div');
+        btn.className = 'mc-option';
+        btn.dataset.choice = choice;
+
+        if (style === 'fraction') {
+            const parts = choice.split('/');
+            btn.innerHTML = makeFractionHTML(parseInt(parts[0]), parseInt(parts[1]), false);
+        } else if (style === 'text') {
+            btn.innerHTML = `<span style="font-size:15px;font-weight:600">${choice}</span>`;
+        } else if (style === 'pair') {
+            const parts = choice.split(' and ');
+            const f1 = parts[0].split('/'), f2 = parts[1].split('/');
+            btn.innerHTML = `${makeFractionHTML(f1[0],f1[1],false)} <span style="margin:0 6px;font-weight:600">and</span> ${makeFractionHTML(f2[0],f2[1],false)}`;
+        } else if (style === 'equivpairs') {
+            const parts = choice.split(' = ');
+            const f1 = parts[0].split('/'), f2 = parts[1].split('/');
+            btn.innerHTML = `${makeFractionHTML(f1[0],f1[1],false)} <span style="font-size:20px;font-weight:700;margin:0 8px">=</span> ${makeFractionHTML(f2[0],f2[1],false)}`;
+        }
+
+        btn.addEventListener('click', () => handleTutorAnswer(problem, choice, btn, grid));
+        grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+}
+
+function renderMCVisualNLTutor(container, problem) {
+    const grid = document.createElement('div');
+    grid.className = 'mc-options';
+    problem.lines.forEach(line => {
+        const btn = document.createElement('div');
+        btn.className = 'mc-option'; btn.style.padding = '10px';
+        btn.dataset.choice = line.label;
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-weight:700;font-size:14px;margin-bottom:4px;';
+        lbl.textContent = line.label;
+        btn.appendChild(lbl);
+        const nlWrap = document.createElement('div');
+        nlWrap.className = 'mini-nl-wrap';
+        const nl = document.createElement('div');
+        nl.className = 'mini-nl';
+        for (let i = 0; i <= line.denom; i++) {
+            const tick = document.createElement('div');
+            tick.className = 'mini-nl-tick'; tick.style.left = (i/line.denom*100) + '%';
+            nl.appendChild(tick);
+            if (i === 0 || i === line.denom) {
+                const el = document.createElement('div');
+                el.className = 'mini-nl-endlabel'; el.style.left = (i/line.denom*100) + '%';
+                el.textContent = i === 0 ? '0' : '1';
+                nl.appendChild(el);
+            }
+        }
+        const pt = document.createElement('div');
+        pt.className = 'mini-nl-point'; pt.style.left = (line.pointPos/line.denom*100) + '%';
+        nl.appendChild(pt);
+        nlWrap.appendChild(nl); btn.appendChild(nlWrap);
+        btn.addEventListener('click', () => handleTutorAnswer(problem, line.label, btn, grid));
+        grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+}
+
+function renderMCComparisonTutor(container, problem) {
+    const grid = document.createElement('div');
+    grid.className = 'mc-options single-col';
+    problem.comparisons.forEach((comp, idx) => {
+        const btn = document.createElement('div');
+        btn.className = 'mc-option'; btn.style.flexDirection = 'row'; btn.style.gap = '6px';
+        btn.dataset.choice = problem.labels[idx];
+        btn.innerHTML = `<span style="font-weight:700;margin-right:6px">${problem.labels[idx]}.</span> ${makeFractionHTML(comp.n1,comp.d1,false)} <span style="font-size:18px;font-weight:700;margin:0 4px">${comp.sym}</span> ${makeFractionHTML(comp.n2,comp.d2,false)}`;
+        btn.addEventListener('click', () => handleTutorAnswer(problem, problem.labels[idx], btn, grid));
+        grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+}
+
+function renderMCStripsTutor(container, problem) {
+    const grid = document.createElement('div');
+    grid.className = 'mc-options';
+    problem.strips.forEach((strip, idx) => {
+        const btn = document.createElement('div');
+        btn.className = 'mc-option'; btn.style.padding = '10px';
+        btn.dataset.choice = problem.labels[idx];
+        const lbl = document.createElement('div');
+        lbl.style.cssText = 'font-weight:700;font-size:13px;margin-bottom:6px;';
+        lbl.textContent = problem.labels[idx];
+        btn.appendChild(lbl);
+        const ms = document.createElement('div');
+        ms.className = 'mini-strip';
+        for (let i = 0; i < strip.d; i++) {
+            const seg = document.createElement('div');
+            seg.className = 'mini-strip-seg ' + (i < strip.n ? 'shaded' : 'unshaded');
+            ms.appendChild(seg);
+        }
+        btn.appendChild(ms);
+        btn.addEventListener('click', () => handleTutorAnswer(problem, problem.labels[idx], btn, grid));
+        grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+}
+
+function renderSymbolTutor(container, problem) {
+    const grid = document.createElement('div');
+    grid.className = 'symbol-options';
+    ['<', '=', '>'].forEach(symbol => {
+        const btn = document.createElement('div');
+        btn.className = 'symbol-btn';
+        btn.textContent = symbol;
+        btn.dataset.choice = symbol;
+        btn.addEventListener('click', () => {
+            document.getElementById('symbolBlank').textContent = symbol;
+            handleTutorAnswer(problem, symbol, btn, grid);
+        });
+        grid.appendChild(btn);
+    });
+    container.appendChild(grid);
+}
+
+// ── Core tutor answer handler ──
+
+async function handleTutorAnswer(problem, response, clickedBtn, grid) {
+    const correct = response === problem.answer;
+    tutorAttempts++;
+
+    // Track tutor answers in Supabase
+    const catLabels2 = { identify: 'Identifying', numberline: 'Number Lines', comparing: 'Comparing', equivalent: 'Equivalent' };
+    GameTracker.recordQuestion({
+        questionText: '[Tutor] ' + (catLabels2[problem.category] || problem.category) + ': ' + (problem.question || '').replace(/<[^>]*>/g, '').substring(0, 200),
+        studentAnswer: String(response),
+        correctAnswer: String(problem.answer),
+        isCorrect: correct
+    });
+
+    if (correct) {
+        // Green highlight, brief pause, then next
+        clickedBtn.style.borderColor = 'var(--green)';
+        clickedBtn.style.background = 'var(--correct-soft)';
+        document.getElementById('hintArea').innerHTML = '';
+
+        // Disable all buttons
+        grid.querySelectorAll('.mc-option, .symbol-btn').forEach(b => {
+            b.style.pointerEvents = 'none';
+        });
+
+        setTimeout(() => {
+            tutorIndex++;
+            const card = document.getElementById('questionCard');
+            card.classList.add('slide-out');
+            setTimeout(() => {
+                card.classList.remove('slide-out');
+                loadTutorProblem();
+            }, 300);
+        }, 800);
+        return;
+    }
+
+    // Wrong — show hint, keep going
+    clickedBtn.style.borderColor = 'var(--amber)';
+    clickedBtn.style.background = 'var(--wrong-soft)';
+    clickedBtn.style.pointerEvents = 'none'; // disable this choice
+    clickedBtn.style.opacity = '0.5';
+
+    const hintArea = document.getElementById('hintArea');
+
+    if (tutorAttempts <= 2) {
+        // Hardcoded hint
+        const hintText = getHint(problem, tutorAttempts, response);
+        hintArea.innerHTML = `<div class="hint-box">
+            <div class="hint-label">Hint ${tutorAttempts}</div>
+            <div class="hint-text">${hintText}</div>
+        </div>`;
+    } else {
+        // Claude API hint
+        hintArea.innerHTML = `<div class="hint-box ai-hint">
+            <div class="hint-label">Let me help</div>
+            <div class="hint-loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>Thinking...</span></div>
+        </div>`;
+
+        const aiHint = await getAIHint(problem, response);
+        if (aiHint) {
+            hintArea.innerHTML = `<div class="hint-box ai-hint">
+                <div class="hint-label">Let me help</div>
+                <div class="hint-text">${escapeHtml(aiHint)}</div>
+            </div>`;
+        } else {
+            // Fallback if API fails
+            const fallback = `The answer is one of the remaining choices. Take your time and try again.`;
+            hintArea.innerHTML = `<div class="hint-box">
+                <div class="hint-label">Hint</div>
+                <div class="hint-text">${fallback}</div>
+            </div>`;
+        }
+    }
+}
+
+function endTutorSession() {
+    // Save tutor session to Supabase
+    GameTracker.saveResult({
+        gameFile: 'fractions_review.html',
+        gameTitle: 'Fractions Review — Tutor',
+        score: tutorQueue.length, // all eventually answered correctly
+        questionsAnswered: tutorQueue.length,
+        bestStreak: tutorQueue.length,
+        timeSeconds: 0
+    });
+
+    tutorMode = false;
+    clearMissedStorage();
+    document.getElementById('tutorBadge').classList.add('hidden');
+    document.getElementById('tutorProgress').classList.add('hidden');
+    document.getElementById('progressFill').style.width = '100%';
+
+    // Show a simple completion message
+    const card = document.getElementById('questionCard');
+    const label = document.getElementById('questionLabel');
+    const text = document.getElementById('questionText');
+    const visual = document.getElementById('visualContainer');
+    const answerArea = document.getElementById('answerArea');
+    const hintArea = document.getElementById('hintArea');
+
+    label.textContent = '';
+    visual.innerHTML = '';
+    answerArea.innerHTML = '';
+    hintArea.innerHTML = '';
+    text.innerHTML = `<div style="text-align:center;padding:20px 0;">
+        <div style="font-size:32px;margin-bottom:12px;">🎉</div>
+        <div style="margin-bottom:8px;">You reviewed all your missed questions!</div>
+        <div style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;">Great job working through those.</div>
+        <button class="restart-btn" onclick="restartSession()" style="margin:0 auto;">Back to Start</button>
+    </div>`;
+}
+
+// ── Init: check localStorage for saved missed questions ──
+
+function checkSavedMissed() {
+    const saved = loadMissedFromStorage();
+    const section = document.getElementById('startTutorSection');
+    if (saved && saved.length > 0) {
+        section.classList.remove('hidden');
+        document.getElementById('startTutorInfo').textContent =
+            `You have ${saved.length} missed question${saved.length > 1 ? 's' : ''} to review from last time.`;
+    } else {
+        section.classList.add('hidden');
+    }
 }
 
 // ═══════════════════════════════════════════
 // ███ GAMETRACKER LOGIN & AUTO-SAVE ███
 // ═══════════════════════════════════════════
+// SUPABASE_URL and SUPABASE_KEY are provided by tracker.js (loaded in <head>)
 (function() {
-    const gameFile = 'fractions_review.html';
     GameTracker.requireLogin().then(function(student) {
-        console.log('GameTracker: Logged in as', student.first_name);
-        GameTracker.startAutoSave({ gameFile: gameFile, gameTitle: 'Fractions Review', interval: 3 });
+        GameTracker.startAutoSave('fractions_review.html', 'Fractions Review');
+        checkSavedMissed();
+    }).catch(function() {
+        checkSavedMissed();
     });
 })();
 </script>
