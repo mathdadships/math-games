@@ -1152,6 +1152,40 @@
         return (result.game_title || '').toLowerCase().includes('tutor');
     }
 
+    // Collapse consecutive rows with the same question_text into one row
+    // with an inferred attempt_number. This handles games that record each
+    // click as a separate row (e.g. face-off where student retries until correct).
+    function collapseAttempts(questions) {
+        if (questions.length === 0) return questions;
+        const collapsed = [];
+        let i = 0;
+        while (i < questions.length) {
+            const qt = questions[i].question_text;
+            // Find all consecutive rows with the same question_text
+            let j = i + 1;
+            while (j < questions.length && questions[j].question_text === qt) j++;
+            const group = questions.slice(i, j);
+            // If attempt_number is already set (> 1) from the game, keep the last row as-is
+            if (group.some(q => (q.attempt_number || 1) > 1)) {
+                // Already tracked by the game — just keep the final attempt (correct or last wrong)
+                const final = group[group.length - 1];
+                collapsed.push(final);
+            } else if (group.length === 1) {
+                collapsed.push(group[0]);
+            } else {
+                // Multiple rows, no explicit attempt tracking — infer attempts
+                // Keep the last row (the final answer) and set attempt_number to group size
+                const final = { ...group[group.length - 1] };
+                final.attempt_number = group.length;
+                // Collect all wrong answers from the group for display
+                final._wrongAttempts = group.filter(q => !q.is_correct).map(q => q.student_answer);
+                collapsed.push(final);
+            }
+            i = j;
+        }
+        return collapsed;
+    }
+
     async function getSessionQuestions(result) {
         // Ensure question cache is populated for this student
         if (!studentQuestionCache[result.student_id]) {
@@ -1302,15 +1336,12 @@
             }
         }
 
-        // Check for multi-attempt questions (tutor mode retries)
+        // Check for multi-attempt questions (retries before getting correct)
         const multiAttemptQs = questions.filter(q => (q.attempt_number || 1) > 1);
         if (multiAttemptQs.length > 0) {
-            const tutorQs = questions.filter(q => (q.question_text || '').startsWith('[Tutor]'));
-            if (tutorQs.length > 0) {
-                parts.push('. Needed multiple tries on ' + multiAttemptQs.length + ' of ' + tutorQs.length + ' tutor question' + (tutorQs.length > 1 ? 's' : ''));
-            } else {
-                parts.push('. Needed multiple tries on ' + multiAttemptQs.length + ' question' + (multiAttemptQs.length > 1 ? 's' : ''));
-            }
+            const maxAtt = Math.max(...multiAttemptQs.map(q => q.attempt_number || 2));
+            parts.push('. Needed multiple tries on ' + multiAttemptQs.length + ' of ' + questions.length + ' question' + (questions.length > 1 ? 's' : ''));
+            if (maxAtt >= 4) parts.push(' (up to ' + maxAtt + ' attempts)');
         }
 
         if (strongest !== weakest) {
@@ -1352,7 +1383,8 @@
         document.body.style.overflow = 'hidden';
 
         try {
-            panelQuestions = await getSessionQuestions(result);
+            const rawQuestions = await getSessionQuestions(result);
+            panelQuestions = collapseAttempts(rawQuestions);
         } catch (err) {
             body.innerHTML = '<div style="color:#c62828;padding:24px">Failed to load question data.</div>';
             return;
