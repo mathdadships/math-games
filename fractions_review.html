@@ -2487,14 +2487,16 @@ async function handleTutorAnswer(problem, response, clickedBtn, grid) {
 }
 
 function endTutorSession() {
-    // Save tutor session to Supabase
+    // Save tutor session with a unique session_id (separate from practice auto-save)
+    const tutorSessionId = 'tutor_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     GameTracker.saveResult({
         gameFile: 'fractions_review.html',
         gameTitle: 'Fractions Review — Tutor',
         score: tutorQueue.length, // all eventually answered correctly
         questionsAnswered: tutorQueue.length,
         bestStreak: tutorQueue.length,
-        timeSeconds: 0
+        timeSeconds: 0,
+        sessionId: tutorSessionId
     });
 
     tutorMode = false;

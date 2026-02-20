@@ -90,14 +90,14 @@ const GameTracker = {
     },
 
     // Send game result to Supabase
-    async saveResult({ gameFile, gameTitle, score, questionsAnswered, bestStreak, timeSeconds }) {
+    async saveResult({ gameFile, gameTitle, score, questionsAnswered, bestStreak, timeSeconds, sessionId: explicitSessionId }) {
         const student = this.getStudent();
         if (!student) {
             console.warn('GameTracker: No student logged in, skipping save.');
             return null;
         }
 
-        const sessionId = this._autoSaveState?.sessionId || null;
+        const sessionId = explicitSessionId || this._autoSaveState?.sessionId || null;
         const payload = {
             student_id: student.id,
             game_file: gameFile,
