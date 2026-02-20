@@ -391,6 +391,14 @@
         .q-attempt-2 { background: #FFF3E0; color: #E65100; }
         .q-attempt-3 { background: #FCEAE8; color: #C0392B; }
 
+        .retry-badge {
+            display: inline-block;
+            padding: 1px 6px; border-radius: 5px;
+            font-size: 0.68rem; font-weight: 700;
+            background: #FFF3E0; color: #E65100;
+            margin-left: 4px; vertical-align: middle;
+        }
+
         .q-tutor-badge {
             display: inline-block;
             padding: 2px 7px; border-radius: 6px;
@@ -492,6 +500,7 @@
                         <th onclick="sortTable('questions_answered')">Questions <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('right_count')">Right <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('wrong_count')">Wrong <span class="sort-arrow"></span></th>
+                        <th onclick="sortTable('retry_count')">Retries <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('accuracy')">Accuracy <span class="sort-arrow"></span></th>
                         <th onclick="sortTable('played_at')">Date <span class="sort-arrow"></span></th>
                     </tr>
@@ -585,7 +594,7 @@
 
     async function loadData() {
         document.getElementById('results-body').innerHTML =
-            '<tr><td colspan="8" class="loading"><span class="loading-spinner"></span> Loading...</td></tr>';
+            '<tr><td colspan="9" class="loading"><span class="loading-spinner"></span> Loading...</td></tr>';
 
         // Load students, game_results, and question_responses summary
         const [students, results, questions] = await Promise.all([
@@ -643,6 +652,16 @@
             if (q.is_correct) g.right++; else g.wrong++;
         });
 
+        // Build retry stats per student+game (total responses vs unique questions)
+        const retryStats = {};
+        allQuestions.forEach(q => {
+            const isTutorQ = (q.question_text || '').startsWith('[Tutor]');
+            const gk = q.student_id + '|' + q.game_file + (isTutorQ ? ':tutor' : '');
+            if (!retryStats[gk]) retryStats[gk] = { total: 0, unique: new Set(), wrongExtra: 0 };
+            retryStats[gk].total++;
+            retryStats[gk].unique.add(q.question_text);
+        });
+
         // Enrich results with per-session right/wrong/accuracy
         // Use score as right_count when it looks like a correct-answer count (≤ questions_answered)
         allResults.forEach(r => {
@@ -658,6 +677,11 @@
                 r.wrong_count = null;
                 r.accuracy = null;
             }
+            // Attach retry info (extra wrong clicks beyond unique questions)
+            const tutor = isTutorSession(r);
+            const rk = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
+            const rs = retryStats[rk];
+            r.retry_count = rs ? Math.max(0, rs.total - rs.unique.size) : 0;
         });
 
         populateFilters();
@@ -759,7 +783,7 @@
 
         const tbody = document.getElementById('results-body');
         if (sorted.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><div class="empty-icon">📭</div>No results yet</div></td></tr>';
             return;
         }
 
@@ -768,6 +792,10 @@
             const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
             const accClass = r.accuracy >= 80 ? 'acc-high' : r.accuracy >= 50 ? 'acc-mid' : 'acc-low';
             const accText = r.accuracy !== null ? r.accuracy + '%' : '-';
+            const retries = r.retry_count || 0;
+            const retriesHtml = retries > 0
+                ? '<span class="retry-badge">' + retries + '</span>'
+                : '<span style="color:#ccc">0</span>';
             return `<tr data-result-id="${r.id}" onclick="openSessionPanel('${r.id}')">
                 <td><strong>${escHtml(r.first_name)}</strong></td>
                 <td>${escHtml(r.class_code)}</td>
@@ -775,6 +803,7 @@
                 <td>${r.questions_answered || '-'}</td>
                 <td>${r.right_count !== null ? '<span style="color:#2e7d32;font-weight:600">' + r.right_count + '</span>' : '-'}</td>
                 <td>${r.wrong_count !== null ? '<span style="color:#c62828;font-weight:600">' + r.wrong_count + '</span>' : '-'}</td>
+                <td>${retriesHtml}</td>
                 <td>${r.accuracy !== null ? '<span class="acc-badge ' + accClass + '">' + accText + '</span>' : '-'}</td>
                 <td>${date}</td>
             </tr>`;
@@ -1117,11 +1146,11 @@
         const filtered = getFilteredResults();
         if (filtered.length === 0) { alert('No data to export.'); return; }
 
-        const headers = ['Student', 'Class', 'Game', 'Questions', 'Right', 'Wrong', 'Accuracy %', 'Date'];
+        const headers = ['Student', 'Class', 'Game', 'Questions', 'Right', 'Wrong', 'Retries', 'Accuracy %', 'Date'];
         const rows = filtered.map(r => {
             const title = r.game_title || r.game_file.replace('.html', '').replace(/_/g, ' ');
             const date = r.played_at ? new Date(r.played_at).toLocaleString() : '';
-            return [r.first_name, r.class_code, title, r.questions_answered || '', r.right_count || '', r.wrong_count || '', r.accuracy !== null ? r.accuracy : '', date];
+            return [r.first_name, r.class_code, title, r.questions_answered || '', r.right_count || '', r.wrong_count || '', r.retry_count || 0, r.accuracy !== null ? r.accuracy : '', date];
         });
 
         const csv = [headers, ...rows].map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
