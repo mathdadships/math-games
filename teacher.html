@@ -643,16 +643,16 @@
             if (q.is_correct) g.right++; else g.wrong++;
         });
 
-        // Enrich results with accuracy from question data
+        // Enrich results with per-session right/wrong/accuracy
+        // Use score as right_count when it looks like a correct-answer count (≤ questions_answered)
         allResults.forEach(r => {
-            const qs = questionsByStudent[r.student_id];
-            // Match tutor sessions to the :tutor virtual key
-            const gameKey = isTutorSession(r) ? r.game_file + ':tutor' : r.game_file;
-            if (qs && qs.byGame[gameKey]) {
-                const g = qs.byGame[gameKey];
-                r.right_count = g.right;
-                r.wrong_count = g.wrong;
-                r.accuracy = g.total > 0 ? Math.round((g.right / g.total) * 100) : null;
+            const qa = r.questions_answered || 0;
+            const sc = r.score || 0;
+            if (qa > 0 && sc <= qa) {
+                // score represents correct answers for this session
+                r.right_count = sc;
+                r.wrong_count = qa - sc;
+                r.accuracy = Math.round((sc / qa) * 100);
             } else {
                 r.right_count = null;
                 r.wrong_count = null;
