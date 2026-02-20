@@ -225,6 +225,176 @@
             .data-table th, .data-table td { padding: 8px 10px; }
             .student-card { padding: 14px 16px; }
         }
+
+        /* ── Session Drill-Down Panel ── */
+        .panel-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.25);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+        }
+        .panel-overlay.open { opacity: 1; pointer-events: all; }
+
+        .panel {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: 620px; max-width: 92vw;
+            background: #F4F1EC;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 101;
+            overflow-y: auto;
+            box-shadow: -8px 0 40px rgba(0,0,0,0.08);
+        }
+        .panel.open { transform: translateX(0); }
+
+        .panel-header {
+            position: sticky; top: 0;
+            background: #fff;
+            border-bottom: 1px solid #E8E4DE;
+            padding: 20px 24px;
+            z-index: 2;
+        }
+        .panel-close {
+            position: absolute; top: 16px; right: 16px;
+            width: 32px; height: 32px;
+            border: none; background: none; cursor: pointer;
+            font-size: 1.2rem; color: #A3A3A3;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.15s;
+        }
+        .panel-close:hover { background: #F4F1EC; }
+        .panel-title {
+            font-size: 1.2rem; font-weight: 700;
+            color: #1A1A1A; margin-bottom: 2px;
+        }
+        .panel-meta {
+            font-size: 0.82rem; color: #A3A3A3;
+        }
+
+        .insight-box {
+            margin: 20px 24px 0;
+            padding: 16px 18px;
+            background: #fff;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            font-size: 0.88rem;
+            line-height: 1.55;
+            color: #1A1A1A;
+        }
+        .insight-box strong { font-weight: 700; }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 24px 0;
+        }
+        .cat-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 16px 18px;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.15s;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .cat-card:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+        .cat-card.active { border-color: #667eea; }
+        .cat-card-label {
+            font-size: 0.68rem; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #A3A3A3;
+            font-weight: 700; margin-bottom: 6px;
+        }
+        .cat-card-score { font-size: 1.8rem; font-weight: 800; }
+        .cat-card-score.score-good { color: #3A7D44; }
+        .cat-card-score.score-mid { color: #C4841D; }
+        .cat-card-score.score-bad { color: #C0392B; }
+
+        .cat-card-bar {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            height: 4px; background: #E8E4DE;
+        }
+        .cat-card-bar-fill {
+            height: 100%; border-radius: 0 2px 2px 0;
+            transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cat-card-bar-fill.fill-good { background: #3A7D44; }
+        .cat-card-bar-fill.fill-mid { background: #C4841D; }
+        .cat-card-bar-fill.fill-bad { background: #C0392B; }
+
+        .cat-card .check-mark {
+            position: absolute; top: 12px; right: 14px;
+            font-size: 1rem; color: #3A7D44;
+        }
+
+        .mistakes-section { margin: 24px 24px; }
+        .mistakes-header {
+            display: flex; align-items: center;
+            justify-content: space-between; margin-bottom: 12px;
+        }
+        .mistakes-title { font-size: 0.82rem; font-weight: 700; color: #1A1A1A; }
+        .mistakes-toggle {
+            font-size: 0.78rem; color: #667eea;
+            cursor: pointer; background: none; border: none;
+            font-family: inherit; font-weight: 600;
+        }
+        .mistakes-toggle:hover { text-decoration: underline; }
+
+        .mistake-group-label {
+            font-size: 0.7rem; text-transform: uppercase;
+            letter-spacing: 0.8px; color: #A3A3A3;
+            font-weight: 700; padding: 10px 0 6px;
+            border-bottom: 1px solid #E8E4DE;
+            margin-top: 8px;
+        }
+        .mistake-group-label:first-child { margin-top: 0; }
+
+        .q-row {
+            display: grid;
+            grid-template-columns: 24px 1fr auto auto;
+            gap: 10px; align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #F3F1ED;
+            font-size: 0.84rem;
+        }
+        .q-row:last-child { border-bottom: none; }
+        .q-icon-wrong { color: #C0392B; font-weight: 700; font-size: 0.9rem; }
+        .q-icon-right { color: #3A7D44; font-weight: 700; font-size: 0.9rem; }
+        .q-text { color: #1A1A1A; line-height: 1.4; }
+        .q-answer-wrong {
+            background: #FCEAE8; color: #C0392B;
+            padding: 3px 10px; border-radius: 6px;
+            font-weight: 700; font-size: 0.8rem;
+            text-decoration: line-through;
+            text-decoration-color: rgba(192,57,43,0.4);
+        }
+        .q-answer-right {
+            background: #E8F2EA; color: #3A7D44;
+            padding: 3px 10px; border-radius: 6px;
+            font-weight: 600; font-size: 0.8rem;
+        }
+        .q-answer-correct-inline {
+            color: #3A7D44; font-weight: 600; font-size: 0.8rem;
+        }
+        .q-row.correct-row { opacity: 0.55; }
+        .q-row.correct-row:hover { opacity: 0.8; }
+
+        .panel-empty {
+            text-align: center; padding: 60px 32px;
+            color: #A3A3A3; font-size: 0.95rem;
+        }
+        .panel-empty-icon { font-size: 2.4rem; margin-bottom: 12px; opacity: 0.5; }
+
+        .data-table tbody tr { cursor: pointer; }
+        .data-table tbody tr.selected td { background: #EEF2F9; }
+
+        @media (max-width: 768px) {
+            .panel { width: 100vw; max-width: 100vw; }
+            .category-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -323,6 +493,17 @@
                 <tbody id="games-body"></tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Session drill-down panel -->
+    <div class="panel-overlay" id="panel-overlay"></div>
+    <div class="panel" id="session-panel">
+        <div class="panel-header">
+            <button class="panel-close" id="panel-close-btn">&times;</button>
+            <div class="panel-title" id="panel-title"></div>
+            <div class="panel-meta" id="panel-meta"></div>
+        </div>
+        <div id="panel-body"></div>
     </div>
 
     <script>
@@ -554,7 +735,7 @@
             const date = r.played_at ? new Date(r.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '-';
             const accClass = r.accuracy >= 80 ? 'acc-high' : r.accuracy >= 50 ? 'acc-mid' : 'acc-low';
             const accText = r.accuracy !== null ? r.accuracy + '%' : '-';
-            return `<tr>
+            return `<tr data-result-id="${r.id}" onclick="openSessionPanel('${r.id}')">
                 <td><strong>${escHtml(r.first_name)}</strong></td>
                 <td>${escHtml(r.class_code)}</td>
                 <td>${escHtml(title)}</td>
@@ -908,6 +1089,315 @@
         d.textContent = str;
         return d.innerHTML;
     }
+
+    // ============ SESSION DRILL-DOWN PANEL ============
+    let panelShowAll = false;
+    let panelActiveCategory = 'all';
+    let panelCurrentResult = null;
+    let panelQuestions = [];
+    let panelCategories = [];
+
+    async function getSessionQuestions(result) {
+        // Ensure question cache is populated for this student
+        if (!studentQuestionCache[result.student_id]) {
+            const questions = await supaFetch('question_responses',
+                `student_id=eq.${result.student_id}&order=answered_at.desc&limit=500`);
+            studentQuestionCache[result.student_id] = questions;
+        }
+        const cached = studentQuestionCache[result.student_id] || [];
+        // Filter to same game
+        const sameGame = cached.filter(q => q.game_file === result.game_file);
+        if (!result.played_at || sameGame.length === 0) {
+            return sameGame.slice(0, result.questions_answered || 20);
+        }
+        // Sort newest first
+        sameGame.sort((a, b) => (b.answered_at || '').localeCompare(a.answered_at || ''));
+        const playedAt = new Date(result.played_at);
+        const cutoff = new Date(playedAt.getTime() + 5 * 60 * 1000);
+        const earliest = new Date(playedAt.getTime() - 3 * 60 * 60 * 1000);
+        const inWindow = sameGame.filter(q => {
+            if (!q.answered_at) return false;
+            const t = new Date(q.answered_at);
+            return t <= cutoff && t >= earliest;
+        });
+        const count = result.questions_answered || inWindow.length;
+        const matched = inWindow.slice(0, count);
+        matched.reverse(); // chronological order for display
+        return matched;
+    }
+
+    function parseCategory(questionText) {
+        const text = (questionText || '').trim();
+        const isTutor = text.startsWith('[Tutor] ');
+        const cleaned = isTutor ? text.substring(8) : text;
+        // Check for explicit prefix "Category: ..."
+        const colonIdx = cleaned.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 20) {
+            const prefix = cleaned.substring(0, colonIdx).trim();
+            const known = ['Identifying', 'Number Lines', 'Comparing', 'Equivalent'];
+            if (known.includes(prefix)) return prefix;
+        }
+        // Multiplication: "3 x 7 = ?" or "3 × 7"
+        const multMatch = text.match(/(\d+)\s*[x×]\s*(\d+)/);
+        if (multMatch) {
+            const a = parseInt(multMatch[1]), b = parseInt(multMatch[2]);
+            return (Math.min(a, b) <= 5) ? '2s – 5s' : '6s – 9s';
+        }
+        // Division
+        if (/^\d+\s*[÷\/]\s*\d+/.test(text)) return 'Division';
+        // Heuristic matching
+        if (/\bvs\b|greater|less|comparison|NOT correct/i.test(text)) return 'Comparing';
+        if (/what fraction.*shaded|fraction is shown/i.test(text)) return 'Identifying';
+        if (/point P|number line|mile from/i.test(text)) return 'Number Lines';
+        if (/equal to|equivalent/i.test(text)) return 'Equivalent';
+        return 'General';
+    }
+
+    function stripCategoryPrefix(questionText) {
+        const text = (questionText || '').trim();
+        let cleaned = text.startsWith('[Tutor] ') ? text.substring(8) : text;
+        const colonIdx = cleaned.indexOf(':');
+        if (colonIdx > 0 && colonIdx < 20) {
+            const prefix = cleaned.substring(0, colonIdx).trim();
+            const known = ['Identifying', 'Number Lines', 'Comparing', 'Equivalent'];
+            if (known.includes(prefix)) return cleaned.substring(colonIdx + 1).trim();
+        }
+        return text;
+    }
+
+    function buildCategoryStats(questions) {
+        const cats = {};
+        questions.forEach(q => {
+            const name = parseCategory(q.question_text);
+            if (!cats[name]) cats[name] = { name, right: 0, wrong: 0, total: 0, questions: [] };
+            cats[name].total++;
+            if (q.is_correct) cats[name].right++;
+            else cats[name].wrong++;
+            cats[name].questions.push(q);
+        });
+        return Object.values(cats).sort((a, b) => {
+            const accA = a.total > 0 ? a.right / a.total : 0;
+            const accB = b.total > 0 ? b.right / b.total : 0;
+            return accA - accB;
+        });
+    }
+
+    function generateInsight(categories, questions) {
+        if (questions.length === 0) return 'No question data available for this session.';
+        if (questions.length < 3) return 'Very short session \u2014 only ' + questions.length + ' question' + (questions.length > 1 ? 's' : '') + ' attempted. Not enough data to identify patterns.';
+
+        const wrongQs = questions.filter(q => !q.is_correct);
+        if (wrongQs.length === 0) return 'Perfect session \u2014 got all ' + questions.length + ' questions correct. \ud83c\udf89';
+
+        const meaningful = categories.filter(c => c.total >= 2);
+        if (meaningful.length === 0) {
+            const overall = Math.round((questions.filter(q => q.is_correct).length / questions.length) * 100);
+            return wrongQs.length + ' mistake' + (wrongQs.length > 1 ? 's' : '') + ' out of ' + questions.length + ' questions (' + overall + '% accuracy).';
+        }
+
+        const weakest = meaningful[0];
+        const strongest = meaningful[meaningful.length - 1];
+        const weakAcc = Math.round((weakest.right / weakest.total) * 100);
+        const strongAcc = Math.round((strongest.right / strongest.total) * 100);
+        const weakWrong = weakest.questions.filter(q => !q.is_correct);
+
+        let parts = ['Struggled most with <strong>' + escHtml(weakest.name) + '</strong> (' + weakAcc + '%)'];
+        let patternFound = false;
+
+        // Check for flipped fractions
+        let flipped = 0;
+        weakWrong.forEach(q => {
+            const sa = (q.student_answer || '').trim();
+            const ca = (q.correct_answer || '').trim();
+            const sm = sa.match(/^(\d+)\/(\d+)$/);
+            const cm = ca.match(/^(\d+)\/(\d+)$/);
+            if (sm && cm && sm[1] === cm[2] && sm[2] === cm[1]) flipped++;
+        });
+        if (flipped >= 2) {
+            parts.push(' \u2014 confused numerator and denominator on ' + flipped + ' of ' + weakWrong.length + ' mistakes');
+            patternFound = true;
+        }
+
+        // Check for addition instead of multiplication
+        if (!patternFound) {
+            let added = 0;
+            weakWrong.forEach(q => {
+                const m = (q.question_text || '').match(/(\d+)\s*[x×]\s*(\d+)/);
+                if (m && parseInt(q.student_answer) === parseInt(m[1]) + parseInt(m[2])) added++;
+            });
+            if (added >= 2) {
+                parts.push(' \u2014 added instead of multiplied on ' + added + ' problems');
+                patternFound = true;
+            }
+        }
+
+        // Check for guessing
+        if (!patternFound && weakAcc < 30 && weakWrong.length >= 3) {
+            const unique = new Set(weakWrong.map(q => q.student_answer));
+            if (unique.size >= weakWrong.length * 0.8) {
+                parts.push(' \u2014 answers suggest guessing rather than applying a strategy');
+            }
+        }
+
+        if (strongest !== weakest) {
+            parts.push('. Strongest on <strong>' + escHtml(strongest.name) + '</strong> (' + strongAcc + '%)');
+        }
+
+        return parts.join('') + '.';
+    }
+
+    async function openSessionPanel(resultId) {
+        const result = allResults.find(r => r.id === resultId);
+        if (!result) return;
+
+        panelCurrentResult = result;
+        panelShowAll = false;
+        panelActiveCategory = 'all';
+
+        // Highlight row
+        document.querySelectorAll('#results-body tr').forEach(r => r.classList.remove('selected'));
+        const clickedRow = document.querySelector('#results-body tr[data-result-id="' + resultId + '"]');
+        if (clickedRow) clickedRow.classList.add('selected');
+
+        // Header
+        const title = result.game_title || result.game_file.replace('.html', '').replace(/_/g, ' ');
+        document.getElementById('panel-title').textContent = (result.first_name || '?') + ' \u2014 ' + title;
+        const date = result.played_at ? new Date(result.played_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+        document.getElementById('panel-meta').textContent = date + '  \u00b7  ' + (result.questions_answered || 0) + ' questions';
+
+        // Show panel with loading
+        const body = document.getElementById('panel-body');
+        body.innerHTML = '<div class="loading" style="padding:40px"><span class="loading-spinner"></span> Loading question details\u2026</div>';
+        document.getElementById('panel-overlay').classList.add('open');
+        document.getElementById('session-panel').classList.add('open');
+        document.body.style.overflow = 'hidden';
+
+        try {
+            panelQuestions = await getSessionQuestions(result);
+        } catch (err) {
+            body.innerHTML = '<div style="color:#c62828;padding:24px">Failed to load question data.</div>';
+            return;
+        }
+
+        if (panelQuestions.length === 0) {
+            body.innerHTML = '<div class="panel-empty"><div class="panel-empty-icon">\ud83d\udced</div>No detailed question data for this session.<br><span style="font-size:0.82rem;color:#A3A3A3">Question tracking may not have been active when this game was played.</span></div>';
+            return;
+        }
+
+        panelCategories = buildCategoryStats(panelQuestions);
+        renderPanelContent();
+    }
+
+    function renderPanelContent() {
+        const body = document.getElementById('panel-body');
+        let html = '';
+
+        // Insight
+        html += '<div class="insight-box">' + generateInsight(panelCategories, panelQuestions) + '</div>';
+
+        // Category grid
+        html += '<div class="category-grid">';
+        panelCategories.forEach(cat => {
+            const pct = cat.total > 0 ? Math.round((cat.right / cat.total) * 100) : 0;
+            const sc = pct >= 67 ? 'score-good' : pct >= 40 ? 'score-mid' : 'score-bad';
+            const fc = pct >= 67 ? 'fill-good' : pct >= 40 ? 'fill-mid' : 'fill-bad';
+            const check = pct >= 67 ? '<span class="check-mark">\u2713</span>' : '';
+            const active = panelActiveCategory === cat.name ? ' active' : '';
+            const safeName = escHtml(cat.name).replace(/'/g, "\\'");
+
+            html += '<div class="cat-card' + active + '" onclick="filterPanelCategory(\'' + safeName + '\')">'
+                + check
+                + '<div class="cat-card-label">' + escHtml(cat.name) + '</div>'
+                + '<div class="cat-card-score ' + sc + '">' + cat.right + '/' + cat.total + '</div>'
+                + '<div class="cat-card-bar"><div class="cat-card-bar-fill ' + fc + '" style="width:0%" data-width="' + pct + '%"></div></div>'
+                + '</div>';
+        });
+        html += '</div>';
+
+        // Questions
+        html += renderPanelQuestions();
+        body.innerHTML = html;
+
+        // Animate bars
+        requestAnimationFrame(() => {
+            document.querySelectorAll('.cat-card-bar-fill').forEach(bar => {
+                bar.style.width = bar.dataset.width;
+            });
+        });
+    }
+
+    function renderPanelQuestions() {
+        const label = panelShowAll ? 'Show mistakes only' : 'Show all questions';
+        let html = '<div class="mistakes-section">'
+            + '<div class="mistakes-header">'
+            + '<div class="mistakes-title">' + (panelShowAll ? 'All Questions' : 'Mistakes') + '</div>'
+            + '<button class="mistakes-toggle" onclick="togglePanelShowAll()">' + label + '</button>'
+            + '</div>';
+
+        const catsToShow = panelActiveCategory === 'all'
+            ? panelCategories
+            : panelCategories.filter(c => c.name === panelActiveCategory);
+
+        let hasContent = false;
+
+        catsToShow.forEach(cat => {
+            const filtered = panelShowAll ? cat.questions : cat.questions.filter(q => !q.is_correct);
+            if (filtered.length === 0) return;
+            hasContent = true;
+
+            html += '<div class="mistake-group-label">' + escHtml(cat.name) + '</div>';
+
+            filtered.forEach(q => {
+                const displayText = stripCategoryPrefix(q.question_text);
+                if (q.is_correct) {
+                    html += '<div class="q-row correct-row">'
+                        + '<span class="q-icon-right">\u2713</span>'
+                        + '<span class="q-text">' + escHtml(displayText) + '</span>'
+                        + '<span class="q-answer-right">' + escHtml(q.student_answer || '?') + '</span>'
+                        + '<span></span></div>';
+                } else {
+                    html += '<div class="q-row">'
+                        + '<span class="q-icon-wrong">\u2717</span>'
+                        + '<span class="q-text">' + escHtml(displayText) + '</span>'
+                        + '<span class="q-answer-wrong">' + escHtml(q.student_answer || '?') + '</span>'
+                        + '<span class="q-answer-correct-inline">' + escHtml(q.correct_answer || '?') + '</span></div>';
+                }
+            });
+        });
+
+        if (!hasContent) {
+            html += '<div style="text-align:center;padding:24px;color:#3A7D44;font-weight:600">\ud83c\udf89 No mistakes' + (panelActiveCategory !== 'all' ? ' in this category' : '') + '!</div>';
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    function filterPanelCategory(catName) {
+        panelActiveCategory = panelActiveCategory === catName ? 'all' : catName;
+        renderPanelContent();
+    }
+
+    function togglePanelShowAll() {
+        panelShowAll = !panelShowAll;
+        renderPanelContent();
+    }
+
+    function closeSessionPanel() {
+        document.getElementById('panel-overlay').classList.remove('open');
+        document.getElementById('session-panel').classList.remove('open');
+        document.querySelectorAll('#results-body tr').forEach(r => r.classList.remove('selected'));
+        document.body.style.overflow = '';
+        panelCurrentResult = null;
+    }
+
+    // Panel event listeners
+    document.getElementById('panel-overlay').addEventListener('click', closeSessionPanel);
+    document.getElementById('panel-close-btn').addEventListener('click', closeSessionPanel);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && panelCurrentResult) closeSessionPanel();
+    });
+
     </script>
 </body>
 </html>
