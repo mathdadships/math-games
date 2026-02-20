@@ -204,7 +204,7 @@ const GameTracker = {
     _questionBuffer: [],
     _flushTimer: null,
 
-    recordQuestion({ questionText, studentAnswer, correctAnswer, isCorrect }) {
+    recordQuestion({ questionText, studentAnswer, correctAnswer, isCorrect, attemptNumber }) {
         const student = this.getStudent();
         if (!student) return;
 
@@ -217,7 +217,8 @@ const GameTracker = {
             question_text: String(questionText || '').substring(0, 500) || '?',
             student_answer: String(studentAnswer ?? '').substring(0, 200) || '?',
             correct_answer: String(correctAnswer ?? '').substring(0, 200) || '?',
-            is_correct: !!isCorrect
+            is_correct: !!isCorrect,
+            attempt_number: (attemptNumber && Number.isInteger(attemptNumber) && attemptNumber >= 1) ? attemptNumber : 1
         });
 
         // Flush when buffer reaches 5, or set a 5-second timer

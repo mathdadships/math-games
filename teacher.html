@@ -382,6 +382,15 @@
         .q-row.correct-row { opacity: 0.55; }
         .q-row.correct-row:hover { opacity: 0.8; }
 
+        .q-attempt {
+            display: inline-block;
+            padding: 2px 8px; border-radius: 6px;
+            font-size: 0.72rem; font-weight: 700;
+            margin-left: 6px; vertical-align: middle;
+        }
+        .q-attempt-2 { background: #FFF3E0; color: #E65100; }
+        .q-attempt-3 { background: #FCEAE8; color: #C0392B; }
+
         .panel-empty {
             text-align: center; padding: 60px 32px;
             color: #A3A3A3; font-size: 0.95rem;
@@ -1239,6 +1248,17 @@
             }
         }
 
+        // Check for multi-attempt questions (tutor mode retries)
+        const multiAttemptQs = questions.filter(q => (q.attempt_number || 1) > 1);
+        if (multiAttemptQs.length > 0) {
+            const tutorQs = questions.filter(q => (q.question_text || '').startsWith('[Tutor]'));
+            if (tutorQs.length > 0) {
+                parts.push('. Needed multiple tries on ' + multiAttemptQs.length + ' of ' + tutorQs.length + ' tutor question' + (tutorQs.length > 1 ? 's' : ''));
+            } else {
+                parts.push('. Needed multiple tries on ' + multiAttemptQs.length + ' question' + (multiAttemptQs.length > 1 ? 's' : ''));
+            }
+        }
+
         if (strongest !== weakest) {
             parts.push('. Strongest on <strong>' + escHtml(strongest.name) + '</strong> (' + strongAcc + '%)');
         }
@@ -1349,17 +1369,22 @@
 
             filtered.forEach(q => {
                 const displayText = stripCategoryPrefix(q.question_text);
+                const att = q.attempt_number || 1;
+                const attemptBadge = att > 1
+                    ? '<span class="q-attempt ' + (att >= 3 ? 'q-attempt-3' : 'q-attempt-2') + '">'
+                      + att + (att === 2 ? ' tries' : ' tries') + '</span>'
+                    : '';
                 if (q.is_correct) {
                     html += '<div class="q-row correct-row">'
                         + '<span class="q-icon-right">\u2713</span>'
                         + '<span class="q-text">' + escHtml(displayText) + '</span>'
-                        + '<span class="q-answer-right">' + escHtml(q.student_answer || '?') + '</span>'
+                        + '<span class="q-answer-right">' + escHtml(q.student_answer || '?') + attemptBadge + '</span>'
                         + '<span></span></div>';
                 } else {
                     html += '<div class="q-row">'
                         + '<span class="q-icon-wrong">\u2717</span>'
                         + '<span class="q-text">' + escHtml(displayText) + '</span>'
-                        + '<span class="q-answer-wrong">' + escHtml(q.student_answer || '?') + '</span>'
+                        + '<span class="q-answer-wrong">' + escHtml(q.student_answer || '?') + attemptBadge + '</span>'
                         + '<span class="q-answer-correct-inline">' + escHtml(q.correct_answer || '?') + '</span></div>';
                 }
             });

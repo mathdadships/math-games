@@ -1,0 +1,2 @@
+ALTER TABLE question_responses
+  ADD COLUMN IF NOT EXISTS attempt_number INTEGER DEFAULT 1 NOT NULL;

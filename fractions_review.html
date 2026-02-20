@@ -2103,7 +2103,8 @@ async function handleTutorAnswer(problem, response, clickedBtn, grid) {
         questionText: '[Tutor] ' + (catLabels2[problem.category] || problem.category) + ': ' + (problem.question || '').replace(/<[^>]*>/g, '').substring(0, 200),
         studentAnswer: String(response),
         correctAnswer: String(problem.answer),
-        isCorrect: correct
+        isCorrect: correct,
+        attemptNumber: tutorAttempts
     });
 
     if (correct) {
