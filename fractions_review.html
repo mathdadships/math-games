@@ -2078,6 +2078,10 @@ function getHint1(problem) {
             if (problem.visual && problem.visual.type === 'multi_point') {
                 return `Count the total spaces between 0 and 1 — that's the denominator. Then count which space the point is at.`;
             }
+            // pick_number_line: comparing 4 mini number lines
+            if (problem.type === 'mc_visual_nl') {
+                return `Look at each number line. First find which ones have the right number of spaces (that's the denominator). Then check if the dot is in the right spot.`;
+            }
             return `Count all the tick marks between 0 and 1. The number of spaces tells you the denominator.`;
         case 'comparing':
             if (problem.type === 'symbol') {
@@ -2087,6 +2091,22 @@ function getHint1(problem) {
                 if (problem.n1 === problem.n2) {
                     return `These fractions have the same numerator (${problem.n1}). When numerators are the same, the bigger denominator means smaller pieces.`;
                 }
+            }
+            // fill_blank: "3/6 > ___" — all same denominator
+            if (problem.type === 'mc') {
+                return `All the choices have the same denominator. Focus on the numerators — which one makes the statement true?`;
+            }
+            // not_correct: "Which comparison is NOT correct?"
+            if (problem.type === 'mc_comparison' && problem.question.includes('NOT')) {
+                return `Check each comparison one by one. For each pair, figure out which fraction is actually bigger, then see if the symbol matches.`;
+            }
+            // which_is_true: "Which number sentence is true?"
+            if (problem.type === 'mc_comparison') {
+                return `These fractions have the same numerator. Remember: same numerator, bigger denominator = smaller pieces = smaller fraction. Check each statement.`;
+            }
+            // two_greater: "Which two fractions BOTH have a value greater than ___?"
+            if (problem.type === 'mc_pair') {
+                return `Think about where each fraction sits compared to the target. Is the fraction more or less than the target? Both fractions in the pair need to be greater.`;
             }
             return `Think about the size of the pieces. A bigger denominator means smaller pieces.`;
         case 'equivalent':
@@ -2098,6 +2118,18 @@ function getHint1(problem) {
             }
             if (problem.wholeNum) {
                 return `To write ${problem.wholeNum} as a fraction, think: how many pieces of that size make ${problem.wholeNum} wholes?`;
+            }
+            // equiv_numberline: read number line first, then find equivalent pair
+            if (problem.type === 'mc_pair' && problem.visual && problem.visual.type === 'numberline') {
+                return `First, figure out what fraction Point R shows: count the spaces from 0 to 1 (that's the denominator), then count how many spaces to Point R (that's the numerator). Then find two fractions equal to that value.`;
+            }
+            // fraction_strips: visual matching, not simplifying
+            if (problem.type === 'mc_strips') {
+                return `Look at how much of each strip is filled. Which strip has the same amount filled as the one on top?`;
+            }
+            // equiv_pairs: "Which choice shows equivalent fractions?"
+            if (problem.type === 'mc_equivpairs') {
+                return `For each pair, check: can you multiply or divide the top and bottom of one fraction by the same number to get the other?`;
             }
             return `Equivalent fractions show the same amount. Try simplifying — divide both the numerator and denominator by the same number.`;
     }
@@ -2117,6 +2149,13 @@ function getHint2(problem, wrongResponse) {
             if (problem.question && problem.question.includes('distance')) {
                 return `Find each pair of points on the number line. Count the spaces between them. The correct pair has exactly ${problem.answer.replace(/ and /, ' to ')} with the right number of spaces between them.`;
             }
+            // pick_number_line: 4 mini number lines
+            if (problem.type === 'mc_visual_nl' && problem.lines) {
+                const correct = problem.lines.find(l => l.label === problem.answer);
+                if (correct) {
+                    return `The correct number line needs ${correct.denom} equal spaces (denominator) with the dot at the ${ordinal(correct.pointPos)} space. Look at option ${problem.answer}.`;
+                }
+            }
             if (problem.numer !== undefined && problem.denom !== undefined) {
                 return `There are ${problem.denom} equal spaces. Point P is at the ${ordinal(problem.numer)} space from 0. The fraction is ${problem.numer} over ${problem.denom}.`;
             }
@@ -2128,7 +2167,25 @@ function getHint2(problem, wrongResponse) {
             if (problem.type === 'symbol' && problem.n1 === problem.n2) {
                 return `Same number of pieces (${problem.n1}). But ${problem.d1}ths are ${problem.d1 < problem.d2 ? 'bigger' : 'smaller'} pieces than ${problem.d2}ths. Bigger pieces = bigger fraction.`;
             }
-            return `Try thinking about a real example. If you ate ${problem.n1 || 2} slices of a pizza cut into ${problem.d1 || 4} pieces vs ${problem.d2 || 8} pieces, which is more food?`;
+            // fill_blank: same-denominator comparison
+            if (problem.type === 'mc') {
+                const parts = problem.answer.split('/');
+                const ansDenom = parts.length === 2 ? parts[1] : '?';
+                return `All the fractions have ${ansDenom} as the denominator, so they're the same size pieces. Just compare the numerators (top numbers) to see which makes the statement true.`;
+            }
+            // not_correct: find the wrong comparison
+            if (problem.type === 'mc_comparison' && problem.question.includes('NOT') && problem.comparisons) {
+                return `Look at each comparison. If the fractions have the same denominator, the bigger numerator is bigger. If same numerator, the bigger denominator makes a smaller fraction. One statement has the symbol backwards.`;
+            }
+            // which_is_true: find the correct comparison
+            if (problem.type === 'mc_comparison' && problem.comparisons) {
+                return `Same numerator means you're comparing piece sizes. Bigger denominator = smaller pieces = smaller fraction. Find the one statement where the symbol matches correctly.`;
+            }
+            // two_greater: benchmark comparison
+            if (problem.type === 'mc_pair') {
+                return `Check each fraction in the pair: is its numerator more than half its denominator? If so, it's greater than one half. Both fractions in the correct pair need to be greater than the target.`;
+            }
+            return `Think about the size of the pieces. A bigger denominator means smaller pieces.`;
         case 'equivalent':
             if (problem.measurementData) {
                 const sc = problem.measurementData;
@@ -2146,6 +2203,18 @@ function getHint2(problem, wrongResponse) {
             if (problem.wholeNum) {
                 const ans = problem.answer.split('/');
                 return `${problem.wholeNum} wholes. Each whole has ${ans[1]} pieces. So ${problem.wholeNum} × ${ans[1]} = ${ans[0]} pieces total.`;
+            }
+            // equiv_numberline: two-step — read NL then find equivalent pair
+            if (problem.type === 'mc_pair' && problem.visual && problem.visual.type === 'numberline') {
+                return `Point R is at ${problem.visual.numer} out of ${problem.visual.denom} spaces, so it shows ${problem.visual.numer}/${problem.visual.denom}. Now find two fractions that equal that same value.`;
+            }
+            // fraction_strips: visual comparison
+            if (problem.type === 'mc_strips' && problem.visual) {
+                return `The top strip shows ${problem.visual.numer}/${problem.visual.denom}. Look at each answer strip — which one has the exact same amount filled in? The answer is ${problem.answer}.`;
+            }
+            // equiv_pairs: check each equation
+            if (problem.type === 'mc_equivpairs') {
+                return `For each pair, simplify both fractions to their lowest terms. If they simplify to the same fraction, they're equivalent.`;
             }
             return `Multiply or divide both the top and bottom by the same number. The amount stays the same — just different sized pieces.`;
     }
