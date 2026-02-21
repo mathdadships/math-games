@@ -1416,13 +1416,33 @@
         m = context.match(/^line divided into (\d+)ths?,\s*answer:\s*(\d+)\/(\d+)$/i);
         if (m) return drawNumberLine(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 0, 1);
 
-        // "line divided into Nths from PLACE"
+        // "line divided into Nths from PLACE, answer at A/B"
+        m = context.match(/^line divided into (\d+)ths?\s*from\s*.+,\s*answer at (\d+)\/(\d+)$/i);
+        if (m) return drawNumberLine(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 0, 1);
+
+        // "line divided into Nths from PLACE" (no answer)
         m = context.match(/^line divided into (\d+)ths?\s*from\s*.+$/i);
         if (m) return drawNumberLine(parseInt(m[1]), 0, 0, 0, 1);
+
+        // "line divided into Nths, A=1/6, B=3/6, ..., answer: C"
+        m = context.match(/^line divided into (\d+)ths?,\s*(.+),\s*answer:\s*([A-D])$/i);
+        if (m) {
+            // Parse point assignments to find the answer point
+            var divs = parseInt(m[1]);
+            var pointsStr = m[2];
+            var ansLabel = m[3];
+            var pointMatch = pointsStr.match(new RegExp(ansLabel + '=(\\d+)/(\\d+)'));
+            if (pointMatch) return drawNumberLine(divs, parseInt(pointMatch[1]), parseInt(pointMatch[2]), 0, 1);
+            return drawNumberLine(divs, 0, 0, 0, 1);
+        }
 
         // "line divided into Nths" (generic)
         m = context.match(/^line divided into (\d+)ths?$/i);
         if (m) return drawNumberLine(parseInt(m[1]), 0, 0, 0, 1);
+
+        // "answer line: N/D divided into Dths"
+        m = context.match(/^answer line:\s*(\d+)\/(\d+)\s*divided into (\d+)ths?$/i);
+        if (m) return drawNumberLine(parseInt(m[3]), parseInt(m[1]), parseInt(m[2]), 0, 1);
 
         // "line 0-E, answer: A/B"
         m = context.match(/^line 0-(\d+),\s*answer:\s*(\d+)\/(\d+)$/i);
@@ -1469,7 +1489,11 @@
         m = context.match(/^measurement:\s*answer is\s*(.+)$/i);
         if (m) return renderAnswerBadge(m[1].trim());
 
-        // "4 number lines shown"
+        // "4 number lines shown, answer: X" (legacy)
+        m = context.match(/number lines? shown,\s*answer:\s*(.+)/i);
+        if (m) return renderAnswerBadge(m[1].trim());
+
+        // "4 number lines shown" (legacy, no answer)
         if (/number lines? shown/i.test(context)) {
             return '<div style="margin:8px 0;padding:6px 10px;background:#f8f4e8;border-radius:6px;font-size:0.82rem;color:#666;border-left:3px solid #e6a817;">Multiple number lines were shown as choices</div>';
         }

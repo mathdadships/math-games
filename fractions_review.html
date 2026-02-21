@@ -1720,7 +1720,10 @@ function renderSymbolOptions(container, problem) {
 function buildQuestionText(problem) {
     const catLabels = { identify: 'Identifying', numberline: 'Number Lines', comparing: 'Comparing', equivalent: 'Equivalent' };
     const cat = catLabels[problem.category] || problem.category;
-    var base = (problem.question || '').replace(/<[^>]*>/g, '').trim();
+    // Convert fraction HTML spans to N/D text before stripping all HTML
+    var base = (problem.question || '')
+        .replace(/<span[^>]*class="fraction-num"[^>]*>(\d+)<\/span>\s*<span[^>]*class="fraction-bar"[^>]*><\/span>\s*<span[^>]*class="fraction-den"[^>]*>(\d+)<\/span>/g, '$1/$2')
+        .replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 
     if (problem.category === 'identify') {
         if (problem.visual && problem.visual.type === 'bar') {
@@ -1742,13 +1745,23 @@ function buildQuestionText(problem) {
             return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths, point at ' + v.numer + '/' + v.denom + ']';
         }
         if (v && v.type === 'labeled_numberline') {
-            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths from ' + v.start + ']';
+            // Find the target position from the answer name
+            var targetPlace = v.places ? v.places.find(function(p) { return p.name === problem.answer; }) : null;
+            var posInfo = targetPlace ? ', answer at ' + targetPlace.pos + '/' + v.denom : '';
+            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths from ' + v.start + posInfo + ']';
         }
         if (v && v.type === 'multi_point') {
-            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths]';
+            // Include all point positions and the answer
+            var pointList = v.points ? v.points.map(function(p) { return p.label + '=' + p.pos + '/' + v.denom; }).join(', ') : '';
+            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths, ' + pointList + ', answer: ' + problem.answer + ']';
         }
         if (problem.type === 'mc_visual_nl' && problem.lines) {
-            return cat + ': ' + base + ' [4 number lines shown]';
+            // Find the correct line and include its info
+            var correctLine = problem.lines.find(function(l) { return l.label === problem.answer; });
+            if (correctLine) {
+                return cat + ': ' + base + ' [answer line: ' + correctLine.pointPos + '/' + correctLine.denom + ' divided into ' + correctLine.denom + 'ths]';
+            }
+            return cat + ': ' + base + ' [4 number lines shown, answer: ' + problem.answer + ']';
         }
         return cat + ': ' + base + ' [answer: ' + problem.answer + ']';
     }
