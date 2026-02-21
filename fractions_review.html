@@ -1796,7 +1796,11 @@ function buildQuestionText(problem) {
     return cat + ': ' + base;
 }
 
+var _answerLocked = false;
 function handleAnswer(problem, response) {
+    if (_answerLocked) return;
+    _answerLocked = true;
+
     const correct = response === problem.answer;
     recordAnswer(problem.category, correct, problem, response);
 
@@ -1833,6 +1837,7 @@ function nextQuestion() {
         card.style.transform = 'translateX(40px)';
 
         renderQuestion(currentProblem);
+        _answerLocked = false;
 
         requestAnimationFrame(() => {
             card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
