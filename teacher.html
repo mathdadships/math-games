@@ -409,13 +409,13 @@
         }
         .q-detail-context {
             background: #fff;
-            border-radius: 6px;
-            padding: 8px 12px;
+            border-radius: 8px;
+            padding: 10px 14px;
             font-size: 0.82rem;
             color: #333;
             border-left: 3px solid #667eea;
-            margin-bottom: 6px;
         }
+        .q-detail-context svg { max-width: 100%; height: auto; }
 
         .q-attempt {
             display: inline-block;
@@ -1364,6 +1364,151 @@
         return { question: text, context: null };
     }
 
+    // Render an SVG visual from the bracket context string
+    function renderContextVisual(context) {
+        if (!context) return '';
+        var m;
+
+        // "bar: 3 of 4 parts shaded"
+        m = context.match(/^bar:\s*(\d+)\s*of\s*(\d+)\s*parts?\s*shaded$/i);
+        if (m) return drawFractionBar(parseInt(m[1]), parseInt(m[2]));
+
+        // "2 whole(s), 3 parts each, 5 shaded"
+        m = context.match(/^(\d+)\s*whole\(s\),\s*(\d+)\s*parts?\s*each,\s*(\d+)\s*shaded$/i);
+        if (m) return drawMultiBar(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+
+        // "N strip(s), D parts each, S of T shaded"
+        m = context.match(/^(\d+)\s*strip\(s\),\s*(\d+)\s*parts?\s*each,\s*(\d+)\s*of\s*(\d+)\s*shaded$/i);
+        if (m) return drawMultiBar(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+
+        // "N parts, shade M"
+        m = context.match(/^(\d+)\s*parts?,\s*shade\s*(\d+)$/i);
+        if (m) return drawFractionBar(parseInt(m[2]), parseInt(m[1]));
+
+        // "line divided into Nths, point at A/B"
+        m = context.match(/^line divided into (\d+)ths?,\s*point at (\d+)\/(\d+)$/i);
+        if (m) return drawNumberLine(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 0, 1);
+
+        // "line divided into Nths, answer: A/B"
+        m = context.match(/^line divided into (\d+)ths?,\s*answer:\s*(\d+)\/(\d+)$/i);
+        if (m) return drawNumberLine(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 0, 1);
+
+        // "line divided into Nths from PLACE"
+        m = context.match(/^line divided into (\d+)ths?\s*from\s*.+$/i);
+        if (m) return drawNumberLine(parseInt(m[1]), 0, 0, 0, 1);
+
+        // "line divided into Nths" (generic)
+        m = context.match(/^line divided into (\d+)ths?$/i);
+        if (m) return drawNumberLine(parseInt(m[1]), 0, 0, 0, 1);
+
+        // "line 0-E, answer: A/B"
+        m = context.match(/^line 0-(\d+),\s*answer:\s*(\d+)\/(\d+)$/i);
+        if (m) {
+            var endpoint = parseInt(m[1]);
+            var num = parseInt(m[2]), den = parseInt(m[3]);
+            return drawNumberLine(den, num, den, 0, endpoint);
+        }
+
+        // "reference strip: A/B"
+        m = context.match(/^reference strip:\s*(\d+)\/(\d+)$/i);
+        if (m) return drawFractionBar(parseInt(m[1]), parseInt(m[2]));
+
+        // "point at A/B on number line"
+        m = context.match(/^point at (\d+)\/(\d+) on number line$/i);
+        if (m) return drawNumberLine(parseInt(m[2]), parseInt(m[1]), parseInt(m[2]), 0, 1);
+
+        // comparison statements "A/B < C/D, ..."
+        if (/^\d+\/\d+\s*[<>=]/.test(context)) {
+            return renderComparisonStatements(context);
+        }
+
+        // Fallback: just return text
+        return '';
+    }
+
+    function drawFractionBar(shaded, total) {
+        var w = 280, h = 40, pad = 2;
+        var partW = (w - pad * 2) / total;
+        var svg = '<svg width="' + w + '" height="' + h + '" style="display:block;margin:8px 0">';
+        svg += '<rect x="0" y="0" width="' + w + '" height="' + h + '" rx="4" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>';
+        for (var i = 0; i < total; i++) {
+            var x = pad + i * partW;
+            var fill = i < shaded ? '#667eea' : '#fff';
+            var stroke = i < shaded ? '#5568d0' : '#ccc';
+            svg += '<rect x="' + x + '" y="' + pad + '" width="' + (partW - 1) + '" height="' + (h - pad * 2) + '" rx="2" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
+        }
+        svg += '<text x="' + (w / 2) + '" y="' + (h / 2 + 5) + '" text-anchor="middle" font-size="14" font-weight="700" fill="#333">' + shaded + '/' + total + '</text>';
+        svg += '</svg>';
+        return svg;
+    }
+
+    function drawMultiBar(numWholes, partsEach, totalShaded) {
+        var barW = 120, barH = 36, gap = 8, pad = 2;
+        var totalW = numWholes * (barW + gap) - gap;
+        var svg = '<svg width="' + totalW + '" height="' + (barH + 20) + '" style="display:block;margin:8px 0">';
+        var remaining = totalShaded;
+        for (var w = 0; w < numWholes; w++) {
+            var bx = w * (barW + gap);
+            svg += '<rect x="' + bx + '" y="0" width="' + barW + '" height="' + barH + '" rx="4" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>';
+            var partW = (barW - pad * 2) / partsEach;
+            for (var p = 0; p < partsEach; p++) {
+                var px = bx + pad + p * partW;
+                var filled = remaining > 0;
+                if (filled) remaining--;
+                var fill = filled ? '#667eea' : '#fff';
+                var stroke = filled ? '#5568d0' : '#ccc';
+                svg += '<rect x="' + px + '" y="' + pad + '" width="' + (partW - 1) + '" height="' + (barH - pad * 2) + '" rx="2" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
+            }
+        }
+        svg += '<text x="' + (totalW / 2) + '" y="' + (barH + 14) + '" text-anchor="middle" font-size="12" fill="#888">' + totalShaded + '/' + partsEach + (numWholes > 1 ? ' (' + numWholes + ' wholes)' : '') + '</text>';
+        svg += '</svg>';
+        return svg;
+    }
+
+    function drawNumberLine(divisions, pointNum, pointDen, startVal, endVal) {
+        var w = 300, h = 50, mx = 30, lineY = 20;
+        var lineW = w - mx * 2;
+        var svg = '<svg width="' + w + '" height="' + h + '" style="display:block;margin:8px 0">';
+        // Main line
+        svg += '<line x1="' + mx + '" y1="' + lineY + '" x2="' + (w - mx) + '" y2="' + lineY + '" stroke="#333" stroke-width="2"/>';
+        // Endpoints
+        svg += '<line x1="' + mx + '" y1="' + (lineY - 8) + '" x2="' + mx + '" y2="' + (lineY + 8) + '" stroke="#333" stroke-width="2"/>';
+        svg += '<line x1="' + (w - mx) + '" y1="' + (lineY - 8) + '" x2="' + (w - mx) + '" y2="' + (lineY + 8) + '" stroke="#333" stroke-width="2"/>';
+        svg += '<text x="' + mx + '" y="' + (lineY + 22) + '" text-anchor="middle" font-size="11" fill="#666">' + startVal + '</text>';
+        svg += '<text x="' + (w - mx) + '" y="' + (lineY + 22) + '" text-anchor="middle" font-size="11" fill="#666">' + endVal + '</text>';
+        // Tick marks
+        var totalTicks = divisions * (endVal - startVal);
+        for (var i = 1; i < totalTicks; i++) {
+            var tx = mx + (i / totalTicks) * lineW;
+            var isWhole = (i % divisions === 0);
+            var tickH = isWhole ? 7 : 4;
+            svg += '<line x1="' + tx + '" y1="' + (lineY - tickH) + '" x2="' + tx + '" y2="' + (lineY + tickH) + '" stroke="#999" stroke-width="1"/>';
+        }
+        // Point marker
+        if (pointNum > 0 && pointDen > 0) {
+            var frac = pointNum / pointDen;
+            var range = endVal - startVal;
+            var px = mx + (frac / range) * lineW;
+            svg += '<circle cx="' + px + '" cy="' + lineY + '" r="6" fill="#C0392B" stroke="#fff" stroke-width="2"/>';
+            svg += '<text x="' + px + '" y="' + (lineY - 12) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#C0392B">' + pointNum + '/' + pointDen + '</text>';
+        }
+        svg += '</svg>';
+        return svg;
+    }
+
+    function renderComparisonStatements(context) {
+        var parts = context.split(',').map(function(s) { return s.trim(); });
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+        parts.forEach(function(stmt, i) {
+            var label = String.fromCharCode(65 + i);
+            html += '<span style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:4px 10px;font-size:0.82rem;font-weight:600;color:#333;">'
+                + '<span style="color:#888;font-weight:400;margin-right:4px;">' + label + '.</span>'
+                + escHtml(stmt) + '</span>';
+        });
+        html += '</div>';
+        return html;
+    }
+
     function toggleQuestionDetail(rowId) {
         var detail = document.getElementById(rowId + '-detail');
         if (!detail) { console.warn('No detail element for', rowId); return; }
@@ -1601,8 +1746,13 @@
 
                 // Expandable detail below the row
                 if (hasDetail) {
+                    var visual = renderContextVisual(parsed.context);
                     html += '<div class="q-detail" id="' + rowId + '-detail">';
-                    html += '<div class="q-detail-context">' + escHtml(parsed.context) + '</div>';
+                    if (visual) {
+                        html += '<div class="q-detail-context">' + visual + '</div>';
+                    } else {
+                        html += '<div class="q-detail-context">' + escHtml(parsed.context) + '</div>';
+                    }
                     html += '</div>';
                 }
             });
