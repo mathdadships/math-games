@@ -379,8 +379,43 @@
         .q-answer-correct-inline {
             color: #3A7D44; font-weight: 600; font-size: 0.8rem;
         }
+        .q-row.has-detail { cursor: pointer; }
+        .q-row.has-detail:hover { background: #EDE9E3; }
         .q-row.correct-row { opacity: 0.55; }
-        .q-row.correct-row:hover { opacity: 0.8; }
+        .q-row.correct-row:hover { opacity: 0.8; background: #F8F6F2; }
+
+        .q-detail {
+            display: none;
+            background: #F8F6F2;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 0 0 4px;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            color: #555;
+        }
+        .q-detail.open { display: block; animation: detailSlide 0.2s ease; }
+        @keyframes detailSlide { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 200px; } }
+        .q-detail-item {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .q-detail-item span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .q-detail-context {
+            background: #fff;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.82rem;
+            color: #333;
+            border-left: 3px solid #667eea;
+            margin-bottom: 6px;
+        }
 
         .q-attempt {
             display: inline-block;
@@ -1320,6 +1355,25 @@
         return text;
     }
 
+    // Split question text into the readable question and the [bracketed context]
+    function parseQuestionContext(text) {
+        const bracketMatch = text.match(/^(.*?)\s*\[([^\]]+)\]\s*$/);
+        if (bracketMatch) {
+            return { question: bracketMatch[1].trim() || text, context: bracketMatch[2].trim() };
+        }
+        return { question: text, context: null };
+    }
+
+    function toggleQuestionDetail(rowId) {
+        var detail = document.getElementById(rowId + '-detail');
+        if (!detail) { console.warn('No detail element for', rowId); return; }
+        // Close any other open details first
+        document.querySelectorAll('.q-detail.open').forEach(function(el) {
+            if (el.id !== rowId + '-detail') el.classList.remove('open');
+        });
+        detail.classList.toggle('open');
+    }
+
     function buildCategoryStats(questions) {
         const cats = {};
         questions.forEach(q => {
@@ -1520,25 +1574,36 @@
 
             html += '<div class="mistake-group-label">' + escHtml(cat.name) + '</div>';
 
-            filtered.forEach(q => {
+            filtered.forEach((q, idx) => {
                 const displayText = stripCategoryPrefix(q.question_text);
+                const parsed = parseQuestionContext(displayText);
                 const att = q.attempt_number || 1;
                 const attemptBadge = att > 1
                     ? '<span class="q-attempt ' + (att >= 3 ? 'q-attempt-3' : 'q-attempt-2') + '">'
                       + att + (att === 2 ? ' tries' : ' tries') + '</span>'
                     : '';
+                const rowId = 'qrow-' + cat.name.replace(/[^a-zA-Z0-9]/g,'') + '-' + idx;
+                const hasDetail = !!parsed.context;
+
                 if (q.is_correct) {
-                    html += '<div class="q-row correct-row">'
+                    html += '<div class="q-row correct-row' + (hasDetail ? ' has-detail' : '') + '" id="' + rowId + '"' + (hasDetail ? ' onclick="toggleQuestionDetail(\'' + rowId + '\')"' : '') + '>'
                         + '<span class="q-icon-right">\u2713</span>'
-                        + '<span class="q-text">' + escHtml(displayText) + '</span>'
+                        + '<span class="q-text">' + escHtml(parsed.question) + '</span>'
                         + '<span class="q-answer-right">' + escHtml(q.student_answer || '?') + attemptBadge + '</span>'
                         + '<span></span></div>';
                 } else {
-                    html += '<div class="q-row">'
+                    html += '<div class="q-row' + (hasDetail ? ' has-detail' : '') + '" id="' + rowId + '"' + (hasDetail ? ' onclick="toggleQuestionDetail(\'' + rowId + '\')"' : '') + '>'
                         + '<span class="q-icon-wrong">\u2717</span>'
-                        + '<span class="q-text">' + escHtml(displayText) + '</span>'
+                        + '<span class="q-text">' + escHtml(parsed.question) + '</span>'
                         + '<span class="q-answer-wrong">' + escHtml(q.student_answer || '?') + attemptBadge + '</span>'
                         + '<span class="q-answer-correct-inline">' + escHtml(q.correct_answer || '?') + '</span></div>';
+                }
+
+                // Expandable detail below the row
+                if (hasDetail) {
+                    html += '<div class="q-detail" id="' + rowId + '-detail">';
+                    html += '<div class="q-detail-context">' + escHtml(parsed.context) + '</div>';
+                    html += '</div>';
                 }
             });
         });

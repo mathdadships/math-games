@@ -1185,7 +1185,7 @@
 
             if (choice.isCorrect) {
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "What fraction is shown? [" + currentProblem.numWholes + " strip(s), " + currentProblem.denominator + " parts each, " + currentProblem.shadedParts + " of " + currentProblem.totalParts + " shaded]", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 btn.classList.add('correct');
                 score++;
@@ -1215,7 +1215,7 @@
             GameTracker.checkAutoSave();
             } else {
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: "What fraction is shown? (" + currentProblem.shadedParts + "/" + currentProblem.totalParts + ")", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "What fraction is shown? [" + currentProblem.numWholes + " strip(s), " + currentProblem.denominator + " parts each, " + currentProblem.shadedParts + " of " + currentProblem.totalParts + " shaded]", studentAnswer: choice.numerator + "/" + choice.denominator, correctAnswer: currentProblem.shadedParts + "/" + currentProblem.totalParts, isCorrect: false });
                 GameTracker.markMissed({ denominator: currentProblem.denominator, numWholes: currentProblem.numWholes, shadedParts: currentProblem.shadedParts });
                 btn.classList.add('wrong');
                 streak = 0;

@@ -1019,7 +1019,7 @@
                 btn.classList.add('correct');
                 playSound('correct');
                 spawnFlyingEmoji(btn);
-            GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "Compare unit fractions: Which is greater, 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "? [visual bars shown]", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
 
                 score++;
@@ -1046,7 +1046,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: "Which is greater: 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "?", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "Compare unit fractions: Which is greater, 1/" + currentProblem.fraction1.denominator + " or 1/" + currentProblem.fraction2.denominator + "? [visual bars shown]", studentAnswer: String(choice.display), correctAnswer: currentProblem.correctAnswer, isCorrect: false });
                 GameTracker.markMissed({ denom1: currentProblem.fraction1.denominator, denom2: currentProblem.fraction2.denominator });
 
                 streak = 0;

@@ -1207,7 +1207,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "Number line (0-" + currentProblem.maxWhole + "): Find " + currentProblem.numerator + "/" + currentProblem.denominator + " [line divided into " + currentProblem.denominator + "ths]", studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
@@ -1229,7 +1229,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "Number line (0-" + currentProblem.maxWhole + "): Find " + currentProblem.numerator + "/" + currentProblem.denominator + " [line divided into " + currentProblem.denominator + "ths]", studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: false });
                 GameTracker.markMissed({ numerator: currentProblem.numerator, denominator: currentProblem.denominator, maxWhole: currentProblem.maxWhole });
                 streak = 0;
                 streakEl.textContent = '0 🔥';

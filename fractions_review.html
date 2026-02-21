@@ -1716,14 +1716,77 @@ function renderSymbolOptions(container, problem) {
 // ███ ANSWER HANDLING (UNCHANGED FROM ORIGINAL) ███
 // ═══════════════════════════════════════════
 
+// Build a descriptive questionText that includes visual context for the teacher dashboard
+function buildQuestionText(problem) {
+    const catLabels = { identify: 'Identifying', numberline: 'Number Lines', comparing: 'Comparing', equivalent: 'Equivalent' };
+    const cat = catLabels[problem.category] || problem.category;
+    var base = (problem.question || '').replace(/<[^>]*>/g, '').trim();
+
+    if (problem.category === 'identify') {
+        if (problem.visual && problem.visual.type === 'bar') {
+            return cat + ': ' + base + ' [bar: ' + problem.visual.numer + ' of ' + problem.visual.denom + ' parts shaded]';
+        }
+        if (problem.visual && problem.visual.type === 'multi_bar') {
+            return cat + ': ' + base + ' [' + problem.visual.numWholes + ' whole(s), ' + problem.visual.denom + ' parts each, ' + problem.visual.totalShaded + ' shaded]';
+        }
+        // Word problems already have descriptive text
+        return cat + ': ' + base;
+    }
+
+    if (problem.category === 'numberline') {
+        var v = problem.visual;
+        if (v && v.type === 'numberline') {
+            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths, point at ' + v.numer + '/' + v.denom + ']';
+        }
+        if (v && v.type === 'labeled_numberline') {
+            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths from ' + v.start + ']';
+        }
+        if (v && v.type === 'multi_point') {
+            return cat + ': ' + base + ' [line divided into ' + v.denom + 'ths]';
+        }
+        if (problem.type === 'mc_visual_nl' && problem.lines) {
+            return cat + ': ' + base + ' [4 number lines shown]';
+        }
+        return cat + ': ' + base;
+    }
+
+    if (problem.category === 'comparing') {
+        if (problem.type === 'symbol' && problem.n1 !== undefined) {
+            return cat + ': Compare ' + problem.n1 + '/' + problem.d1 + ' and ' + problem.n2 + '/' + problem.d2;
+        }
+        if (problem.type === 'mc_comparison' && problem.comparisons) {
+            var stmts = problem.comparisons.map(function(c) { return c.n1 + '/' + c.d1 + ' ' + c.sym + ' ' + c.n2 + '/' + c.d2; });
+            return cat + ': ' + base + ' [' + stmts.join(', ') + ']';
+        }
+        return cat + ': ' + base;
+    }
+
+    if (problem.category === 'equivalent') {
+        if (problem.visual && problem.visual.type === 'reference_strip') {
+            return cat + ': ' + base + ' [reference strip: ' + problem.visual.numer + '/' + problem.visual.denom + ']';
+        }
+        if (problem.visual && problem.visual.type === 'numberline') {
+            return cat + ': ' + base + ' [point at ' + problem.visual.numer + '/' + problem.visual.denom + ' on number line]';
+        }
+        if (problem.shownNumer !== undefined) {
+            return cat + ': What fraction is equivalent to ' + problem.shownNumer + '/' + problem.shownDenom + '?';
+        }
+        if (problem.wholeNum !== undefined) {
+            return cat + ': Which fraction equals ' + problem.wholeNum + '?';
+        }
+        return cat + ': ' + base;
+    }
+
+    return cat + ': ' + base;
+}
+
 function handleAnswer(problem, response) {
     const correct = response === problem.answer;
     recordAnswer(problem.category, correct, problem, response);
 
     // Track in Supabase
-    const catLabels = { identify: 'Identifying', numberline: 'Number Lines', comparing: 'Comparing', equivalent: 'Equivalent' };
     GameTracker.recordQuestion({
-        questionText: (catLabels[problem.category] || problem.category) + ': ' + (problem.question || '').replace(/<[^>]*>/g, '').substring(0, 200),
+        questionText: buildQuestionText(problem),
         studentAnswer: String(response),
         correctAnswer: String(problem.answer),
         isCorrect: correct
@@ -2521,9 +2584,8 @@ async function handleTutorAnswer(problem, response, clickedBtn, grid) {
     tutorAttempts++;
 
     // Track tutor answers in Supabase
-    const catLabels2 = { identify: 'Identifying', numberline: 'Number Lines', comparing: 'Comparing', equivalent: 'Equivalent' };
     GameTracker.recordQuestion({
-        questionText: '[Tutor] ' + (catLabels2[problem.category] || problem.category) + ': ' + (problem.question || '').replace(/<[^>]*>/g, '').substring(0, 200),
+        questionText: '[Tutor] ' + buildQuestionText(problem),
         studentAnswer: String(response),
         correctAnswer: String(problem.answer),
         isCorrect: correct,

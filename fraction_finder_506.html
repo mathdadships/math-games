@@ -1183,7 +1183,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: true });
+            GameTracker.recordQuestion({ questionText: (currentProblem.questionType === 'identifyFraction' ? "Number line: What fraction is at the point? [line divided into " + currentProblem.denominator + "ths, answer: " + currentProblem.numerator + "/" + currentProblem.denominator + "]" : "Find the number line showing " + currentProblem.numerator + "/" + currentProblem.denominator + " [line divided into " + currentProblem.denominator + "ths]"), studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
@@ -1205,7 +1205,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: currentProblem.numerator + "/" + currentProblem.denominator, studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: false });
+            GameTracker.recordQuestion({ questionText: (currentProblem.questionType === 'identifyFraction' ? "Number line: What fraction is at the point? [line divided into " + currentProblem.denominator + "ths, answer: " + currentProblem.numerator + "/" + currentProblem.denominator + "]" : "Find the number line showing " + currentProblem.numerator + "/" + currentProblem.denominator + " [line divided into " + currentProblem.denominator + "ths]"), studentAnswer: String(choice.display), correctAnswer: currentProblem.numerator + "/" + currentProblem.denominator, isCorrect: false });
                 GameTracker.markMissed({ denominator: currentProblem.denominator, questionType: currentProblem.questionType });
                 streak = 0;
                 streakEl.textContent = '0 🔥';

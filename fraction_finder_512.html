@@ -2115,7 +2115,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ?", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "Equivalent on number line: " + currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ? [line 0-" + currentProblem.endpoint + ", answer: " + currentProblem.equivNum + "/" + currentProblem.equivDenom + "]", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
@@ -2137,7 +2137,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ?", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "Equivalent on number line: " + currentProblem.givenNum + "/" + currentProblem.givenDenom + " = ? [line 0-" + currentProblem.endpoint + ", answer: " + currentProblem.equivNum + "/" + currentProblem.equivDenom + "]", studentAnswer: String(choice.display), correctAnswer: currentProblem.equivNum + "/" + currentProblem.equivDenom, isCorrect: false });
                 GameTracker.markMissed({ givenNum: currentProblem.givenNum, givenDenom: currentProblem.givenDenom, equivNum: currentProblem.equivNum, equivDenom: currentProblem.equivDenom });
                 streak = 0;
                 streakEl.textContent = '0🔥';

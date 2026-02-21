@@ -1376,7 +1376,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "Shade the fraction: " + currentProblem.display + " [" + currentProblem.denominator + " parts, shade " + currentProblem.numerator + "]", studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
@@ -1401,7 +1401,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "Shade the fraction: " + currentProblem.display + " [" + currentProblem.denominator + " parts, shade " + currentProblem.numerator + "]", studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
                 GameTracker.markMissed({ numerator: currentProblem.numerator, denominator: currentProblem.denominator });
                 streak = 0;
                 streakEl.textContent = '0 🔥';
