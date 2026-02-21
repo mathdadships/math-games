@@ -159,7 +159,12 @@ const GameTracker = {
         };
 
         // Also save when student leaves the page (navigate away or close tab)
+        let _exitSaved = false;
         const saveOnExit = () => {
+            if (_exitSaved) return;
+            _exitSaved = true;
+            clearTimeout(GameTracker._flushTimer);
+            GameTracker._flushTimer = null;
             const s = this._autoSaveState;
             if (!s || !this.isLoggedIn()) return;
             const currentQ = typeof questionsAnswered !== 'undefined' ? questionsAnswered :
@@ -224,6 +229,14 @@ const GameTracker = {
 
         const gameFile = this._autoSaveState?.gameFile ||
                          location.pathname.split('/').pop() || 'unknown.html';
+
+        // Deduplicate: skip if last buffered entry is identical (prevents double-click duplicates)
+        const last = this._questionBuffer[this._questionBuffer.length - 1];
+        if (last && last.question_text === String(questionText || '').substring(0, 500)
+            && last.student_answer === String(studentAnswer ?? '').substring(0, 200)
+            && last.is_correct === !!isCorrect) {
+            return;
+        }
 
         this._questionBuffer.push({
             student_id: student.id,
