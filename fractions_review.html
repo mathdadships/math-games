@@ -1729,7 +1729,10 @@ function buildQuestionText(problem) {
         if (problem.visual && problem.visual.type === 'multi_bar') {
             return cat + ': ' + base + ' [' + problem.visual.numWholes + ' whole(s), ' + problem.visual.denom + ' parts each, ' + problem.visual.totalShaded + ' shaded]';
         }
-        // Word problems already have descriptive text
+        // Word problems - include answer for context
+        if (problem.numer !== undefined && problem.denom !== undefined) {
+            return cat + ': ' + base + ' [answer: ' + problem.numer + '/' + problem.denom + ']';
+        }
         return cat + ': ' + base;
     }
 
@@ -1747,18 +1750,22 @@ function buildQuestionText(problem) {
         if (problem.type === 'mc_visual_nl' && problem.lines) {
             return cat + ': ' + base + ' [4 number lines shown]';
         }
-        return cat + ': ' + base;
+        return cat + ': ' + base + ' [answer: ' + problem.answer + ']';
     }
 
     if (problem.category === 'comparing') {
         if (problem.type === 'symbol' && problem.n1 !== undefined) {
-            return cat + ': Compare ' + problem.n1 + '/' + problem.d1 + ' and ' + problem.n2 + '/' + problem.d2;
+            return cat + ': Compare ' + problem.n1 + '/' + problem.d1 + ' and ' + problem.n2 + '/' + problem.d2 + ' [compare: ' + problem.n1 + '/' + problem.d1 + ' vs ' + problem.n2 + '/' + problem.d2 + ']';
         }
         if (problem.type === 'mc_comparison' && problem.comparisons) {
             var stmts = problem.comparisons.map(function(c) { return c.n1 + '/' + c.d1 + ' ' + c.sym + ' ' + c.n2 + '/' + c.d2; });
             return cat + ': ' + base + ' [' + stmts.join(', ') + ']';
         }
-        return cat + ': ' + base;
+        if (problem.type === 'mc_pair') {
+            return cat + ': ' + base + ' [choices: ' + problem.choices.join('; ') + ']';
+        }
+        // mc fill-blank: question already has the fraction and symbol
+        return cat + ': ' + base + ' [choices: ' + (problem.choices || []).join(', ') + ']';
     }
 
     if (problem.category === 'equivalent') {
@@ -1768,13 +1775,22 @@ function buildQuestionText(problem) {
         if (problem.visual && problem.visual.type === 'numberline') {
             return cat + ': ' + base + ' [point at ' + problem.visual.numer + '/' + problem.visual.denom + ' on number line]';
         }
+        if (problem.type === 'mc_equivpairs') {
+            return cat + ': ' + base + ' [choices: ' + (problem.choices || []).join('; ') + ']';
+        }
         if (problem.shownNumer !== undefined) {
-            return cat + ': What fraction is equivalent to ' + problem.shownNumer + '/' + problem.shownDenom + '?';
+            return cat + ': What fraction is equivalent to ' + problem.shownNumer + '/' + problem.shownDenom + '? [equivalent to: ' + problem.shownNumer + '/' + problem.shownDenom + ', answer: ' + problem.answer + ']';
+        }
+        if (problem.nnShownDenom !== undefined) {
+            return cat + ': ' + base + ' [equivalent to: ' + problem.nnShownDenom + '/' + problem.nnShownDenom + ', answer: ' + problem.answer + ']';
         }
         if (problem.wholeNum !== undefined) {
-            return cat + ': Which fraction equals ' + problem.wholeNum + '?';
+            return cat + ': Which fraction equals ' + problem.wholeNum + '? [whole number: ' + problem.wholeNum + ', answer: ' + problem.answer + ']';
         }
-        return cat + ': ' + base;
+        if (problem.measurementData) {
+            return cat + ': ' + base + ' [measurement: answer is ' + problem.answer + ']';
+        }
+        return cat + ': ' + base + ' [answer: ' + problem.answer + ']';
     }
 
     return cat + ': ' + base;

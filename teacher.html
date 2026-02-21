@@ -1417,9 +1417,43 @@
         m = context.match(/^point at (\d+)\/(\d+) on number line$/i);
         if (m) return drawNumberLine(parseInt(m[2]), parseInt(m[1]), parseInt(m[2]), 0, 1);
 
+        // "compare: N/D vs N/D" — draw two comparison bars
+        m = context.match(/^compare:\s*(\d+)\/(\d+)\s*vs\s*(\d+)\/(\d+)$/i);
+        if (m) return drawComparisonBars(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), parseInt(m[4]));
+
         // comparison statements "A/B < C/D, ..."
         if (/^\d+\/\d+\s*[<>=]/.test(context)) {
             return renderComparisonStatements(context);
+        }
+
+        // "choices: A; B; C; D" or "choices: A, B, C, D"
+        m = context.match(/^choices:\s*(.+)$/i);
+        if (m) return renderChoiceChips(m[1]);
+
+        // "equivalent to: N/D, answer: A/B"
+        m = context.match(/^equivalent to:\s*(\d+)\/(\d+),\s*answer:\s*(.+)$/i);
+        if (m) return renderEquivalentContext(parseInt(m[1]), parseInt(m[2]), m[3].trim());
+
+        // "whole number: N, answer: A/B"
+        m = context.match(/^whole number:\s*(\d+),\s*answer:\s*(.+)$/i);
+        if (m) return renderWholeNumberContext(parseInt(m[1]), m[2].trim());
+
+        // "answer: N/D" — simple answer badge
+        m = context.match(/^answer:\s*(.+)$/i);
+        if (m) return renderAnswerBadge(m[1].trim());
+
+        // "measurement: answer is N"
+        m = context.match(/^measurement:\s*answer is\s*(.+)$/i);
+        if (m) return renderAnswerBadge(m[1].trim());
+
+        // "4 number lines shown"
+        if (/number lines? shown/i.test(context)) {
+            return '<div style="margin:8px 0;padding:6px 10px;background:#f8f4e8;border-radius:6px;font-size:0.82rem;color:#666;border-left:3px solid #e6a817;">Multiple number lines were shown as choices</div>';
+        }
+
+        // "visual bars shown"
+        if (/visual bars? shown/i.test(context)) {
+            return '<div style="margin:8px 0;padding:6px 10px;background:#f0f0ff;border-radius:6px;font-size:0.82rem;color:#666;border-left:3px solid #667eea;">Visual fraction bars were shown for comparison</div>';
         }
 
         // Fallback: just return text
@@ -1507,6 +1541,69 @@
         });
         html += '</div>';
         return html;
+    }
+
+    function drawComparisonBars(n1, d1, n2, d2) {
+        var barW = 200, barH = 30, pad = 2, gap = 6;
+        var totalH = barH * 2 + gap + 30;
+        var svg = '<svg width="' + (barW + 60) + '" height="' + totalH + '" style="display:block;margin:8px 0">';
+        // First fraction bar
+        var partW1 = (barW - pad * 2) / d1;
+        svg += '<rect x="0" y="0" width="' + barW + '" height="' + barH + '" rx="4" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>';
+        for (var i = 0; i < d1; i++) {
+            var fill = i < n1 ? '#667eea' : '#fff';
+            var stroke = i < n1 ? '#5568d0' : '#ccc';
+            svg += '<rect x="' + (pad + i * partW1) + '" y="' + pad + '" width="' + (partW1 - 1) + '" height="' + (barH - pad * 2) + '" rx="2" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1"/>';
+        }
+        svg += '<text x="' + (barW + 8) + '" y="' + (barH / 2 + 5) + '" font-size="13" font-weight="700" fill="#333">' + n1 + '/' + d1 + '</text>';
+        // Second fraction bar
+        var y2 = barH + gap;
+        var partW2 = (barW - pad * 2) / d2;
+        svg += '<rect x="0" y="' + y2 + '" width="' + barW + '" height="' + barH + '" rx="4" fill="#f0f0f0" stroke="#ccc" stroke-width="1"/>';
+        for (var j = 0; j < d2; j++) {
+            var fill2 = j < n2 ? '#e67e22' : '#fff';
+            var stroke2 = j < n2 ? '#d35400' : '#ccc';
+            svg += '<rect x="' + (pad + j * partW2) + '" y="' + (y2 + pad) + '" width="' + (partW2 - 1) + '" height="' + (barH - pad * 2) + '" rx="2" fill="' + fill2 + '" stroke="' + stroke2 + '" stroke-width="1"/>';
+        }
+        svg += '<text x="' + (barW + 8) + '" y="' + (y2 + barH / 2 + 5) + '" font-size="13" font-weight="700" fill="#333">' + n2 + '/' + d2 + '</text>';
+        svg += '</svg>';
+        return svg;
+    }
+
+    function renderChoiceChips(choicesStr) {
+        // Split by semicolons first, then by commas if no semicolons
+        var parts = choicesStr.indexOf(';') >= 0 ? choicesStr.split(';') : choicesStr.split(',');
+        parts = parts.map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+        var html = '<div style="display:flex;flex-wrap:wrap;gap:6px;margin:8px 0">';
+        parts.forEach(function(choice, i) {
+            var label = String.fromCharCode(65 + i);
+            html += '<span style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:5px 12px;font-size:0.82rem;font-weight:600;color:#333;">'
+                + '<span style="color:#888;font-weight:400;margin-right:4px;">' + label + '.</span>'
+                + escHtml(choice) + '</span>';
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function renderEquivalentContext(numer, denom, answer) {
+        var html = '<div style="display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap">';
+        html += drawFractionBar(numer, denom);
+        html += '<div style="font-size:1.1rem;font-weight:700;color:#333;">' + numer + '/' + denom + ' = <span style="color:#27ae60">' + escHtml(answer) + '</span></div>';
+        html += '</div>';
+        return html;
+    }
+
+    function renderWholeNumberContext(wholeNum, answer) {
+        var html = '<div style="display:flex;align-items:center;gap:12px;margin:8px 0">';
+        html += '<div style="font-size:1.5rem;font-weight:700;color:#333;background:#f8f4e8;border-radius:8px;padding:8px 16px;border:2px solid #e6a817;">' + wholeNum + '</div>';
+        html += '<div style="font-size:1.1rem;color:#666;"> = </div>';
+        html += '<div style="font-size:1.1rem;font-weight:700;color:#27ae60;">' + escHtml(answer) + '</div>';
+        html += '</div>';
+        return html;
+    }
+
+    function renderAnswerBadge(answer) {
+        return '<div style="margin:8px 0;display:inline-block;padding:6px 14px;background:#e8f5e9;border-radius:6px;font-size:0.9rem;font-weight:600;color:#2e7d32;border:1px solid #c8e6c9;">Correct answer: ' + escHtml(answer) + '</div>';
     }
 
     function toggleQuestionDetail(rowId) {
