@@ -696,6 +696,16 @@
             qIndex[key].push(q);
         });
 
+        // Build a map of previous session played_at per student+game for tight scoping
+        const sortedResults = [...allResults].sort((a, b) => (a.played_at || '').localeCompare(b.played_at || ''));
+        const prevSessionMap = {};
+        sortedResults.forEach(r => {
+            const tutor = isTutorSession(r);
+            const key = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
+            if (!prevSessionMap[key]) prevSessionMap[key] = [];
+            prevSessionMap[key].push(r.played_at);
+        });
+
         // Enrich results with per-session right/wrong/accuracy + retries
         allResults.forEach(r => {
             const qa = r.questions_answered || 0;
@@ -713,17 +723,22 @@
             // Count retries from question_responses scoped to this session's time window
             const tutor = isTutorSession(r);
             const sessionQs = qIndex[r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '')] || [];
-            // Use played_at window to scope to this session
-            // Tutor sessions can last longer, allow 30 min after start; practice games 5 min
+            // Scope: from previous session's played_at to this session's played_at + buffer
             let scoped = sessionQs;
             if (r.played_at) {
                 const afterMin = tutor ? 30 : 5;
-                const t0 = new Date(new Date(r.played_at).getTime() - 3 * 60 * 60 * 1000);
                 const t1 = new Date(new Date(r.played_at).getTime() + afterMin * 60 * 1000);
+                // Find previous session's played_at for same student+game
+                const key = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
+                const allTimes = prevSessionMap[key] || [];
+                const idx = allTimes.indexOf(r.played_at);
+                const prevTime = idx > 0 ? allTimes[idx - 1] : null;
+                // Lower bound: previous session's played_at (exclusive), or 10 min before this session
+                const t0 = prevTime ? new Date(prevTime) : new Date(new Date(r.played_at).getTime() - 10 * 60 * 1000);
                 scoped = sessionQs.filter(q => {
                     if (!q.answered_at) return true; // include if no timestamp
                     const t = new Date(q.answered_at);
-                    return t >= t0 && t <= t1;
+                    return t > t0 && t <= t1;
                 });
             }
             const uniqueQs = new Set(scoped.map(q => q.question_text)).size;
@@ -1304,11 +1319,19 @@
         const playedAt = new Date(result.played_at);
         const afterMin = tutor ? 30 : 5; // tutor sessions can last longer
         const cutoff = new Date(playedAt.getTime() + afterMin * 60 * 1000);
-        const earliest = new Date(playedAt.getTime() - 3 * 60 * 60 * 1000);
+        // Find previous session boundary for same student+game+mode
+        const allSessions = (allResults || []).filter(r =>
+            r.student_id === result.student_id &&
+            r.game_file === result.game_file &&
+            isTutorSession(r) === tutor &&
+            r.played_at && r.played_at < result.played_at
+        ).sort((a, b) => b.played_at.localeCompare(a.played_at));
+        const prevPlayedAt = allSessions.length > 0 ? new Date(allSessions[0].played_at) : null;
+        const earliest = prevPlayedAt || new Date(playedAt.getTime() - 10 * 60 * 1000);
         const inWindow = sameGame.filter(q => {
             if (!q.answered_at) return false;
             const t = new Date(q.answered_at);
-            return t <= cutoff && t >= earliest;
+            return t <= cutoff && t > earliest;
         });
         const count = result.questions_answered || inWindow.length;
         const matched = inWindow.slice(0, count);
