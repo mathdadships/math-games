@@ -597,7 +597,7 @@
         if (input === TEACHER_PASSWORD) {
             document.getElementById('password-gate').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            sessionStorage.setItem('teacher_auth', 'true');
+            localStorage.setItem('teacher_auth', 'true');
             loadData();
         } else {
             document.getElementById('password-error').textContent = 'Incorrect password';
@@ -608,7 +608,7 @@
         if (e.key === 'Enter') checkPassword();
     });
 
-    if (sessionStorage.getItem('teacher_auth') === 'true') {
+    if (localStorage.getItem('teacher_auth') === 'true') {
         document.getElementById('password-gate').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         loadData();

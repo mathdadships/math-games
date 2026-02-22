@@ -7,20 +7,20 @@ const SUPABASE_URL = 'https://pnarndrlkkrzqvbnmahh.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_8ZmsmQ2JV7m3cwGOUbGiIg_UM6gw17d';
 
 const GameTracker = {
-    // Get current student from sessionStorage
+    // Get current student from localStorage (persists across tabs/sessions)
     getStudent() {
-        const data = sessionStorage.getItem('mathgames_student');
+        const data = localStorage.getItem('mathgames_student');
         return data ? JSON.parse(data) : null;
     },
 
-    // Save student to sessionStorage
+    // Save student to localStorage
     setStudent(student) {
-        sessionStorage.setItem('mathgames_student', JSON.stringify(student));
+        localStorage.setItem('mathgames_student', JSON.stringify(student));
     },
 
     // Clear student session
     logout() {
-        sessionStorage.removeItem('mathgames_student');
+        localStorage.removeItem('mathgames_student');
     },
 
     // Check if student is logged in
