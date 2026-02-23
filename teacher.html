@@ -710,15 +710,6 @@
         allResults.forEach(r => {
             const qa = r.questions_answered || 0;
             const sc = r.score || 0;
-            if (qa > 0 && sc <= qa) {
-                r.right_count = sc;
-                r.wrong_count = qa - sc;
-                r.accuracy = Math.round((sc / qa) * 100);
-            } else {
-                r.right_count = null;
-                r.wrong_count = null;
-                r.accuracy = null;
-            }
 
             // Count retries from question_responses scoped to this session's time window
             const tutor = isTutorSession(r);
@@ -744,9 +735,9 @@
             const uniqueQs = new Set(scoped.map(q => q.question_text)).size;
             r.retry_count = Math.max(0, scoped.length - uniqueQs);
 
-            // Fallback: if questions_answered is 0 but we have question_responses, derive stats
-            if (qa === 0 && scoped.length > 0) {
-                // Group by question_text: a question is "right" if any attempt was correct
+            // Derive right/wrong from question_responses (unique questions) when available.
+            // This avoids inflated counts from games that requeue wrong answers as new attempts.
+            if (scoped.length > 0) {
                 const byQ = {};
                 scoped.forEach(q => {
                     if (!byQ[q.question_text]) byQ[q.question_text] = false;
@@ -759,6 +750,15 @@
                 r.wrong_count = wrongUnique;
                 r.questions_answered = qTexts.length;
                 r.accuracy = qTexts.length > 0 ? Math.round((rightUnique / qTexts.length) * 100) : null;
+            } else if (qa > 0 && sc <= qa) {
+                // Fallback to game_results score when no question_responses available
+                r.right_count = sc;
+                r.wrong_count = qa - sc;
+                r.accuracy = Math.round((sc / qa) * 100);
+            } else {
+                r.right_count = null;
+                r.wrong_count = null;
+                r.accuracy = null;
             }
         });
 
