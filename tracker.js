@@ -238,7 +238,7 @@ const GameTracker = {
             return;
         }
 
-        this._questionBuffer.push({
+        const entry = {
             student_id: student.id,
             game_file: gameFile,
             question_text: String(questionText || '').substring(0, 500) || '?',
@@ -246,7 +246,11 @@ const GameTracker = {
             correct_answer: String(correctAnswer ?? '').substring(0, 200) || '?',
             is_correct: !!isCorrect,
             attempt_number: (attemptNumber && Number.isInteger(attemptNumber) && attemptNumber >= 1) ? attemptNumber : 1
-        });
+        };
+        if (this._autoSaveState?.sessionId) {
+            entry.session_id = this._autoSaveState.sessionId;
+        }
+        this._questionBuffer.push(entry);
 
         // Flush when buffer reaches 5, or set a 5-second timer
         if (this._questionBuffer.length >= 5) {

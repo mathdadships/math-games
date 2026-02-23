@@ -711,27 +711,30 @@
             const qa = r.questions_answered || 0;
             const sc = r.score || 0;
 
-            // Count retries from question_responses scoped to this session's time window
+            // Scope question_responses to this session
             const tutor = isTutorSession(r);
             const sessionQs = qIndex[r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '')] || [];
-            // Scope: from previous session's played_at to this session's played_at + buffer
-            let scoped = sessionQs;
-            if (r.played_at) {
+            let scoped;
+            if (isRealSessionId(r.session_id)) {
+                // Direct match by session_id
+                scoped = sessionQs.filter(q => q.session_id === r.session_id);
+            } else if (r.played_at) {
+                // Legacy fallback: time-window scoping
                 const sessionSec = r.time_seconds || 0;
                 const afterMin = tutor ? 30 : (sessionSec > 0 ? Math.ceil(sessionSec / 60) + 2 : 10);
                 const t1 = new Date(new Date(r.played_at).getTime() + afterMin * 60 * 1000);
-                // Find previous session's played_at for same student+game
                 const key = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
                 const allTimes = prevSessionMap[key] || [];
                 const idx = allTimes.indexOf(r.played_at);
                 const prevTime = idx > 0 ? allTimes[idx - 1] : null;
-                // Lower bound: previous session's played_at (exclusive), or 10 min before this session
                 const t0 = prevTime ? new Date(prevTime) : new Date(new Date(r.played_at).getTime() - 10 * 60 * 1000);
                 scoped = sessionQs.filter(q => {
-                    if (!q.answered_at) return true; // include if no timestamp
+                    if (!q.answered_at) return true;
                     const t = new Date(q.answered_at);
                     return t > t0 && t <= t1;
                 });
+            } else {
+                scoped = sessionQs;
             }
             const uniqueQs = new Set(scoped.map(q => q.question_text)).size;
             r.retry_count = Math.max(0, scoped.length - uniqueQs);
@@ -1312,16 +1315,22 @@
             return tutor ? isTutorQ : !isTutorQ;
         });
 
+        // Direct session_id match (new sessions)
+        if (isRealSessionId(result.session_id)) {
+            const matched = sameGame.filter(q => q.session_id === result.session_id);
+            matched.sort((a, b) => (a.answered_at || '').localeCompare(b.answered_at || ''));
+            return matched;
+        }
+
+        // Legacy fallback: time-window scoping for old data without session_id
         if (!result.played_at || sameGame.length === 0) {
             return sameGame.slice(0, result.questions_answered || 20);
         }
-        // Sort newest first
         sameGame.sort((a, b) => (b.answered_at || '').localeCompare(a.answered_at || ''));
         const playedAt = new Date(result.played_at);
         const sessionSec = result.time_seconds || 0;
         const afterMin = tutor ? 30 : (sessionSec > 0 ? Math.ceil(sessionSec / 60) + 2 : 10);
         const cutoff = new Date(playedAt.getTime() + afterMin * 60 * 1000);
-        // Find previous session boundary for same student+game+mode
         const allSessions = (allResults || []).filter(r =>
             r.student_id === result.student_id &&
             r.game_file === result.game_file &&
@@ -1337,7 +1346,7 @@
         });
         const count = result.questions_answered || inWindow.length;
         const matched = inWindow.slice(0, count);
-        matched.reverse(); // chronological order for display
+        matched.reverse();
         return matched;
     }
 
