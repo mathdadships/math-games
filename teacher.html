@@ -717,7 +717,8 @@
             // Scope: from previous session's played_at to this session's played_at + buffer
             let scoped = sessionQs;
             if (r.played_at) {
-                const afterMin = tutor ? 30 : 5;
+                const sessionSec = r.time_seconds || 0;
+                const afterMin = tutor ? 30 : (sessionSec > 0 ? Math.ceil(sessionSec / 60) + 2 : 10);
                 const t1 = new Date(new Date(r.played_at).getTime() + afterMin * 60 * 1000);
                 // Find previous session's played_at for same student+game
                 const key = r.student_id + '|' + r.game_file + (tutor ? ':tutor' : '');
@@ -1317,7 +1318,8 @@
         // Sort newest first
         sameGame.sort((a, b) => (b.answered_at || '').localeCompare(a.answered_at || ''));
         const playedAt = new Date(result.played_at);
-        const afterMin = tutor ? 30 : 5; // tutor sessions can last longer
+        const sessionSec = result.time_seconds || 0;
+        const afterMin = tutor ? 30 : (sessionSec > 0 ? Math.ceil(sessionSec / 60) + 2 : 10);
         const cutoff = new Date(playedAt.getTime() + afterMin * 60 * 1000);
         // Find previous session boundary for same student+game+mode
         const allSessions = (allResults || []).filter(r =>
