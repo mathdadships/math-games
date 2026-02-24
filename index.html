@@ -591,7 +591,8 @@
 
                 var el = document.createElement('span');
                 el.className = 'card-score';
-                el.textContent = 'Last: ' + right + '/' + keys.length;
+                var pct = Math.round((right / keys.length) * 100);
+                el.textContent = 'Last: ' + pct + '% (' + right + '/' + keys.length + ')';
                 card.appendChild(el);
             });
 
