@@ -741,12 +741,13 @@
             r.retry_count = Math.max(0, scoped.length - uniqueQs);
 
             // Derive right/wrong from question_responses (unique questions) when available.
-            // This avoids inflated counts from games that requeue wrong answers as new attempts.
+            // Only count "right" if the student got it correct on the FIRST attempt.
+            // Any question that required a retry counts as "wrong".
             if (scoped.length > 0) {
+                scoped.sort((a, b) => (a.answered_at || '').localeCompare(b.answered_at || ''));
                 const byQ = {};
                 scoped.forEach(q => {
-                    if (!byQ[q.question_text]) byQ[q.question_text] = false;
-                    if (q.is_correct) byQ[q.question_text] = true;
+                    if (!(q.question_text in byQ)) byQ[q.question_text] = !!q.is_correct;
                 });
                 const qTexts = Object.keys(byQ);
                 const rightUnique = qTexts.filter(k => byQ[k]).length;
