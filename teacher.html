@@ -639,7 +639,7 @@
         const [students, results, questions] = await Promise.all([
             supaFetch('students', 'order=created_at.asc'),
             supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc&limit=5000'),
-            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text,answered_at,session_id&limit=50000')
+            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text,correct_answer,answered_at,session_id&limit=50000')
         ]);
 
         allStudents = students;
@@ -747,7 +747,10 @@
                 scoped.sort((a, b) => (a.answered_at || '').localeCompare(b.answered_at || ''));
                 const byQ = {};
                 scoped.forEach(q => {
-                    if (!(q.question_text in byQ)) byQ[q.question_text] = !!q.is_correct;
+                    // Key by question_text + correct_answer to avoid grouping distinct
+                    // problems that share the same display (e.g. two different "2/4" problems)
+                    const qKey = (q.question_text || '') + '||' + (q.correct_answer || '');
+                    if (!(qKey in byQ)) byQ[qKey] = !!q.is_correct;
                 });
                 const qTexts = Object.keys(byQ);
                 const rightUnique = qTexts.filter(k => byQ[k]).length;
@@ -1274,9 +1277,10 @@
         let i = 0;
         while (i < questions.length) {
             const qt = questions[i].question_text;
-            // Find all consecutive rows with the same question_text
+            const ca = questions[i].correct_answer;
+            // Find all consecutive rows with the same question_text + correct_answer
             let j = i + 1;
-            while (j < questions.length && questions[j].question_text === qt) j++;
+            while (j < questions.length && questions[j].question_text === qt && questions[j].correct_answer === ca) j++;
             const group = questions.slice(i, j);
             // If attempt_number is already set (> 1) from the game, keep the last row as-is
             if (group.some(q => (q.attempt_number || 1) > 1)) {
@@ -1305,7 +1309,9 @@
         const seen = {};
         const result = [];
         questions.forEach(q => {
-            const key = q.question_text;
+            // Key by question_text + correct_answer to avoid grouping distinct
+            // problems that share the same display (e.g. two different "2/4" problems)
+            const key = (q.question_text || '') + '||' + (q.correct_answer || '');
             if (key in seen) {
                 // Non-consecutive replay — merge into the first occurrence
                 const first = seen[key];
