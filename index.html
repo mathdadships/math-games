@@ -104,6 +104,7 @@
         .tag-mixed  { background: #f3e5f5; color: #7b1fa2; }
         .tag-frac   { background: #e3f2fd; color: #1565c0; }
         .tag-story  { background: #e8f5e9; color: #2e7d32; }
+        .card-score { font-size: 0.75rem; color: #999; margin-top: auto; }
         .welcome-bar {
             max-width: 1100px; margin: 0 auto 24px;
             display: flex; align-items: center; justify-content: space-between;
@@ -401,6 +402,7 @@
     const gameAccuracy = {};   // { file: { total, correct, pct } }
     const gameMaxQ = {};       // { file: maxQuestionsAnswered }
     const gameMostRecent = {}; // { file: ISO timestamp }
+    const gameLatest = {};     // { file: { score, questions_answered } }
 
     const FINISHED_THRESHOLD = 10;
 
@@ -535,7 +537,7 @@
             var [results, questions] = await Promise.all([
                 supaFetch('game_results',
                     'student_id=eq.' + student.id +
-                    '&select=game_file,questions_answered,played_at,session_id' +
+                    '&select=game_file,questions_answered,score,played_at,session_id' +
                     '&order=played_at.desc&limit=500'),
                 supaFetch('question_responses',
                     'student_id=eq.' + student.id +
@@ -562,6 +564,19 @@
                 }
                 if (!gameMostRecent[r.game_file] || r.played_at > gameMostRecent[r.game_file]) {
                     gameMostRecent[r.game_file] = r.played_at;
+                    gameLatest[r.game_file] = { score: r.score || 0, questions: qa };
+                }
+            });
+
+            // Inject latest score onto game cards
+            document.querySelectorAll('.card[href]').forEach(function(card) {
+                var file = card.getAttribute('href');
+                var latest = gameLatest[file];
+                if (latest && latest.questions > 0) {
+                    var el = document.createElement('span');
+                    el.className = 'card-score';
+                    el.textContent = 'Last: ' + latest.score + '/' + latest.questions;
+                    card.appendChild(el);
                 }
             });
 
