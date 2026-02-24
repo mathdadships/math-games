@@ -1299,6 +1299,34 @@
         return collapsed;
     }
 
+    // Dedup non-consecutive replays and mark retried questions as wrong.
+    // Only first-attempt correct counts as "right".
+    function firstAttemptDedup(questions) {
+        const seen = {};
+        const result = [];
+        questions.forEach(q => {
+            const key = q.question_text;
+            if (key in seen) {
+                // Non-consecutive replay — merge into the first occurrence
+                const first = seen[key];
+                first.attempt_number = (first.attempt_number || 1) + (q.attempt_number || 1);
+                first.is_correct = false;
+                if (!first._wrongAttempts) first._wrongAttempts = [];
+                if (q._wrongAttempts) first._wrongAttempts.push(...q._wrongAttempts);
+                if (!q.is_correct) first._wrongAttempts.push(q.student_answer);
+            } else {
+                const entry = { ...q };
+                // Consecutive retries already collapsed — mark wrong if retried
+                if ((entry.attempt_number || 1) > 1) {
+                    entry.is_correct = false;
+                }
+                seen[key] = entry;
+                result.push(entry);
+            }
+        });
+        return result;
+    }
+
     async function getSessionQuestions(result) {
         // Ensure question cache is populated for this student
         if (!studentQuestionCache[result.student_id]) {
@@ -1798,7 +1826,7 @@
 
         try {
             const rawQuestions = await getSessionQuestions(result);
-            panelQuestions = collapseAttempts(rawQuestions);
+            panelQuestions = firstAttemptDedup(collapseAttempts(rawQuestions));
         } catch (err) {
             body.innerHTML = '<div style="color:#c62828;padding:24px">Failed to load question data.</div>';
             return;
