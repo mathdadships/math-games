@@ -1524,7 +1524,7 @@
             if (choice.isCorrect) {
                 btn.classList.add('correct');
                 playSound('correct');
-            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
+            GameTracker.recordQuestion({ questionText: "Division: " + currentProblem.display + " = ? [answer: " + currentProblem.answer + "]", studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: true });
                 if (currentProblem._isReplay) GameTracker.markCorrected(currentProblem._replayParams);
                 score++;
                 streak++;
@@ -1556,7 +1556,7 @@
             } else {
                 btn.classList.add('wrong');
                 playSound('wrong');
-            GameTracker.recordQuestion({ questionText: currentProblem.display, studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
+            GameTracker.recordQuestion({ questionText: "Division: " + currentProblem.display + " = ? [answer: " + currentProblem.answer + "]", studentAnswer: String(choice.display), correctAnswer: String(currentProblem.answer), isCorrect: false });
                 GameTracker.markMissed({ questionNum: currentProblem.questionNum, questionDen: currentProblem.questionDen, answerNum: currentProblem.answerNum, answerDen: currentProblem.answerDen });
                 streak = 0;
                 streakEl.textContent = '0 🔥';

@@ -1813,7 +1813,7 @@
 
             if (answer === correctAnswer) {
                 canAnswer = false;
-                GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: true });
+                GameTracker.recordQuestion({ questionText: "What fraction is shaded? [" + blocks[0].shadedIndices.length + " of " + blocks[0].denom + " parts, answer: " + blocks[0].shadedIndices.length + "/" + blocks[0].denom + "]", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: true });
                 if (currentBlock._isReplay) GameTracker.markCorrected(currentBlock._replayParams);
         let points = 10 + (streak * 2);
                 const isPerfect = responseTime < PERFECT_THRESHOLD;
@@ -1929,7 +1929,7 @@
 
             } else {
                 playWrongSound();
-                GameTracker.recordQuestion({ questionText: "What fraction is shaded?", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: false });
+                GameTracker.recordQuestion({ questionText: "What fraction is shaded? [" + blocks[0].shadedIndices.length + " of " + blocks[0].denom + " parts, answer: " + blocks[0].shadedIndices.length + "/" + blocks[0].denom + "]", studentAnswer: String(answer), correctAnswer: blocks[0].shadedIndices.length + "/" + blocks[0].denom, isCorrect: false });
                 GameTracker.markMissed({ denom: blocks[0].denom, numShaded: blocks[0].shadedIndices.length });
                 btn.classList.add('wrong');
                 setTimeout(() => btn.classList.remove('wrong'), 400);
