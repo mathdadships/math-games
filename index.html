@@ -541,8 +541,8 @@
                     '&order=played_at.desc&limit=500'),
                 supaFetch('question_responses',
                     'student_id=eq.' + student.id +
-                    '&select=game_file,is_correct' +
-                    '&limit=10000')
+                    '&select=game_file,is_correct,session_id,question_text,correct_answer,answered_at' +
+                    '&order=answered_at.asc&limit=10000')
             ]);
 
             // Build per-game accuracy
@@ -564,20 +564,35 @@
                 }
                 if (!gameMostRecent[r.game_file] || r.played_at > gameMostRecent[r.game_file]) {
                     gameMostRecent[r.game_file] = r.played_at;
-                    gameLatest[r.game_file] = { score: r.score || 0, questions: qa };
+                    gameLatest[r.game_file] = { score: r.score || 0, questions: qa, sessionId: r.session_id };
                 }
             });
 
-            // Inject latest score onto game cards
+            // Compute first-attempt scoring per latest session and inject onto cards
             document.querySelectorAll('.card[href]').forEach(function(card) {
                 var file = card.getAttribute('href');
                 var latest = gameLatest[file];
-                if (latest && latest.questions > 0) {
-                    var el = document.createElement('span');
-                    el.className = 'card-score';
-                    el.textContent = 'Last: ' + latest.score + '/' + latest.questions;
-                    card.appendChild(el);
-                }
+                if (!latest || !latest.sessionId) return;
+
+                // Filter question_responses to this session
+                var sessionQs = questions.filter(function(q) {
+                    return q.game_file === file && q.session_id === latest.sessionId;
+                });
+                if (sessionQs.length === 0) return;
+
+                // First-attempt scoring: group by question+answer, first occurrence wins
+                var byQ = {};
+                sessionQs.forEach(function(q) {
+                    var key = (q.question_text || '') + '||' + (q.correct_answer || '');
+                    if (!(key in byQ)) byQ[key] = !!q.is_correct;
+                });
+                var keys = Object.keys(byQ);
+                var right = keys.filter(function(k) { return byQ[k]; }).length;
+
+                var el = document.createElement('span');
+                el.className = 'card-score';
+                el.textContent = 'Last: ' + right + '/' + keys.length;
+                card.appendChild(el);
             });
 
             var recs = getRecommendations();
