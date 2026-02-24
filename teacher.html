@@ -1310,10 +1310,14 @@
                 // Non-consecutive replay — merge into the first occurrence
                 const first = seen[key];
                 first.attempt_number = (first.attempt_number || 1) + (q.attempt_number || 1);
-                first.is_correct = false;
-                if (!first._wrongAttempts) first._wrongAttempts = [];
-                if (q._wrongAttempts) first._wrongAttempts.push(...q._wrongAttempts);
-                if (!q.is_correct) first._wrongAttempts.push(q.student_answer);
+                // Only flip to wrong if the first attempt was already wrong/retried.
+                // If the first attempt was correct, a later duplicate is a coincidental
+                // re-generation, not a retry — keep it as correct.
+                if (!first.is_correct) {
+                    if (!first._wrongAttempts) first._wrongAttempts = [];
+                    if (q._wrongAttempts) first._wrongAttempts.push(...q._wrongAttempts);
+                    if (!q.is_correct) first._wrongAttempts.push(q.student_answer);
+                }
             } else {
                 const entry = { ...q };
                 // Consecutive retries already collapsed — mark wrong if retried
