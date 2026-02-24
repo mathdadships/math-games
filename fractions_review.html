@@ -1659,13 +1659,13 @@ function renderMCComparison(container, problem) {
 
 function renderMCEquivPairs(container, problem) {
     const grid = document.createElement('div');
-    grid.className = 'mc-options single-col';
+    grid.className = 'mc-options';
     problem.choices.forEach(choice => {
         const btn = document.createElement('div');
-        btn.className = 'mc-option'; btn.style.flexDirection = 'row'; btn.style.gap = '6px';
+        btn.className = 'mc-option';
         const parts = choice.split(' = ');
         const f1 = parts[0].split('/'), f2 = parts[1].split('/');
-        btn.innerHTML = `${makeFractionHTML(f1[0],f1[1],false)} <span style="font-size:20px;font-weight:700;margin:0 8px">=</span> ${makeFractionHTML(f2[0],f2[1],false)}`;
+        btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:8px">${makeFractionHTML(f1[0],f1[1],false)} <span style="font-size:20px;font-weight:700">=</span> ${makeFractionHTML(f2[0],f2[1],false)}</span>`;
         btn.addEventListener('click', () => handleAnswer(problem, choice));
         grid.appendChild(btn);
     });
