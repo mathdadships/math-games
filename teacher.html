@@ -639,7 +639,7 @@
         const [students, results, questions] = await Promise.all([
             supaFetch('students', 'order=created_at.asc'),
             supaFetch('game_results', 'select=*,students(first_name,class_code)&order=played_at.desc&limit=5000'),
-            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text,answered_at&limit=50000')
+            supaFetch('question_responses', 'select=student_id,game_file,is_correct,question_text,answered_at,session_id&limit=50000')
         ]);
 
         allStudents = students;
