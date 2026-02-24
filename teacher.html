@@ -617,6 +617,10 @@
     }
 
     // ============ DATA ============
+    // Real session_ids (from tracker.js) are short base36 strings like "m5abc1x2f".
+    // Backfilled session_ids are UUIDs (from the migration: session_id = id::text).
+    const isRealSessionId = (sid) => sid && sid.length < 20 && !sid.includes('-');
+
     async function supaFetch(table, query = '') {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${query}`, {
             headers: {
@@ -646,10 +650,7 @@
         }));
 
         // Deduplicate: keep one row per session.
-        // Real session_ids (from tracker.js) are short base36 strings like "m5abc1x2f".
-        // Backfilled session_ids are UUIDs (from the migration: session_id = id::text).
         // Group backfilled/missing rows by student + game + date to collapse auto-save dupes.
-        const isRealSessionId = (sid) => sid && sid.length < 20 && !sid.includes('-');
         const dedup = {};
         enriched.forEach(r => {
             let sessionKey;

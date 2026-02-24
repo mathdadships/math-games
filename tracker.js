@@ -306,13 +306,37 @@ const GameTracker = {
         }
     },
 
-    // Idle timeout: log out after 10 minutes of no interaction
+    // Idle timeout: log out after 20 minutes of no interaction
     _idleTimer: null,
-    IDLE_TIMEOUT: 10 * 60 * 1000, // 10 minutes
+    _warningTimer: null,
+    _warningEl: null,
+    IDLE_TIMEOUT: 20 * 60 * 1000, // 20 minutes
+    IDLE_WARNING: 19 * 60 * 1000, // warn at 19 minutes (1 min before logout)
 
     startIdleTimer() {
+        const dismissWarning = () => {
+            if (this._warningEl && this._warningEl.parentNode) {
+                this._warningEl.remove();
+            }
+        };
+
+        const showWarning = () => {
+            if (!this.isLoggedIn()) return;
+            dismissWarning();
+            const el = document.createElement('div');
+            el.setAttribute('style',
+                'position:fixed;top:0;left:0;right:0;z-index:999999;background:#b71c1c;color:#fff;' +
+                'text-align:center;padding:10px 16px;font:600 15px/1.3 system-ui,sans-serif;cursor:pointer');
+            el.textContent = 'Still there? Tap anywhere to stay logged in (logging out in 1 minute)';
+            document.body.appendChild(el);
+            this._warningEl = el;
+        };
+
         const resetTimer = () => {
             clearTimeout(this._idleTimer);
+            clearTimeout(this._warningTimer);
+            dismissWarning();
+            this._warningTimer = setTimeout(showWarning, this.IDLE_WARNING);
             this._idleTimer = setTimeout(() => {
                 if (this.isLoggedIn()) {
                     console.log('GameTracker: Idle timeout — logging out');
@@ -323,7 +347,7 @@ const GameTracker = {
         };
 
         // Reset on any user interaction
-        ['touchstart', 'click', 'keydown', 'scroll'].forEach(evt => {
+        ['touchstart', 'click', 'keydown', 'scroll', 'touchmove', 'mousemove', 'pointerdown'].forEach(evt => {
             document.addEventListener(evt, resetTimer, { passive: true });
         });
 
