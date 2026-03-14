@@ -232,6 +232,18 @@ Before ending any session that makes meaningful changes, you MUST update the "Re
 - The hook is registered in `.claude/settings.json` — do not remove that config
 - When adding new automated checks, add them to the hook script rather than creating separate scripts
 
+## Review Agents (Required)
+
+Three specialized review agents live in `.claude/agents/`. **Before finalizing any PR or push that changes game files, run all three agents against the changed files.** They enforce the project's rules from different angles:
+
+| Agent | File | Focus |
+|-------|------|-------|
+| **QA Review** | `.claude/agents/qa-review.md` | Tracker integration, variable naming, hub sync, silent bugs |
+| **UI Review** | `.claude/agents/ui-review.md` | Pedagogy (no red, growth mindset), touch targets, accessibility |
+| **Code Review** | `.claude/agents/code-review.md` | Architecture, code style, security, common bugs |
+
+Each agent outputs a structured checklist of PASS/FAIL items. Fix all FAILs before merging.
+
 ## What NOT to Do
 
 - Never add npm/webpack/build tooling
