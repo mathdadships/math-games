@@ -214,6 +214,24 @@ function initAudio() {
 
 Call `initAudio()` on first user interaction. Sound definitions are per-game in a `playSound(type)` function.
 
+## SessionStart Hook & Automation
+
+A SessionStart hook (`.claude/hooks/session-start.sh`) runs on every new Claude Code web session. It is **required infrastructure** — do not remove or disable it.
+
+**What it does:**
+1. **Sets git identity** to `mathdadships` if not already configured
+2. **Auto-updates the "Recent Work" section** of this file from `git log --oneline -10`, so every session starts with current context
+3. **Validates game inventory** — checks that all files in `GAME_SEQUENCE` exist on disk and warns about missing files
+
+**Session-end requirement — update "Recent Work":**
+Before ending any session that makes meaningful changes, you MUST update the "Recent Work" section of this file with a **human-readable summary** of what was done and why (not just commit messages). Commit this update as part of your final push. The SessionStart hook overwrites this section with `git log` as a fallback, but a thoughtful summary from the session that did the work is always preferred.
+
+**Rules:**
+- The "Recent Work" section gets overwritten by the hook on session start as a safety net — but the goal is for each session to leave a good summary before that happens
+- If you add a new game, the hook will catch missing files on the next session
+- The hook is registered in `.claude/settings.json` — do not remove that config
+- When adding new automated checks, add them to the hook script rather than creating separate scripts
+
 ## What NOT to Do
 
 - Never add npm/webpack/build tooling
