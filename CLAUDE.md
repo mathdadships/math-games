@@ -65,6 +65,20 @@
 - Descriptive question text recording in Fraction Blast/Blaster
 - Equivalent fraction display fixes
 
+### Recent Commits (auto-updated)
+<!-- RECENT_COMMITS_START -->
+- Add QA, UI, and code review agents
+- Add SessionStart hook for automated CLAUDE.md updates and validation
+- Make CLAUDE.md the single source of truth for project status
+- Expand CLAUDE.md with architecture rules, tracker contract, and conventions
+- Fix equivalent fraction pairs to display horizontally on one line
+- Show percentage + fraction on game card scores
+- Use first-attempt scoring for hub card scores
+- Show latest score on game cards in hub page
+- Record descriptive question text in Fraction Blast and Blaster
+- Add scoring logic test suite (test_scoring.html)
+<!-- RECENT_COMMITS_END -->
+
 ## Architecture — Non-Negotiable Rules
 
 **No build system.** Every game is a single standalone HTML file with all CSS and JS inline. No npm, no webpack, no frameworks, no shared CSS files. The only shared file is `tracker.js`. Never introduce build tooling, package.json, or split a game into multiple files.
@@ -91,88 +105,27 @@ Some older games don't follow this pattern (`multiplication_arcade_zombie.html`,
 
 ## Tracker Integration Contract
 
-Every game MUST include this boilerplate at the bottom of its `<script>`:
+See `tracker.js` for the full API. Every game must call `requireLogin()`, `startAutoSave()`, and `recordQuestion()`. Copy the tracker IIFE from an existing game (e.g., `fraction_blast_503.html`) as a starting point.
 
-```js
-(function() {
-    const gameFile = 'your_game_filename.html';  // MUST match actual filename
-    GameTracker.requireLogin().then(student => {
-        GameTracker.startAutoSave({ gameFile: gameFile, interval: 3 });
-    });
-})();
-```
-
-The `gameFile` string **must exactly match the HTML filename**. A mismatch silently breaks progress tracking.
+**Critical rules:**
+- The `gameFile` string in the tracker IIFE **must exactly match the HTML filename**. A mismatch silently breaks progress tracking — this is the #1 silent bug.
+- Every answer (correct AND incorrect) must call `GameTracker.recordQuestion()`. Call `GameTracker.checkAutoSave()` after incrementing `questionsAnswered`.
+- Integrate adaptive replay: `markMissed()` on wrong, `getMissedProblem()` when generating, `markCorrected()` when fixed.
 
 ## Required Global Variables
 
-`tracker.js` reads these globals from the game's scope for auto-save (`checkAutoSave()` and `saveOnExit()`):
+`tracker.js` reads these globals for auto-save. **Use these exact names** — anything else silently reports 0:
 
-| Variable | Purpose | Required? |
-|---|---|---|
-| `questionsAnswered` | Progress count (primary) | Yes — use this name |
-| `questionNumber` | Fallback if `questionsAnswered` undefined | Acceptable fallback |
-| `score` | Points earned | Yes |
-| `bestStreak` | Longest correct streak | Yes (or `streak` as fallback) |
-| `streak` | Current streak, fallback for `bestStreak` | Yes |
-
-If you name these differently (e.g., `points` instead of `score`), auto-save will silently report 0. This is the most common silent bug.
-
-## Question Recording
-
-Every answer — correct AND incorrect — must call:
-
-```js
-GameTracker.recordQuestion({
-    questionText: '6 × 7',           // human-readable problem
-    studentAnswer: '48',              // what the student chose
-    correctAnswer: '42',              // the right answer
-    isCorrect: false,                 // boolean
-    attemptNumber: 1                  // which attempt (1-based)
-});
-```
-
-Also call `GameTracker.checkAutoSave()` after incrementing `questionsAnswered`.
-
-## Adaptive Replay
-
-Games should integrate the missed-problem replay system:
-
-- `GameTracker.markMissed(params)` — call when student gets a problem wrong
-- `GameTracker.getMissedProblem()` — call when generating the next problem (returns `null` or a missed problem to retry)
-- `GameTracker.markCorrected(params)` — call when a previously-missed problem is answered correctly
-
-The `params` object is game-specific (whatever you need to reconstruct the problem).
+| Variable | Purpose |
+|---|---|
+| `questionsAnswered` | Progress count (primary). `questionNumber` accepted as fallback |
+| `score` | Points earned |
+| `bestStreak` | Longest correct streak. `streak` accepted as fallback |
+| `streak` | Current streak |
 
 ## Game HTML Structure
 
-Every game follows this structure:
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Game Title</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        /* all CSS inline */
-    </style>
-</head>
-<body>
-    <div id="start-screen">...</div>
-    <div id="game-container">...</div>
-    <div id="end-screen">...</div>
-    <script src="tracker.js"></script>
-    <script>
-        // all JS inline
-        // global state: score, streak, bestStreak, questionsAnswered, canAnswer
-        // tracker IIFE at the bottom
-    </script>
-</body>
-</html>
-```
+New games should follow the structure of an existing game (e.g., `fraction_blast_503.html`). Copy one as a starting point.
 
 Key conventions:
 - `user-scalable=no` on game pages (prevents zoom during touch gameplay)
@@ -203,32 +156,23 @@ Key conventions:
 
 ## Audio Pattern
 
-Games use Web Audio API with lazy initialization:
-
-```js
-let audioCtx;
-function initAudio() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-}
-```
-
-Call `initAudio()` on first user interaction. Sound definitions are per-game in a `playSound(type)` function.
+Games use Web Audio API with lazy `AudioContext` initialization on first user interaction. See any existing game's `initAudio()` / `playSound()` for the pattern. No `<audio>` tags or external audio files.
 
 ## SessionStart Hook & Automation
 
-A SessionStart hook (`.claude/hooks/session-start.sh`) runs on every new Claude Code web session. It is **required infrastructure** — do not remove or disable it.
+A SessionStart hook (`.claude/hooks/session-start.sh`) runs on every new Claude Code session (local and remote). It is **required infrastructure** — do not remove or disable it.
 
 **What it does:**
-1. **Sets git identity** to `mathdadships` if not already configured
-2. **Auto-updates the "Recent Work" section** of this file from `git log --oneline -10`, so every session starts with current context
-3. **Validates game inventory** — checks that all files in `GAME_SEQUENCE` exist on disk and warns about missing files
+1. **Git identity** — auto-sets to `mathdadships` on remote; warns if different on local
+2. **Auto-updates "Recent Commits"** — overwrites the `<!-- RECENT_COMMITS_START/END -->` section with `git log --oneline -10`. This is the auto-generated section only; the human-written "Recent Work" section above it is preserved
+3. **Validates game inventory** — checks that all files in `GAME_SEQUENCE` exist on disk
 
 **Session-end requirement — update "Recent Work":**
-Before ending any session that makes meaningful changes, you MUST update the "Recent Work" section of this file with a **human-readable summary** of what was done and why (not just commit messages). Commit this update as part of your final push. The SessionStart hook overwrites this section with `git log` as a fallback, but a thoughtful summary from the session that did the work is always preferred.
+Before ending any session that makes meaningful changes, you MUST update the "### Recent Work" section with a **human-readable summary** of what was done and why. This section is never overwritten by the hook — it's the primary context for the next session. Commit this update as part of your final push.
 
 **Rules:**
-- The "Recent Work" section gets overwritten by the hook on session start as a safety net — but the goal is for each session to leave a good summary before that happens
-- If you add a new game, the hook will catch missing files on the next session
+- Never edit the `<!-- RECENT_COMMITS_START/END -->` block manually — it's machine-managed
+- The human "Recent Work" section is your responsibility — write meaningful summaries, not commit messages
 - The hook is registered in `.claude/settings.json` — do not remove that config
 - When adding new automated checks, add them to the hook script rather than creating separate scripts
 
