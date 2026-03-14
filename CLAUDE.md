@@ -13,8 +13,57 @@
 - Games are organized by Unit 4 (multiplication/division) and Unit 5 (fractions)
 - `index.html` is the hub page that links to all games
 - Hosted via GitHub Pages at https://mathdadships.github.io/math-games/
-- **Read status.md first** — it contains full project history, architecture, and current state
-- `status.md` is gitignored and local-only
+- **This file is the single source of truth** — project rules, architecture, and current status all live here
+
+## Current Status
+
+### Games (28 total)
+**Unit 4 — Multiplication & Division (10 games):**
+- `number_family_407.html` — Fact Families
+- `division_detective_ML407.html` — Division
+- `fact_builder_408.html` — Multiplication
+- `rectangle_builder_409.html` — Arrays
+- `expression_match_410.html` — Expressions
+- `tens_multiply_411.html` — Multiply by 10s
+- `two_step_415.html` — Two-Step Word Problems
+- `division_story_416.html` — Division Word Problems
+- `division_buildup_417.html` — Division Build Up
+- `multiplication_arcade_zombie.html` — Arcade (legacy name)
+
+**Unit 5 — Fractions (18 games):**
+- `partition_blast_502.html` — Partitioning
+- `fraction_blast_503.html` — Fractions
+- `fraction_strips_504.html` — Visual Fractions
+- `shade_shifters_505.html` — Shading Fractions
+- `fraction_finder_506.html` — Number Lines
+- `fraction_finder_507.html` — Number Lines
+- `space_defender_508.html` — Fractions = Wholes
+- `fraction_arcade_509.html` — Locating Fractions
+- `fraction_blaster_510.html` — Fractions
+- `fraction_transformer_511.html` — Equivalent Fractions
+- `fraction_finder_512.html` — Comparing Fractions
+- `fraction_whole_number_513.html` — Whole Numbers
+- `whole_numbers_514.html` — Fraction Match
+- `face_off_515.html` — Comparing
+- `fraction_faceoff_516.html` — Comparing
+- `fractions_review.html` — Review (legacy name)
+- `fraction_invaders.html` — Arcade (legacy name)
+
+**Other files (not games):**
+- `teacher.html` — Teacher dashboard
+- `tracker.js` — Shared progress tracking module
+- `dd.html`, `tens_multiply_hard.html`, `test_scoring.html` — Dev/test files
+
+### Infrastructure
+- **Tracker (`tracker.js`):** Supabase-backed student login, progress auto-save, question recording, adaptive replay (missed-problem re-queuing)
+- **Hub (`index.html`):** Card grid with per-game score display (percentage + fraction), prev/next navigation via `GAME_SEQUENCE`
+- **Teacher dashboard (`teacher.html`):** Session history, per-question drill-down, first-attempt scoring
+
+### Recent Work
+- Hub card scores showing percentage + fraction based on first-attempt scoring
+- Question deduplication and session-scoped question loading in teacher dashboard
+- Descriptive question text recording in Fraction Blast/Blaster
+- Equivalent fraction display fixes
 
 ## Architecture — Non-Negotiable Rules
 
