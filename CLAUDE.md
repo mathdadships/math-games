@@ -67,6 +67,7 @@
 
 ### Recent Commits (auto-updated)
 <!-- RECENT_COMMITS_START -->
+- Address PR review feedback
 - Add QA, UI, and code review agents
 - Add SessionStart hook for automated CLAUDE.md updates and validation
 - Make CLAUDE.md the single source of truth for project status
@@ -76,7 +77,6 @@
 - Use first-attempt scoring for hub card scores
 - Show latest score on game cards in hub page
 - Record descriptive question text in Fraction Blast and Blaster
-- Add scoring logic test suite (test_scoring.html)
 <!-- RECENT_COMMITS_END -->
 
 ## Architecture — Non-Negotiable Rules
