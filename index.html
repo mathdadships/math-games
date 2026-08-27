@@ -391,12 +391,7 @@
     const GAME_INDEX = {};
     GAME_SEQUENCE.forEach((g, i) => { GAME_INDEX[g.file] = i; });
 
-    // ============ Supabase helper ============
-    function supaFetch(table, query) {
-        return fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, {
-            headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-        }).then(r => r.json());
-    }
+    function supaFetch() { return Promise.resolve([]); }
 
     // ============ Recommendation state ============
     const gameAccuracy = {};   // { file: { total, correct, pct } }
