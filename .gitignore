@@ -35,3 +35,4 @@ test_edge_function.sh
 
 # Node (in case you add dependencies later)
 node_modules/
+.vercel
